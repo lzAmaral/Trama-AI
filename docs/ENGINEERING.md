@@ -8,7 +8,7 @@ O primeiro marco é um pacote Swift 6 para macOS 14+, com executável SwiftUI e 
 
 Projetos são armazenados em JSON local dentro de Application Support. O armazenamento deve ser injetável para testes com diretórios temporários. Diferencie a primeira execução de falhas de leitura e dados inválidos; não sobrescreva silenciosamente um arquivo corrompido. Grave de forma atômica e preserve o estado anterior quando uma operação falhar.
 
-Dados de demonstração devem aparecer como demonstração na interface e permanecer separados dos projetos cadastrados pelo usuário. Neste marco não há subprocessos, consumo de APIs ou agentes reais em execução.
+Dados de demonstração devem aparecer como demonstração na interface e permanecer separados dos projetos cadastrados pelo usuário. No modo real, tarefas iniciadas pelo usuário executam CLIs e podem acessar serviços dos provedores. Testes automatizados usam processos controlados, sem chamadas de IA pagas.
 
 ## Evidências por entrega
 
@@ -40,7 +40,7 @@ Critérios de aceite:
 Validação executada e limitações:
 ```
 
-## Integrações futuras
+## Integrações
 
 Antes de executar o primeiro CLI, valide seu protocolo e ciclo de vida em uma tarefa específica. Use executável e argumentos separados, sem interpolar comandos em um shell. Trate cancelamento, encerramento, saída incompleta e limites de captura. Credenciais devem permanecer nos mecanismos do provedor ou armazenamento apropriado, nunca no JSON de projetos.
 

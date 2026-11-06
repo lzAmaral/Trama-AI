@@ -2,7 +2,7 @@ name: Swift and Rust checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/native-foundation]
   pull_request:
 
 permissions:

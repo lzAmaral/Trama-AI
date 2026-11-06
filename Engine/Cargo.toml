@@ -9,3 +9,7 @@ publish = false
 orkai = { git = "https://github.com/lucasmarujo/octo", rev = "f66aa854313026870aaf57f65d26d9cbfbf32269" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+base64 = "0.23"
+clap = { version = "4", features = ["derive"] }
+libc = "0.2"

@@ -2,8 +2,13 @@ import SwiftUI
 import TramaCore
 
 struct EngineInspectorView: View {
+    // Mirrors usage::PROVIDERS in the pinned Octo revision f66aa85.
+    private static let usageProviders: Set<String> = [
+        "claude", "codex", "kilo", "opencode", "antigravity", "grok", "kimi"
+    ]
     @Environment(\.dismiss) private var dismiss
     @State private var inspection: EngineInspection?
+    @State private var selectedUsageProvider: EngineProvider?
     @State private var failure: String?
     @State private var isLoading = false
     @State private var requestID = UUID()
@@ -40,6 +45,9 @@ struct EngineInspectorView: View {
                             HStack {
                                 Text(provider.id)
                                 Spacer()
+                                if Self.usageProviders.contains(provider.id) && provider.installed {
+                                    Button("Consumo…") { selectedUsageProvider = provider }
+                                }
                                 Label(provider.installed ? "Detectado" : "Não encontrado",
                                       systemImage: provider.installed ? "checkmark.circle" : "minus.circle")
                                     .foregroundStyle(provider.installed ? TerminalTheme.accent : TerminalTheme.secondary)
@@ -51,7 +59,7 @@ struct EngineInspectorView: View {
                 }
             }
             Spacer(minLength: 0)
-            Text("Controle de sessões e terminal ainda em integração. O quadro continua demonstrativo.")
+            Text("Desative Demonstração para iniciar tarefas e acompanhar sessões reais.")
                 .font(TerminalTheme.mono(12))
                 .foregroundStyle(TerminalTheme.secondary)
             Button("Verificar novamente") { requestID = UUID() }
@@ -63,6 +71,7 @@ struct EngineInspectorView: View {
         .foregroundStyle(TerminalTheme.primary)
         .background(TerminalTheme.background)
         .preferredColorScheme(.dark)
+        .sheet(item: $selectedUsageProvider) { UsageInspectorView(provider: $0) }
         .task(id: requestID) { await inspect() }
     }
 

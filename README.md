@@ -2,79 +2,67 @@
 
 **Seus projetos e agentes, em um só lugar.**
 
-Um app nativo para macOS, desenvolvido em Swift.
+App nativo para macOS em SwiftUI, com terminal e motor Rust para executar CLIs de agentes em projetos locais.
 
 ## Estado atual
 
-Primeira base de desenvolvimento em SwiftUI: cadastro de pastas locais como projetos, armazenamento local e uma visão demonstrativa de agentes e atividade. Os agentes exibidos são fictícios: **esta versão não executa agentes nem chama APIs de IA**. A ação Motor executa apenas o processo auxiliar de inspeção local.
+O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. O modo **Demonstração** continua separado e identificado.
 
-A interface segue uma direção de terminal: fonte monoespaçada, superfícies grafite, verde discreto, um quadro de agentes por status, modo lista e detalhes com atividade em formato de log. Os controles continuam nativos. Veja a [direção visual](docs/DESIGN.md).
+A interface usa superfícies grafite, tipografia monoespaçada e acentos verdes. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
+
+Esta é uma versão de desenvolvimento. O fluxo de terminal foi testado com shell real e Git em diretórios temporários. Execução autenticada de cada provedor, revisão visual e distribuição notarizada ainda precisam de validação. Detectar um CLI não confirma login ou compatibilidade de sua versão.
 
 ## Executar
 
-Requisitos: macOS 14 ou superior e toolchain Swift 6.0 ou superior (Xcode ou Command Line Tools compatíveis). Desenvolvimento inicial validado com Swift 6.1.2.
+Requisitos: macOS 14+, Swift 6 e Rust compatível com o lockfile (validado com Swift 6.1.2 e Rust 1.99.1). O primeiro build baixa dependências.
 
 ```sh
-git clone https://github.com/lzAmaral/trama.git
-cd trama
-swift run Trama
-```
-
-O repositório está privado; o clone requer acesso. O pacote produz um executável de desenvolvimento, ainda sem bundle `.app`, assinatura ou instalador. Abra `Package.swift` no Xcode caso prefira trabalhar pela IDE.
-
-Execute apenas uma instância do Trama por vez nesta versão: o armazenamento ainda não coordena gravações de processos simultâneos.
-
-O cadastro armazena apenas nome, identificador e caminho das pastas em `~/Library/Application Support/Trama/projects.json`. Não modifica os arquivos dos projetos. Um erro de leitura é apresentado e bloqueia novas gravações até que o arquivo seja recuperado; o arquivo inválido não é substituído silenciosamente.
-
-## Compilar o motor local
-
-A interface usa SwiftUI e o motor reutiliza uma biblioteca Rust fixada. Requisitos adicionais: Rust 1.88+ e acesso à rede no primeiro build para baixar dependências. A instalação local de desenvolvimento usada nesta máquina fica em `.build/toolchains`, sem alterar o PATH global.
-
-```sh
+git clone https://github.com/lzAmaral/Trama-AI.git
+cd Trama-AI
 ./scripts/build-engine.sh
 swift run Trama
 ```
 
-Abra **Motor** para verificar os provedores detectados. Detectado significa que o executável está disponível no PATH herdado; não confirma login. O diagnóstico não inicia agentes e usa armazenamento separado em `~/Library/Application Support/Trama/Engine`.
+O repositório privado requer acesso. Para gerar um aplicativo local:
 
-A arquitetura e as funcionalidades ainda por conectar estão em [ENGINE_INTEGRATION.md](docs/ENGINE_INTEGRATION.md).
+```sh
+./scripts/package-app.sh
+open .build/Trama.app
+```
+
+O bundle tem assinatura ad hoc para desenvolvimento, sem Developer ID ou notarização. Detalhes em [PACKAGING.md](docs/PACKAGING.md). O script também aceita `--release`.
+
+Cadastre uma pasta, escolha **Nova tarefa** e selecione um provedor instalado ou **terminal**. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela **não encerra** os agentes; use o controle de encerramento na tarefa.
+
+## Dados e controles
+
+Projetos ficam em `~/Library/Application Support/Trama/projects.json`; sessões e logs do motor, em `~/Library/Application Support/Trama/Engine`. O cadastro de pastas não altera seu conteúdo. Um arquivo de projetos inválido bloqueia gravações para preservar os dados. Execute uma instância do app por vez; as mutações do motor têm lock, mas o cadastro de projetos ainda não coordena múltiplas instâncias.
+
+A ação **Motor** detecta provedores sem acessar credenciais ou rede. A consulta de consumo só ocorre ao escolher um provedor e clicar **Consultar agora**, usando o adaptador upstream. Ela pode ler credenciais locais e consultar o serviço correspondente; não roda em segundo plano. Não foi validada com contas reais nesta entrega.
+
+As aprovações do CLI permanecem no terminal. Merge exige worktree isolada, agente encerrado, revisão das alterações e confirmação. O aplicativo não ativa bypass de permissões, acesso remoto ou atualizações automáticas.
 
 ## Validar
 
 ```sh
-swift build
-swift test
+./scripts/build-engine.sh
 ./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
-TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test --filter EngineIntegrationTests
+TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test
 git diff --check
 ```
 
-Os testes usam diretórios temporários e verificam persistência, corrupção de dados, versão de armazenamento incompatível e falhas de gravação. A interface também requer verificação manual: compilação não comprova comportamento visual.
+Os testes cobrem persistência, erros e limites do transporte, cancelamento, lifecycle real de shell e operações Git isoladas. Não executam tarefas de IA pagas ou consultas autenticadas. A compilação e os testes não substituem a revisão visual.
 
-## Visão geral de agentes
+## Desenvolvimento
 
-O quadro inicial reúne **Precisa de você**, **Em andamento**, **Concluído** e **Disponível**. Filtro de projeto, busca, alternância Quadro/Lista e detalhes funcionam sobre dados demonstrativos. A demonstração pode ser explorada sem cadastrar uma pasta; esses projetos fictícios não são salvos. Desligar Demonstração mostra o estado sem agentes conectados.
+- `Sources/TramaApp`: SwiftUI, estado de apresentação e terminal.
+- `Sources/TramaCore`: persistência, modelos e cliente JSON do motor.
+- `Engine`: adaptador Rust, dependência fixada e testes de lifecycle.
+- `Tests/TramaCoreTests`: contratos Swift e integração com o binário real.
+- `scripts`: build e empacotamento local.
 
-Não há criação de sessões reais, aprovação, diff, merge ou medição de cotas nesta versão. Os requisitos para essas integrações estão em [Segurança](docs/SECURITY.md).
+O integrador define contratos, distribui arquivos entre agentes e controla Git; outro agente revisa o comportamento antes da integração. Consulte [AGENTS.md](AGENTS.md), [engenharia](docs/ENGINEERING.md), [tarefas](docs/TASKS.md), [roadmap](docs/ROADMAP.md) e [segurança](docs/SECURITY.md).
 
-## Estrutura
+## Referências e dependências
 
-- `Sources/TramaApp`: interface SwiftUI e estado de apresentação.
-- `Sources/TramaCore`: modelos e persistência, independentes da interface.
-- `Tests/TramaCoreTests`: testes automatizados do núcleo.
-- `.github/workflows/ci.yml`: build e testes em macOS.
-
-O pacote Swift não tem dependências externas. O motor Rust possui dependências fixadas por revisão e `Engine/Cargo.lock`; os avisos estão em [ThirdPartyNotices](ThirdPartyNotices/README.md).
-
-## Desenvolvimento com agentes
-
-O integrador define contratos e tarefas; agentes implementam partes independentes; outro agente revisa antes da integração. Em checkout compartilhado, somente o integrador controla Git.
-
-Consulte [AGENTS.md](AGENTS.md), os [critérios de engenharia](docs/ENGINEERING.md) o [roadmap](docs/ROADMAP.md) e as [tarefas com dependências](docs/TASKS.md). O marco ativo conecta o motor Rust à interface; a próxima entrega valida uma sessão real com saída, entrada e encerramento.
-
-## Referências
-
-- [Octo](https://github.com/lucasmarujo/octo): organização de agentes e projetos em uma janela.
-- [Maestrum](https://github.com/gabrielgreco1/maestrum): acompanhamento e orquestração em um app nativo de macOS.
-
-O motor utiliza a biblioteca Rust do Octo como dependência. O Maestrum permanece apenas como referência de estudo.
+[Octo](https://github.com/lucasmarujo/octo) fornece o motor Rust reutilizado; [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) fornece o terminal nativo. Revisões e versões ficam nos manifests e lockfiles; avisos em [ThirdPartyNotices](ThirdPartyNotices/README.md). [Maestrum](https://github.com/gabrielgreco1/maestrum) é uma referência de produto, sem código incorporado.

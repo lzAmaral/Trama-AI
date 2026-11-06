@@ -1,54 +1,49 @@
 # Integração do motor
 
-## Decisão
+## Arquitetura
 
-A interface permanece nativa em SwiftUI. O motor e as integrações existentes são reutilizados por um executável Rust auxiliar, `trama-engine`, compilado contra a biblioteca `orkai` do projeto Octo. Swift conversa com esse processo por entrada/saída padronizada, usando mensagens JSON versionadas e argumentos separados, sem comandos interpolados em shell.
+A interface SwiftUI usa `OctoEngineClient` para executar `trama-engine` com argumentos separados e JSON via stdin/stdout. O executável depende da biblioteca `orkai` do Octo, revisão `f66aa854313026870aaf57f65d26d9cbfbf32269` (0.2.19). Os holders duráveis são lançados pelo motor; fechar uma janela ou cancelar uma consulta não os encerra.
 
-A dependência está fixada no commit `f66aa854313026870aaf57f65d26d9cbfbf32269` (versão upstream `0.2.19`) em `Engine/Cargo.toml`. Não criamos um fork no GitHub nesta etapa nem copiamos as integrações para Swift. O Cargo baixa e compila a revisão fixada. Uma futura correção necessária no motor deve ser pequena, rastreável e revisada antes de atualizar essa referência.
+Optamos por RPC de uma operação por processo, com polling do quadro a cada dois segundos e snapshot do terminal aberto a cada 800 ms. Isso permite reaproveitar Launcher/Store/client sem inicializar Hub/Peer, cujo watcher upstream consultaria consumo automaticamente. Não é um stream contínuo de terminal; alta frequência de digitação e saída merece medição antes da distribuição.
 
-A origem técnica e a licença ficam na documentação e em [Octo-MIT.txt](../ThirdPartyNotices/Octo-MIT.txt). A interface do produto usa a identidade Trama. O inventário de licenças das dependências transitivas continua necessário antes de distribuir o aplicativo.
+O binário também despacha `__holder`, `__agents` e `__hook`, necessários porque o launcher copia seu próprio executável. `__pwa-bridge` é recusado. Dados ficam exclusivamente no diretório do Trama; não há migração automática de instalações Octo.
 
-## O que está conectado agora
+## Contratos
 
-O comando `trama-engine --inspect --home DIRETORIO_ABSOLUTO` usa `Store::open(Home::at(...))`, `Config::default()` e `launch::installed_kinds`. Retorna um objeto JSON com:
+`--inspect --home CAMINHO_ABSOLUTO` retorna versão de protocolo 1, origem/revisão fixada, provedores instalados, quantidade de registros e operações suportadas. Inspeção pode criar diretórios; não inicia holders, lê credenciais nem consulta rede. `agentCount` conta registros, não processos ativos.
 
-| Campo | Significado |
+`--request --home CAMINHO_ABSOLUTO` recebe um objeto JSON com `operation` e campos específicos. Resposta: `{"protocol":1,"ok":true,"result":...}` ou `{"protocol":1,"ok":false,"error":"..."}`. Input e snapshot transportam bytes em base64. Não há interpolação de tarefas em comandos de shell pelo cliente Swift.
+
+| Operação | Comportamento |
 | --- | --- |
-| `protocol` | Versão do contrato do Trama: `1` |
-| `engine` | Identificador técnico da origem: `octo` |
-| `upstreamRevision` / `upstreamVersion` | Revisão e versão fixadas |
-| `providers` | Registro de provedores, com `id` e `installed` |
-| `agentCount` | Quantidade de registros persistidos; **não** processos ativos |
-| `operations` | Operações disponíveis nesta versão: somente `inspect` |
+| list | Registros, sessões e status consultado dos holders |
+| start | Provedor, pasta, nome, tarefa, sessão e worktree opcional |
+| create_session | Cria agrupamento persistente |
+| input / resize / snapshot | Entrada PTY, dimensões e viewport ANSI |
+| remove | Exclui registro/histórico de agente encerrado sem worktree, mediante confirmação |
+| stop / resume | Encerra ou recupera somente sessão interrompida |
+| skills | Descoberta upstream por provedor e projeto |
+| logs | Replay do histórico persistido, limitado |
+| details | Registro e status, incluindo processo CLI aninhado quando detectado |
+| diff / merge | Alterações locais ou worktree; merge exige confirmação e holder encerrado |
+| usage | Consulta manual do provedor escolhido; exige `confirmed: true` |
 
-A ação **Motor** da interface consulta esse diagnóstico por um cliente Swift com prazo de execução e limite de saída. Detectar um CLI instalado não comprova autenticação, disponibilidade de conta ou compatibilidade integral da versão instalada.
+Mutações persistentes usam lock de arquivo. A UI serializa entrada e redimensionamento por terminal; outras consultas podem ocorrer em paralelo. O terminal não aceita comandos produzidos pela saída como autorizações. Aprovações permanecem sob controle do CLI.
 
-A inspeção pode criar os diretórios privados do motor no caminho informado. Não abre `Hub`, conecta holders, inicia agentes, lê credenciais ou consulta cotas pela rede. O armazenamento pertence ao Trama; não há descoberta nem migração automática dos dados existentes do Octo. O build inicial com Cargo requer rede para baixar o código e as dependências; isso é separado da operação de inspeção em runtime.
+## Limites
 
-## Reaproveitamento e implementação nativa
+- Até 64 registros de agentes; probes paralelos limitados por essa quantidade.
+- Solicitação até 64 KiB; entrada PTY até 32 KiB; UI agrupa até 24.000 bytes.
+- Snapshot e diff até 512.000 bytes; envelope Rust até 900.000 bytes.
+- Terminal entre 2–100 linhas e 10–240 colunas. A UI ajusta os pedidos a esses limites.
+- Replay recusa arquivos de log acima de 16 MiB por arquivo e retorna os últimos 64 KiB de texto. Isso limita leitura/exibição, não constitui política de retenção de todo o armazenamento upstream.
+- Cliente Swift limita saída/tempo, descarta stderr e cancela apenas o processo da solicitação. Após timeout de uma mutação, atualize o quadro antes de tentar novamente: a ação pode ter ocorrido. Não há retry automático.
+- `nested` indica um processo CLI aninhado detectado no terminal, não uma árvore completa de subagentes.
 
-| Capacidade | Disponível no motor fixado | Ligação com o Trama |
-| --- | --- | --- |
-| Registro e detecção de CLIs | `model::AgentKind`, `launch::installed_kinds` | Conectada à inspeção |
-| Armazenamento de registros | `Store` e `Home` | Contagem isolada, sem sessões reais na UI |
-| Iniciar, enviar entrada e parar agentes | `Launcher`, `holder`, `client` | Pendente: contrato, lifecycle e controles nativos |
-| Hooks, status e subagentes | `hooks`, `holder`, `subagents`, `Hub` | Pendente: eventos reais e recuperação de falhas |
-| Terminal e histórico | PTY, snapshots e saída dos holders | Pendente: renderização e entrada nativas |
-| Skills e sessões | `skills`, ações do `Peer` e `Store` | Pendente: adaptação de comandos e telas |
-| Worktrees, diff e merge | `worktree` e ações do motor | Pendente: revisão, contexto e confirmação na UI |
-| Consumo e cotas | `usage` | Desativado nesta etapa; futura ativação explícita após revisão |
-| Telefone e acesso remoto | Módulos PWA/pairing | Etapa posterior; não iniciado pelo Trama |
-| Atualizações | Código upstream e wrappers desktop | Etapa posterior; não reutilizar automaticamente o atualizador de outro produto |
+## Reaproveitamento e validação
 
-Disponibilidade no código não significa paridade entregue. O motor conserva implementações úteis, mas cada capacidade precisa de contrato de transporte, mapeamento de estados, interface e testes no Trama.
+Registro/detecção, launch, hooks, holders, PTY, skills, logs, worktrees e adaptadores de consumo vêm do motor fixado. Os dez provedores aparecem no diagnóstico; somente os instalados ficam disponíveis para novas tarefas. Instalação não garante autenticação. As integrações autenticadas não foram exercitadas nesta entrega.
 
-## Próxima entrega: uma sessão real de ponta a ponta
+Testes Rust usam shell real e repositórios Git temporários para lifecycle, recuperação, resize, logs, diff e merge. Testes Swift verificam transporte, limites, cancelamento e o binário compilado. Testes não iniciam IA paga nem consultam consumo real.
 
-1. Adaptar `Peer`, `PhoneMsg`, `BridgeMsg` e `Outbox` para um canal contínuo local; publicar capacidades e validar a versão do contrato.
-2. Implementar o despacho interno esperado pelo launcher (`__holder`, `__agents`, `__hook`) ou um executável de holder dedicado. O launcher prepara uma cópia do seu executável; apenas aceitar JSON no sidecar não basta.
-3. Antes de abrir `Hub`/`Peer`, controlar explicitamente a consulta de uso. O watcher upstream chama `refresh_usage` automaticamente; ativá-lo inadvertidamente poderia acessar credenciais e rede.
-4. Validar iniciar, receber saída, enviar entrada e encerrar com um processo de teste controlado, em diretório temporário, sem autenticação de provedor.
-5. Integrar um CLI real, preservando suas aprovações, e mostrar estados de erro/interrupção além das quatro colunas demonstrativas.
-6. Só então ligar o restante das capacidades do motor, preservando testes e evitando reimplementar os adaptadores de provedores em Swift.
-
-Fixar a revisão limita mudanças inesperadas, mas não elimina manutenção. Atualizações upstream exigem revisar protocolo, flags dos CLIs, layout de persistência e testes de contrato. O processo auxiliar facilita isolamento de falhas; não transforma automaticamente a execução de agentes em sandbox.
+O Trama não oferece paridade completa com a aplicação Octo: acesso remoto/PWA, árvores completas de subagentes, edição avançada de sessões e atualizador não estão conectados. Assinatura Developer ID e notarização dependem da configuração de distribuição. Atualizar o motor exige revisar contratos, flags, persistência e regressões. O sidecar não isola o CLI em sandbox.

@@ -28,7 +28,7 @@ struct TramaApp: App {
 private final class WorkspaceModel: ObservableObject {
     @Published private(set) var projects: [Project] = []
     @Published var selectedID: UUID?
-    @Published var showsDemo = true
+    @Published var showsDemo = false
     @Published var errorMessage: String?
     @Published private(set) var canSave = false
 
@@ -92,6 +92,8 @@ private struct WorkspaceView: View {
                 Group {
                     if !workspace.canSave {
                         loadError
+                    } else if !workspace.showsDemo {
+                        LiveWorkspaceView(projects: workspace.projects, selectedProjectID: $workspace.selectedID)
                     } else {
                         AgentBoardView(projects: workspace.projects,
                                        selectedProjectID: $workspace.selectedID,
@@ -104,7 +106,7 @@ private struct WorkspaceView: View {
             TerminalRule()
             HStack(spacing: 12) {
                 Text("trama >").foregroundStyle(TerminalTheme.accent)
-                Text("0 processos reais")
+                Text(workspace.showsDemo ? "demonstração" : "sessões reais")
                 Spacer()
                 Text(workspace.canSave ? "local" : "gravação suspensa")
                 Text("⌘O adicionar projeto")

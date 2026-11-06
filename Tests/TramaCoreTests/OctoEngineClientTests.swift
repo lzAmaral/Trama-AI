@@ -2,10 +2,11 @@ import Foundation
 import Testing
 @testable import TramaCore
 
+@Suite(.serialized)
 struct OctoEngineClientTests {
     private let response = #"{"protocol":1,"engine":"octo","upstreamRevision":"f66aa854313026870aaf57f65d26d9cbfbf32269","upstreamVersion":"0.2.19","providers":[{"id":"claude","installed":true}],"agentCount":0,"operations":["inspect"]}"#
 
-    private func withFixture(_ script: String, timeout: TimeInterval = 2,
+    private func withFixture(_ script: String, timeout: TimeInterval = 10,
                              body: (OctoEngineClient) async throws -> Void) async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

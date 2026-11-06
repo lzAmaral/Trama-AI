@@ -2,6 +2,14 @@ use std::{env, io, path::PathBuf, process::ExitCode};
 
 use orkai::{config::Config, launch, model::AgentKind, paths::Home, store::Store};
 use serde::Serialize;
+mod rpc;
+use clap::Parser;
+
+#[derive(Parser)]
+struct InternalArgs {
+    #[command(subcommand)]
+    command: orkai::cli::Internal,
+}
 
 const UPSTREAM_REVISION: &str = "f66aa854313026870aaf57f65d26d9cbfbf32269";
 
@@ -24,13 +32,21 @@ struct Inspection {
 }
 
 fn parse_args(args: &[String]) -> io::Result<PathBuf> {
-    if args.len() != 3 || args[0] != "--inspect" || args[1] != "--home" {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput,
-            "usage: trama-engine --inspect --home ABSOLUTE_DIRECTORY"));
+    if args.len() != 3
+        || !matches!(args[0].as_str(), "--inspect" | "--request")
+        || args[1] != "--home"
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "usage: trama-engine --inspect --home ABSOLUTE_DIRECTORY",
+        ));
     }
     let home = PathBuf::from(&args[2]);
     if !home.is_absolute() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "engine home must be absolute"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "engine home must be absolute",
+        ));
     }
     Ok(home)
 }
@@ -45,17 +61,41 @@ fn inspect(home: PathBuf) -> io::Result<Inspection> {
         engine: "octo",
         upstream_revision: UPSTREAM_REVISION,
         upstream_version: "0.2.19",
-        providers: AgentKind::ALL.into_iter().map(|kind| Provider {
-            id: kind.label(), installed: installed.contains(&kind),
-        }).collect(),
+        providers: AgentKind::ALL
+            .into_iter()
+            .map(|kind| Provider {
+                id: kind.label(),
+                installed: installed.contains(&kind),
+            })
+            .collect(),
         // Stored records, NOT a count of active processes. No holder connections here.
         agent_count: store.list_agents()?.len(),
-        operations: vec!["inspect"],
+        operations: rpc::OPERATIONS.to_vec(),
     })
 }
 
 fn main() -> ExitCode {
-    let result = parse_args(&env::args().skip(1).collect::<Vec<_>>()).and_then(inspect);
+    let args: Vec<String> = env::args().skip(1).collect();
+    if args.first().is_some_and(|arg| arg.starts_with("__")) {
+        let parsed = InternalArgs::try_parse();
+        return match parsed {
+            Ok(InternalArgs {
+                command: orkai::cli::Internal::PwaBridge { .. },
+            }) => ExitCode::FAILURE,
+            Ok(parsed) => {
+                if parsed.command.run().is_ok() {
+                    ExitCode::SUCCESS
+                } else {
+                    ExitCode::FAILURE
+                }
+            }
+            Err(_) => ExitCode::FAILURE,
+        };
+    }
+    if args.first().is_some_and(|arg| arg == "--request") {
+        return rpc::serve(parse_args(&args));
+    }
+    let result = parse_args(&args).and_then(inspect);
     match result {
         Ok(response) => match serde_json::to_writer(io::stdout().lock(), &response) {
             Ok(()) => ExitCode::SUCCESS,
@@ -74,10 +114,17 @@ mod tests {
 
     #[test]
     fn refuses_unknown_commands_and_relative_storage() {
-        for args in [vec![], vec!["--start"], vec!["--inspect", "--home", "relative"]] {
+        for args in [
+            vec![],
+            vec!["--start"],
+            vec!["--inspect", "--home", "relative"],
+        ] {
             assert!(parse_args(&args.into_iter().map(String::from).collect::<Vec<_>>()).is_err());
         }
-        assert_eq!(parse_args(&["--inspect".into(), "--home".into(), "/tmp/a b".into()]).unwrap(), PathBuf::from("/tmp/a b"));
+        assert_eq!(
+            parse_args(&["--inspect".into(), "--home".into(), "/tmp/a b".into()]).unwrap(),
+            PathBuf::from("/tmp/a b")
+        );
     }
 
     #[test]
@@ -86,7 +133,7 @@ mod tests {
         let response = inspect(root.clone()).unwrap();
         assert_eq!(response.providers.len(), AgentKind::ALL.len());
         assert_eq!(response.agent_count, 0);
-        assert_eq!(response.operations, ["inspect"]);
+        assert!(response.operations.contains(&"inspect"));
         assert!(!root.join("config.json").exists());
         assert!(!root.join("agents-host.json").exists());
         assert!(root.join("agents").is_dir());
