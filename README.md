@@ -8,7 +8,7 @@ Um app nativo para macOS, desenvolvido em Swift.
 
 Primeira base de desenvolvimento em SwiftUI: cadastro de pastas locais como projetos, armazenamento local e uma visão demonstrativa de agentes e atividade. Os agentes exibidos são fictícios: **esta versão não executa agentes, comandos ou APIs de IA**.
 
-A interface segue uma direção de terminal: fonte monoespaçada, superfícies grafite, verde discreto, agentes em linhas e atividade em formato de log. Os controles continuam nativos. Veja a [direção visual](docs/DESIGN.md).
+A interface segue uma direção de terminal: fonte monoespaçada, superfícies grafite, verde discreto, um quadro de agentes por status, modo lista e detalhes com atividade em formato de log. Os controles continuam nativos. Veja a [direção visual](docs/DESIGN.md).
 
 ## Executar
 
@@ -35,6 +35,12 @@ git diff --check
 ```
 
 Os testes usam diretórios temporários e verificam persistência, corrupção de dados, versão de armazenamento incompatível e falhas de gravação. A interface também requer verificação manual: compilação não comprova comportamento visual.
+
+## Visão geral de agentes
+
+O quadro inicial reúne **Precisa de você**, **Em andamento**, **Concluído** e **Disponível**. Filtro de projeto, busca, alternância Quadro/Lista e detalhes funcionam sobre dados demonstrativos. A demonstração pode ser explorada sem cadastrar uma pasta; esses projetos fictícios não são salvos. Desligar Demonstração mostra o estado sem agentes conectados.
+
+Não há criação de sessões reais, aprovação, diff, merge ou medição de cotas nesta versão. Os requisitos para essas integrações estão em [Segurança](docs/SECURITY.md).
 
 ## Estrutura
 

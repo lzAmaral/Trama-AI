@@ -13,13 +13,14 @@ public struct Project: Identifiable, Codable, Equatable, Sendable {
 }
 
 public enum AgentStatus: String, CaseIterable, Sendable {
-    case working, needsAttention, completed
+    case working, needsAttention, completed, idle
 
     public var title: String {
         switch self {
         case .working: "Em andamento"
         case .needsAttention: "Precisa de você"
         case .completed: "Concluído"
+        case .idle: "Disponível"
         }
     }
 }

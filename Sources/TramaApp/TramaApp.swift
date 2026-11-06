@@ -44,7 +44,7 @@ private final class WorkspaceModel: ObservableObject {
         do {
             projects = try repository.load()
             if !projects.contains(where: { $0.id == selectedID }) {
-                selectedID = projects.first?.id
+                selectedID = nil
             }
             canSave = true
         } catch {
@@ -91,10 +91,10 @@ private struct WorkspaceView: View {
                 Group {
                     if !workspace.canSave {
                         loadError
-                    } else if let project = workspace.selectedProject {
-                        ProjectDashboard(project: project, showsDemo: workspace.showsDemo)
                     } else {
-                        emptyWorkspace
+                        AgentBoardView(projects: workspace.projects,
+                                       selectedProjectID: $workspace.selectedID,
+                                       showsDemo: workspace.showsDemo)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,13 +149,16 @@ private struct WorkspaceView: View {
             .padding(20)
             TerminalRule()
             List(selection: $workspace.selectedID) {
+                Label("Visão geral", systemImage: "rectangle.split.3x1")
+                    .font(TerminalTheme.mono(13))
+                    .tag(Optional<UUID>.none)
                 Section("projetos [\(workspace.projects.count)]") {
                     ForEach(workspace.projects) { project in
                         Label(project.name, systemImage: "folder")
                             .font(TerminalTheme.mono(13))
                             .lineLimit(1)
                             .help(project.path)
-                            .tag(project.id)
+                            .tag(Optional(project.id))
                             .padding(.vertical, 4)
                     }
                 }
@@ -174,39 +177,6 @@ private struct WorkspaceView: View {
             .disabled(!workspace.canSave)
         }
         .background(TerminalTheme.sidebar)
-    }
-
-    private var emptyWorkspace: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Text("~/projetos").foregroundStyle(TerminalTheme.secondary)
-                HStack(alignment: .top, spacing: 12) {
-                    Text(">").foregroundStyle(TerminalTheme.accent)
-                    Text("Um lugar para o seu próximo projeto")
-                        .foregroundStyle(TerminalTheme.primary)
-                }
-                .font(TerminalTheme.mono(24, weight: .medium))
-                TerminalRule()
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("[info] Nenhuma pasta cadastrada")
-                        .foregroundStyle(TerminalTheme.accent)
-                    Text("Adicione uma pasta local para reunir seus projetos e explorar o painel de agentes.")
-                        .foregroundStyle(TerminalTheme.secondary)
-                    Text("Seus arquivos permanecem onde estão.")
-                        .foregroundStyle(TerminalTheme.secondary)
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                Button("Adicionar projeto…", action: workspace.chooseProject)
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                Text("A integração com agentes reais será adicionada em uma próxima etapa.")
-                    .font(TerminalTheme.mono(12))
-                    .foregroundStyle(TerminalTheme.secondary)
-            }
-            .padding(32)
-            .frame(maxWidth: 800, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 
     private var loadError: some View {
@@ -231,185 +201,6 @@ private struct WorkspaceView: View {
             }
             .padding(32)
             .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
-
-private struct ProjectDashboard: View {
-    let project: Project
-    let showsDemo: Bool
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("projeto selecionado")
-                        .font(TerminalTheme.mono(12))
-                        .foregroundStyle(TerminalTheme.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text(">").foregroundStyle(TerminalTheme.accent)
-                        Text(project.name).textSelection(.enabled)
-                    }
-                    .font(TerminalTheme.mono(24, weight: .medium))
-                    Text(project.path)
-                        .font(TerminalTheme.mono(12))
-                        .foregroundStyle(TerminalTheme.secondary)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                TerminalRule()
-                if showsDemo {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("[demo] Demonstração — nenhum agente em execução")
-                            .foregroundStyle(TerminalTheme.warning)
-                        Text("Agentes e eventos abaixo são fictícios")
-                            .font(TerminalTheme.mono(12))
-                            .foregroundStyle(TerminalTheme.secondary)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    Text("3 agentes de exemplo · 1 em andamento · 1 aguardando · 1 concluído")
-                        .font(TerminalTheme.mono(12))
-                        .foregroundStyle(TerminalTheme.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    agents
-                    activity
-                } else {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("[info] Nenhum agente conectado")
-                            .foregroundStyle(TerminalTheme.accent)
-                        Text("Ative Demonstração para explorar o painel com exemplos fictícios. A integração com agentes reais será adicionada em uma próxima etapa.")
-                            .foregroundStyle(TerminalTheme.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.vertical, 8)
-                }
-            }
-            .padding(24)
-            .frame(maxWidth: 1200, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-    }
-
-    private var agents: some View {
-        VStack(spacing: 0) {
-            TerminalPanelHeader(title: "agentes", detail: "exemplos")
-            AgentRow(index: "01", name: "Interface", task: "Explorando a navegação de \(project.name)", status: .working)
-            TerminalRule()
-            AgentRow(index: "02", name: "Revisão", task: "Exemplo de solicitação de revisão", status: .needsAttention)
-            TerminalRule()
-            AgentRow(index: "03", name: "Planejamento", task: "Exemplo de escopo organizado", status: .completed)
-        }
-        .background(TerminalTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-        .overlay(RoundedRectangle(cornerRadius: 4).stroke(TerminalTheme.border))
-    }
-
-    private var activity: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            TerminalPanelHeader(title: "atividade", detail: "log demonstrativo")
-            VStack(alignment: .leading, spacing: 20) {
-                ActivityRow(index: "001", level: "aguarda", title: "Revisão solicitou uma decisão", detail: "Uma solicitação real aparecerá aqui quando houver integração.", color: TerminalTheme.warning)
-                ActivityRow(index: "002", level: "info", title: "Interface registrou uma etapa", detail: "Nenhum arquivo de \(project.name) foi alterado.", color: TerminalTheme.secondary)
-                ActivityRow(index: "003", level: "ok", title: "Planejamento concluiu uma tarefa", detail: "Este histórico ilustra a organização das atividades.", color: TerminalTheme.accent)
-            }
-            .padding(16)
-        }
-        .background(TerminalTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-        .overlay(RoundedRectangle(cornerRadius: 4).stroke(TerminalTheme.border))
-    }
-}
-
-private struct TerminalPanelHeader: View {
-    let title: String
-    let detail: String
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Text(title).foregroundStyle(TerminalTheme.primary)
-                Spacer()
-                Text(detail).foregroundStyle(TerminalTheme.secondary)
-            }
-            .font(TerminalTheme.mono(12, weight: .medium))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            TerminalRule()
-        }
-    }
-}
-
-private struct AgentRow: View {
-    let index: String
-    let name: String
-    let task: String
-    let status: AgentStatus
-
-    private var color: Color {
-        switch status {
-        case .working: TerminalTheme.primary
-        case .needsAttention: TerminalTheme.warning
-        case .completed: TerminalTheme.accent
-        }
-    }
-
-    private var symbol: String {
-        switch status {
-        case .working: "circle.dotted"
-        case .needsAttention: "pause.circle"
-        case .completed: "checkmark.circle"
-        }
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(index)
-                .font(TerminalTheme.mono(12))
-                .foregroundStyle(TerminalTheme.secondary)
-                .frame(width: 24, alignment: .leading)
-                .padding(.top, 2)
-            VStack(alignment: .leading, spacing: 8) {
-                Text(name).font(TerminalTheme.mono(13, weight: .medium))
-                Text(task)
-                    .font(TerminalTheme.mono(12))
-                    .foregroundStyle(TerminalTheme.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Label(status.title, systemImage: symbol)
-                .font(TerminalTheme.mono(12))
-                .foregroundStyle(color)
-                .fixedSize()
-                .frame(width: 148, alignment: .leading)
-                .padding(.top, 2)
-        }
-        .padding(16)
-    }
-}
-
-private struct ActivityRow: View {
-    let index: String
-    let level: String
-    let title: String
-    let detail: String
-    let color: Color
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(index)
-                .font(TerminalTheme.mono(12))
-                .foregroundStyle(TerminalTheme.secondary)
-                .frame(width: 28, alignment: .leading)
-            VStack(alignment: .leading, spacing: 8) {
-                (Text("[\(level)] ").foregroundColor(color) + Text(title).foregroundColor(TerminalTheme.primary))
-                    .font(TerminalTheme.mono(12))
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(detail)
-                    .font(TerminalTheme.mono(12))
-                    .foregroundStyle(TerminalTheme.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .textSelection(.enabled)
         }
     }
 }
