@@ -6,15 +6,21 @@ O Trama adota execução e armazenamento locais como direção de arquitetura. I
 
 O aplicativo cadastra pastas e grava identificador, nome e caminho em `~/Library/Application Support/Trama/projects.json`. Não modifica arquivos dos projetos nem configurações de ferramentas. A gravação é atômica; erros de leitura bloqueiam novas gravações na interface para preservar os dados existentes. O JSON não é um cofre de segredos e não tem criptografia própria.
 
-Não há execução de agentes, servidor local, login, leitura de tokens, chamadas de rede do aplicativo ou atualização automática implementados. Agentes e atividades exibidos são demonstrações. O uso de uma única instância é necessário enquanto não houver coordenação de gravações concorrentes.
+A ação de inspeção executa o processo auxiliar `trama-engine`, com argumentos separados, prazo e limite de saída. Ele detecta executáveis dos provedores e conta registros persistidos em armazenamento próprio; essa contagem não indica agentes em execução. A abertura do armazenamento pode criar diretórios privados. Não inicia holders, abre servidor local, lê tokens, faz login, consulta rede ou atualiza o aplicativo. O build com Cargo pode baixar a dependência fixada e suas dependências; isso é distinto da inspeção em runtime. Agentes e atividades exibidos são demonstrações. O uso de uma única instância é necessário enquanto não houver coordenação de gravações concorrentes.
 
 | Princípio da referência | Situação no Trama |
 | --- | --- |
-| Controle em `127.0.0.1` e porta aleatória | Não aplicável hoje: não existe servidor. Comunicação futura deve preferir processo direto ou IPC local restrito. |
+| Controle em `127.0.0.1` e porta aleatória | A inspeção usa pipes do processo filho; não existe servidor de controle do Trama. Holders do motor serão ligados apenas após validar o lifecycle e a autenticação existentes. |
 | Token de 256 bits por agente | Ainda não implementado; será exigido se houver serviço local de controle. Token de autenticação não significa criptografia dos dados. |
 | Não alterar configurações globais | Já respeitado pelo cadastro atual; futuras integrações devem manter esse requisito. |
 | Conferir SHA-256 antes de atualizar | Ainda não existe atualizador. A distribuição precisará validar também a autenticidade da origem. |
 | Credenciais somente em memória e para seu emissor | O aplicativo não lê credenciais hoje. Não há medidor de consumo autenticado implementado. |
+
+## Limites da reutilização
+
+A biblioteca do motor é uma dependência de código fixada, não uma garantia automática de segurança ou paridade de recursos. A inspeção atual usa `Store`, `Home` e detecção de executáveis; não usa `Hub`/`Peer`. No snapshot adotado, o watcher de `Hub` consulta uso automaticamente. Antes de integrá-lo, é necessário impedir acesso involuntário a credenciais/rede e definir ativação explícita para cotas.
+
+A implementação deve usar um diretório exclusivo do Trama e não importar a configuração ou sessões de outra instalação silenciosamente. Não expor comandos de trust, bypass, merge ou acesso remoto só porque existem no protocolo upstream. O contrato atual permite somente `inspect`.
 
 ## Antes do primeiro agente real
 

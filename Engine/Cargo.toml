@@ -1,0 +1,11 @@
+[package]
+name = "trama-engine"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+[dependencies]
+orkai = { git = "https://github.com/lucasmarujo/octo", rev = "f66aa854313026870aaf57f65d26d9cbfbf32269" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

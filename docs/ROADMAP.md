@@ -18,22 +18,32 @@ Pendências conhecidas: verificação visual/manual da interface e coordenação
 
 Este marco não inicia processos de agentes nem altera arquivos dos projetos cadastrados.
 
-## M2 — Primeiro agente real
+## M2 — SwiftUI + motor Rust (marco ativo)
 
-- [ ] Escolher um CLI e documentar o protocolo validado, versão e requisitos de instalação.
-- [ ] Implementar um adaptador com executável e argumentos separados, sem interpolação de shell.
-- [ ] Iniciar uma sessão vinculada a um projeto e acompanhar saída e encerramento.
-- [ ] Exibir estados reais e erros, sem inferir sucesso apenas por silêncio no terminal.
-- [ ] Cancelar sessões e lidar com processo interrompido ou protocolo inválido.
-- [ ] Testar integração com um processo controlado e fazer um teste manual com o CLI escolhido.
+A decisão é reutilizar o motor e suas integrações, mantendo a interface SwiftUI. O contrato atual e a matriz de capacidades estão em [ENGINE_INTEGRATION.md](ENGINE_INTEGRATION.md). As tarefas de implementação só são consideradas verificadas após os checks da entrega.
 
-## M3 — Trabalho supervisionado
+- [x] Definir dependência Rust fixada e contrato de inspeção, com origem/licença registradas.
+- [x] Validar build/test do sidecar e inspeção real: provedores detectados e contagem de registros persistidos.
+- [x] Validar cliente Swift com prazo, limite de saída e tratamento de processo/JSON inválido.
+- [ ] Validar ação Motor na interface; manter separação entre diagnóstico real e quadro demonstrativo.
+- [ ] Adaptar transporte contínuo do motor, sem consultas automáticas de uso/credenciais.
+- [ ] Suportar o lifecycle de holders exigido pelo launcher.
+- [ ] Validar iniciar, enviar entrada, receber saída e encerrar uma sessão com processo controlado.
+- [ ] Validar um CLI real de ponta a ponta, com aprovações preservadas, estados reais e recuperação de erro.
 
-- [ ] Linha do tempo por sessão com eventos estruturados e limites de retenção.
-- [ ] Solicitações de intervenção e aprovação com contexto suficiente para decisão.
-- [ ] Recuperação de sessão com semântica documentada para fechar/reabrir o aplicativo.
-- [ ] Revisão de alterações e isolamento por worktree quando houver edição concorrente.
-- [ ] Segundo provedor, apenas após estabilizar o contrato do primeiro.
+A inspeção pode executar o sidecar local e criar seus diretórios privados. Ela não inicia agentes reais nem modifica projetos. A instalação do CLI e seu login continuam sob responsabilidade do usuário/provedor.
+
+## M3 — Conectar as capacidades existentes
+
+- [ ] Expor hooks, estados e subagentes do motor no quadro nativo.
+- [ ] Implementar terminal nativo, entrada interativa e histórico com limites de retenção.
+- [ ] Integrar sessões, recuperação e skills sem reescrever os adaptadores de provedores.
+- [ ] Integrar worktrees, diff e merge com revisão explícita do contexto e das alterações.
+- [ ] Ligar os demais provedores após testes de contrato e smoke por integração disponível.
+- [ ] Avaliar consulta de uso com ativação explícita e acesso a credenciais revisado.
+- [ ] Avaliar acesso por telefone separadamente; não habilitar túneis ou exposição remota por padrão.
+
+Ter o código upstream disponível não comprova que essas capacidades estão conectadas ou testadas no Trama.
 
 ## M4 — Portfólio e distribuição
 

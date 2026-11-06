@@ -6,7 +6,7 @@ Um app nativo para macOS, desenvolvido em Swift.
 
 ## Estado atual
 
-Primeira base de desenvolvimento em SwiftUI: cadastro de pastas locais como projetos, armazenamento local e uma visão demonstrativa de agentes e atividade. Os agentes exibidos são fictícios: **esta versão não executa agentes, comandos ou APIs de IA**.
+Primeira base de desenvolvimento em SwiftUI: cadastro de pastas locais como projetos, armazenamento local e uma visão demonstrativa de agentes e atividade. Os agentes exibidos são fictícios: **esta versão não executa agentes nem chama APIs de IA**. A ação Motor executa apenas o processo auxiliar de inspeção local.
 
 A interface segue uma direção de terminal: fonte monoespaçada, superfícies grafite, verde discreto, um quadro de agentes por status, modo lista e detalhes com atividade em formato de log. Os controles continuam nativos. Veja a [direção visual](docs/DESIGN.md).
 
@@ -26,11 +26,26 @@ Execute apenas uma instância do Trama por vez nesta versão: o armazenamento ai
 
 O cadastro armazena apenas nome, identificador e caminho das pastas em `~/Library/Application Support/Trama/projects.json`. Não modifica os arquivos dos projetos. Um erro de leitura é apresentado e bloqueia novas gravações até que o arquivo seja recuperado; o arquivo inválido não é substituído silenciosamente.
 
+## Compilar o motor local
+
+A interface usa SwiftUI e o motor reutiliza uma biblioteca Rust fixada. Requisitos adicionais: Rust 1.88+ e acesso à rede no primeiro build para baixar dependências. A instalação local de desenvolvimento usada nesta máquina fica em `.build/toolchains`, sem alterar o PATH global.
+
+```sh
+./scripts/build-engine.sh
+swift run Trama
+```
+
+Abra **Motor** para verificar os provedores detectados. Detectado significa que o executável está disponível no PATH herdado; não confirma login. O diagnóstico não inicia agentes e usa armazenamento separado em `~/Library/Application Support/Trama/Engine`.
+
+A arquitetura e as funcionalidades ainda por conectar estão em [ENGINE_INTEGRATION.md](docs/ENGINE_INTEGRATION.md).
+
 ## Validar
 
 ```sh
 swift build
 swift test
+./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
+TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test --filter EngineIntegrationTests
 git diff --check
 ```
 
@@ -49,17 +64,17 @@ Não há criação de sessões reais, aprovação, diff, merge ou medição de c
 - `Tests/TramaCoreTests`: testes automatizados do núcleo.
 - `.github/workflows/ci.yml`: build e testes em macOS.
 
-Não há dependências de terceiros nesta base.
+O pacote Swift não tem dependências externas. O motor Rust possui dependências fixadas por revisão e `Engine/Cargo.lock`; os avisos estão em [ThirdPartyNotices](ThirdPartyNotices/README.md).
 
 ## Desenvolvimento com agentes
 
 O integrador define contratos e tarefas; agentes implementam partes independentes; outro agente revisa antes da integração. Em checkout compartilhado, somente o integrador controla Git.
 
-Consulte [AGENTS.md](AGENTS.md), os [critérios de engenharia](docs/ENGINEERING.md) e o [roadmap](docs/ROADMAP.md). O próximo marco integra um primeiro CLI com estados reais, cancelamento e tratamento de erros.
+Consulte [AGENTS.md](AGENTS.md), os [critérios de engenharia](docs/ENGINEERING.md) o [roadmap](docs/ROADMAP.md) e as [tarefas com dependências](docs/TASKS.md). O marco ativo conecta o motor Rust à interface; a próxima entrega valida uma sessão real com saída, entrada e encerramento.
 
 ## Referências
 
 - [Octo](https://github.com/lucasmarujo/octo): organização de agentes e projetos em uma janela.
 - [Maestrum](https://github.com/gabrielgreco1/maestrum): acompanhamento e orquestração em um app nativo de macOS.
 
-As referências orientam o estudo do produto. Nenhum código desses projetos foi incorporado nesta base inicial.
+O motor utiliza a biblioteca Rust do Octo como dependência. O Maestrum permanece apenas como referência de estudo.

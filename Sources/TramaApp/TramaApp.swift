@@ -81,6 +81,7 @@ private final class WorkspaceModel: ObservableObject {
 
 private struct WorkspaceView: View {
     @ObservedObject var workspace: WorkspaceModel
+    @State private var showsEngine = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -118,12 +119,17 @@ private struct WorkspaceView: View {
         .foregroundStyle(TerminalTheme.primary)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                Button("Motor", systemImage: "cpu") { showsEngine = true }
+                    .help("Verificar motor local e provedores instalados")
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Toggle("Demonstração", isOn: $workspace.showsDemo)
                     .font(TerminalTheme.mono(12))
                     .toggleStyle(.switch)
                     .help("Exibe agentes e atividades fictícios para explorar a interface.")
             }
         }
+        .sheet(isPresented: $showsEngine) { EngineInspectorView() }
         .alert("Atenção aos dados do projeto", isPresented: Binding(
             get: { workspace.errorMessage != nil },
             set: { if !$0 { workspace.errorMessage = nil } }

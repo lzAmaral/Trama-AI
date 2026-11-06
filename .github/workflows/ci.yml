@@ -1,4 +1,4 @@
-name: Swift checks
+name: Swift and Rust checks
 
 on:
   push:
@@ -17,9 +17,19 @@ jobs:
           fetch-depth: 0
       - name: Toolchain
         run: swift --version
-      - name: Build
-        run: swift build
-      - name: Test persistence
+      - name: Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal
+      - name: Build app and engine
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/build-engine.sh
+      - name: Test engine
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
+      - name: Test Swift and real engine contract
+        env:
+          TRAMA_TEST_ENGINE_PATH: ${{ github.workspace }}/Engine/target/debug/trama-engine
         run: swift test
       - name: Check patch whitespace
         run: git diff --check HEAD^ HEAD
