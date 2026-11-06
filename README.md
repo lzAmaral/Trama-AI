@@ -8,6 +8,8 @@ Um app nativo para macOS, desenvolvido em Swift.
 
 Primeira base de desenvolvimento em SwiftUI: cadastro de pastas locais como projetos, armazenamento local e uma visão demonstrativa de agentes e atividade. Os agentes exibidos são fictícios: **esta versão não executa agentes, comandos ou APIs de IA**.
 
+A interface segue uma direção de terminal: fonte monoespaçada, superfícies grafite, verde discreto, agentes em linhas e atividade em formato de log. Os controles continuam nativos. Veja a [direção visual](docs/DESIGN.md).
+
 ## Executar
 
 Requisitos: macOS 14 ou superior e toolchain Swift 6.0 ou superior (Xcode ou Command Line Tools compatíveis). Desenvolvimento inicial validado com Swift 6.1.2.

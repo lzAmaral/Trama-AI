@@ -10,7 +10,7 @@ Os itens abaixo são critérios de aceite. Marque-os como concluídos somente ap
 - [x] Persistência de projetos em JSON dentro de Application Support.
 - [x] Agentes e atividade de exemplo explicitamente identificados como demonstração.
 - [x] Testes do núcleo e da persistência, incluindo entradas inválidas e falhas de leitura.
-- [ ] Build e testes no CI macOS; instruções de execução e limites no README.
+- [x] Build e testes no CI macOS; instruções de execução e limites no README.
 - [ ] Revisão independente e verificação manual da interface.
 
 Pendências conhecidas: verificação visual/manual da interface e coordenação de gravações entre múltiplas instâncias. Nesta versão, execute apenas uma instância por vez.
