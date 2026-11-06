@@ -35,9 +35,3 @@ A integração com múltiplos provedores será considerada após validar o fluxo
 
 A versão mínima do macOS e os detalhes de execução, persistência e distribuição serão definidos na implementação inicial.
 
-## Referências
-
-- [Octo](https://github.com/lucasmarujo/octo): organização de agentes e projetos em uma janela.
-- [Maestrum](https://github.com/gabrielgreco1/maestrum): acompanhamento e orquestração em um app nativo de macOS.
-
-As referências orientam o estudo do produto. Nenhum código desses projetos foi incorporado nesta base inicial.
