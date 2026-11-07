@@ -6,7 +6,9 @@ App nativo para macOS em SwiftUI, com terminal e motor Rust para executar CLIs d
 
 ## Estado atual
 
-O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. O modo **Demonstração** continua separado e identificado.
+O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. Sessões podem ser renomeadas e registros encerrados movidos entre elas. Worktrees podem ser arquivados no lugar, preservando arquivos e branch; o quadro permite mostrar os arquivados. O modo **Demonstração** continua separado e identificado.
+
+O histórico tem exportação com prévia, ocultação literal opcional e revisão manual antes de salvar, além de retenção manual com candidatos e confirmação. A consulta de processos mostra descendentes locais e parentesco registrado quando disponível, com visibilidade incompleta; não representa toda a árvore lógica de subagentes do provedor.
 
 A interface usa superfícies grafite, tipografia monoespaçada e acentos verdes. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
 
@@ -36,7 +38,7 @@ Cadastre uma pasta, escolha **Nova tarefa** e selecione um provedor instalado ou
 
 ## Dados e controles
 
-Projetos ficam em `~/Library/Application Support/Trama/projects.json`; sessões e logs do motor, em `~/Library/Application Support/Trama/Engine`. O cadastro de pastas não altera seu conteúdo. Um arquivo de projetos inválido bloqueia gravações para preservar os dados. Execute uma instância do app por vez; as mutações do motor têm lock, mas o cadastro de projetos ainda não coordena múltiplas instâncias.
+Projetos ficam em `~/Library/Application Support/Trama/projects.json`; sessões e logs do motor, em `~/Library/Application Support/Trama/Engine`. O cadastro de pastas não altera seu conteúdo. Um arquivo de projetos inválido bloqueia gravações para preservar os dados. O cadastro coordena instâncias desta versão com lock e releitura antes de gravar; contenção pede uma nova tentativa. Outra janela atualiza sua lista no próximo cadastro ou recarregamento. Versões antigas não seguem esse protocolo.
 
 A ação **Motor** detecta provedores sem acessar credenciais ou rede. A consulta de consumo só ocorre ao escolher um provedor e clicar **Consultar agora**, usando o adaptador upstream. Ela pode ler credenciais locais e consultar o serviço correspondente; não roda em segundo plano. Não foi validada com contas reais nesta entrega.
 
@@ -48,10 +50,13 @@ As aprovações do CLI permanecem no terminal. Merge exige worktree isolada, age
 ./scripts/build-engine.sh
 ./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
 TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
+./scripts/generate-notices.py --check --target aarch64-apple-darwin
+./scripts/generate-notices.py --check --target x86_64-apple-darwin
 git diff --check
 ```
 
-Os testes cobrem persistência, erros e limites do transporte, cancelamento, lifecycle real de shell e operações Git isoladas. Não executam tarefas de IA pagas ou consultas autenticadas. A compilação e os testes não substituem a revisão visual.
+Os testes cobrem persistência, erros e limites do transporte, cancelamento, fila do terminal, lifecycle real de shell, operações Git isoladas, reorganização de sessões, revisão de logs e falhas de empacotamento. Os checks de avisos usam fontes locais; se faltar cache, execute `./scripts/cargo-local.sh fetch --locked --manifest-path Engine/Cargo.toml`. Não executam tarefas de IA pagas ou consultas autenticadas. A compilação e os testes não substituem a revisão visual. Evidências de transporte e ferramentas ficam em [scripts/VALIDATION.md](scripts/VALIDATION.md); critérios externos em [RELEASE_VALIDATION.md](docs/RELEASE_VALIDATION.md).
 
 ## Desenvolvimento
 

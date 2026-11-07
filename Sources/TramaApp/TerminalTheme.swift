@@ -17,6 +17,6 @@ enum TerminalTheme {
 
 struct TerminalRule: View {
     var body: some View {
-        Rectangle().fill(TerminalTheme.border).frame(height: 1)
+        Rectangle().fill(TerminalTheme.border).frame(height: 1).accessibilityHidden(true)
     }
 }

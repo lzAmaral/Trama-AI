@@ -7,6 +7,7 @@ struct AgentBoardView: View {
 
     @Binding private var projectFilter: UUID?
     @State private var search = ""
+    @FocusState private var searchFocused: Bool
     @State private var mode: BoardDisplayMode = .board
     @State private var selectedSession: AgentSession?
 
@@ -39,14 +40,16 @@ struct AgentBoardView: View {
             header.padding(24)
             TerminalRule()
             if !showsDemo {
-                boardMessage("Nenhum agente conectado", detail: "Ative Demonstração para explorar o quadro. A execução de agentes reais ainda não está disponível.")
+                boardMessage("Nenhum agente conectado", detail: "Desative Demonstração para acompanhar sessões reais.")
+            } else if filteredSessions.isEmpty {
+                boardMessage("Nenhum resultado", detail: "Experimente outro termo ou selecione todos os projetos.")
             } else if mode == .board {
                 board
             } else {
                 list
             }
             TerminalRule()
-            Text("Execução de agentes será adicionada em uma próxima etapa")
+            Text("Demonstração · tarefas e atividades fictícias, sem processos em execução")
                 .font(TerminalTheme.mono(12))
                 .foregroundStyle(TerminalTheme.secondary)
                 .padding(16)
@@ -54,6 +57,9 @@ struct AgentBoardView: View {
         .background(TerminalTheme.background)
         .foregroundStyle(TerminalTheme.primary)
         .font(TerminalTheme.mono(13))
+        .background {
+            Button("Buscar agentes demonstrativos") { searchFocused = true }.keyboardShortcut("f").hidden()
+        }
         .onChange(of: showsDemo) { _, _ in selectedSession = nil }
         .sheet(item: $selectedSession) { session in
             BoardSessionDetail(session: session)
@@ -108,7 +114,7 @@ struct AgentBoardView: View {
     private var searchField: some View {
         TextField("Buscar agente, projeto ou provedor", text: $search)
             .textFieldStyle(.roundedBorder)
-            .accessibilityLabel("Buscar agente, projeto ou provedor")
+            .accessibilityLabel("Buscar agente, projeto ou provedor").focused($searchFocused)
     }
 
     private var modePicker: some View {

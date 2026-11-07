@@ -6,6 +6,7 @@
 - [x] Demonstração identificada, quadro/lista, busca e filtros.
 - [x] Testes de persistência e erros; primeira execução de CI macOS validada.
 - [ ] Revisão visual e acessibilidade.
+- [x] Rótulos de acessibilidade, atalhos e estados de carregamento/erro revisados em código; VoiceOver real continua pendente.
 - [x] Coordenação do cadastro entre múltiplas instâncias com lock e releitura antes de gravar.
 
 ## M2 — Motor Rust e sessões reais
@@ -19,23 +20,32 @@
 - [x] Consulta de consumo manual, sem watcher automático.
 - [ ] Smoke autenticado por provedor e validação da consulta de consumo real.
 - [ ] Verificação manual da interface e desempenho com saída intensa.
+- [x] Medição reproduzível do transporte com saída intensa e processos controlados, sem renderização da UI.
 
 Implementação não implica paridade completa com Octo. `nested` identifica um CLI aninhado, não toda a árvore de subagentes. [Contratos e limites](ENGINE_INTEGRATION.md) e [tarefas](TASKS.md) detalham o que foi entregue.
 
 ## M3 — Evolução de produto
 
-- [ ] Árvore completa de subagentes e controles de orquestração adicionais.
-- [ ] Renomear/mover sessões e arquivar worktrees com tratamento explícito de alterações.
-- [ ] Política de retenção e exportação de logs com revisão de dados sensíveis.
-- [ ] Medir transporte e avaliar stream contínuo para terminais de alta frequência.
-- [ ] Avaliar acesso remoto separadamente, sem exposição automática.
+- [x] Parentesco de registros e consulta limitada de descendentes locais, sem argumentos/ambiente de processos.
+- [ ] Árvore lógica completa de subagentes e controles de orquestração adicionais por provedor.
+- [x] Renomear sessões, mover registros encerrados e arquivar worktrees no lugar, preservando alterações e branch.
+- [x] Retenção manual e exportação de logs com prévia, revisão de dados sensíveis e confirmação.
+- [x] Medir transporte e avaliar stream contínuo: manter RPC nesta entrega; medir interação/renderização antes de mudar a arquitetura.
+- [x] Avaliar acesso remoto separadamente, sem exposição automática; decisão e critérios em [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
+
+Arquivamento não libera disco e não tem desarquivamento nesta entrega. Retenção não é automática nem uma quota global. Árvore de processos e parentesco registrado não comprovam completude de subagentes do provedor. Evidências e limites ficam em [ENGINE_INTEGRATION.md](ENGINE_INTEGRATION.md) e [scripts/VALIDATION.md](../scripts/VALIDATION.md).
 
 ## M4 — Portfólio e distribuição
 
 - [x] Arquitetura, critérios de engenharia e workflow com responsáveis/revisão.
 - [x] Script de bundle `.app` com recursos, motor e assinatura ad hoc.
 - [ ] Demonstração gravada e revisão visual do bundle.
-- [ ] Inventário completo de avisos transitivos para distribuição.
-- [ ] Developer ID, notarização e política de atualização autenticada.
+- [x] Inventário reproduzível com textos e origens, verificado para ambos os targets macOS.
+- [ ] Revisão final dos avisos e fontes exigidos para distribuição pública; duas ausências Windows permanecem explícitas fora dos grafos macOS.
+- [x] Ferramenta opt-in de preparação Developer ID/notarização, testada com fixtures sem certificados ou envio à Apple.
+- [ ] Developer ID, notarização real e validação Gatekeeper em outra máquina.
+- [x] Política de confiança para um futuro canal de atualizações documentada; o aplicativo não instala atualizações automaticamente.
 
 Os itens ainda abertos não devem ser anunciados como concluídos. Os critérios gerais ficam em [ENGINEERING.md](ENGINEERING.md) e [SECURITY.md](SECURITY.md).
+
+Em 2026-11-07, a ferramenta de controle do computador recusou acesso ao Trama. A revisão visual, VoiceOver e gravação continuam pendentes. Smoke de provedores e consumo dependem das contas escolhidas pelo usuário; Developer ID/notarização dependem da configuração de distribuição. Veja [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md).

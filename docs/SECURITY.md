@@ -12,9 +12,13 @@ Iniciar tarefas mantém as aprovações do CLI: `bypass` e `remote_control` são
 
 ## Dados
 
-Projetos ficam em `~/Library/Application Support/Trama/projects.json`; registros, configuração de lançamento e logs do motor ficam em `~/Library/Application Support/Trama/Engine`. Não há importação silenciosa de outra instalação. O cadastro usa gravação atômica e bloqueia gravações após erro de leitura. Execute uma instância por vez: o lock de mutações do motor não protege o JSON de projetos entre apps.
+Projetos ficam em `~/Library/Application Support/Trama/projects.json`; registros, configuração de lançamento e logs do motor ficam em `~/Library/Application Support/Trama/Engine`. Não há importação silenciosa de outra instalação. O cadastro usa gravação atômica, bloqueia gravações após erro de leitura e coordena instâncias desta versão com lock exclusivo não bloqueante e releitura do snapshot. A lista de outra janela atualiza no próximo cadastro ou recarregamento. Versões antigas que não seguem o protocolo de lock não participam dessa coordenação. O motor usa seu próprio lock, separado do cadastro.
 
-Os dados não têm criptografia própria. Logs e tarefas podem conter conteúdo sensível produzido pelo usuário ou pelo CLI. A UI limita o histórico exibido e o motor limita replay, mas isso não garante redação de segredos nem limita todo o espaço ocupado. Não exporte logs automaticamente. A remoção de registro encerrado sem worktree apaga também seu histórico, preservando a pasta do projeto.
+Os dados não têm criptografia própria. Logs e tarefas podem conter conteúdo sensível produzido pelo usuário ou pelo CLI. A UI limita o histórico exibido e o motor limita replay, mas isso não garante redação de segredos nem limita todo o espaço ocupado. A exportação é manual: permite ocultar textos literais, apresenta uma prévia e grava exatamente o texto revisado pelo usuário. Não há identificação automática de todos os segredos. Um processo ainda ativo pode ter saída não persistida no replay até o flush do holder.
+
+A retenção é manual e seleciona somente os nomes de arquivos de log previstos de agentes comprovadamente encerrados, por idade ou tamanho por arquivo. A UI apresenta os candidatos, e o motor exige confirmação e token da mesma prévia; mudança de estado, identidade ou metadados dos candidatos invalida o plano antes de excluir. Symlinks não são candidatos. Não há quota global nem limpeza em segundo plano. Uma falha de filesystem após começar a exclusão pode deixar resultado parcial; prepare outra prévia, sem retry automático. A remoção de registro encerrado sem worktree apaga também seu histórico, preservando a pasta do projeto.
+
+Renomear sessões e mover registros exigem agentes afetados encerrados, inclusive no motor. Não basta estar `lost`: o ambiente de um CLI iniciado continua contendo o agrupamento anterior. Renomeações usam journal recuperável sob lock; dados ou journal inválidos são preservados e bloqueiam a operação, em vez de inferir um snapshot parcial.
 
 ## Consumo e credenciais
 
@@ -28,10 +32,10 @@ O processo herda o ambiente do aplicativo para compatibilidade com CLIs. Isso po
 
 ## Git
 
-Worktree é opcional. Diff é apresentado como texto. Merge exige worktree, holder encerrado, mensagem não vazia, carregamento do diff e confirmação explícita; pode criar commits no projeto. Não há merge automático a partir da saída do agente. Remoção de registros com worktree é recusada para evitar descarte de alterações. Operações externas no repositório ainda podem concorrer com o app; reveja o estado se houver erro.
+Worktree é opcional. Diff é apresentado como texto. Merge exige worktree, holder encerrado, mensagem não vazia, carregamento do diff e confirmação explícita; pode criar commits no projeto. Não há merge automático a partir da saída do agente. Remoção de registros com worktree é recusada para evitar descarte de alterações. Arquivar um worktree encerrado grava um marcador e preserva pasta, branch e alterações no lugar, incluindo arquivos ignorados. Não libera disco, não faz commit nem torna os arquivos imutáveis para ferramentas externas. O sidecar bloqueia entrada, retomada e merge do registro arquivado; a UI permite consultá-lo pelo filtro de arquivados. Não há desarquivamento nesta entrega. Operações externas no repositório ainda podem concorrer com o app; reveja o estado se houver erro.
 
 ## Validação e distribuição
 
 Testes cobrem transporte inválido/excessivo, cancelamento e timeout, solicitações literais, shell/PTY, recuperação, logs, worktree e merge em diretório temporário. Não executam agentes pagos, leitura autenticada de consumo ou mudanças em configuração global. Ainda faltam smoke autenticado por provedor, revisão visual e auditoria completa do IPC upstream.
 
-O bundle local tem assinatura ad hoc. Não há Developer ID, notarização, instalador ou atualizador. Antes de distribuição pública, reunir todos os avisos das dependências incluídas, configurar identidade de assinatura e notarização e definir um canal de atualizações autenticadas. Um hash isolado não comprova a origem de um binário.
+O bundle local tem assinatura ad hoc. Há preparação opt-in para Developer ID e notarização, com staging separado e preservação de artefatos anteriores, mas o fluxo real depende de identidade/configuração e não foi executado. Não há instalador nem atualizador. O inventário reúne textos locais e verifica a cobertura dos dois targets macOS; dois pacotes exclusivos de Windows seguem com ausência explícita, e o inventário conservador não substitui revisão das obrigações de distribuição. Critérios de assinatura, Gatekeeper e um futuro canal de atualizações autenticado ficam em [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md). Um hash isolado não comprova a origem de um binário.

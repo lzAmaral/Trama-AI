@@ -31,5 +31,23 @@ jobs:
         env:
           TRAMA_TEST_ENGINE_PATH: ${{ github.workspace }}/Engine/target/debug/trama-engine
         run: swift test
+      - name: Test local packaging and failure recovery
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Fetch locked sources for notice verification
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/cargo-local.sh fetch --locked --manifest-path Engine/Cargo.toml
+      - name: Verify notices for both macOS targets
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: |
+          python3 scripts/generate-notices.py --check --target aarch64-apple-darwin
+          python3 scripts/generate-notices.py --check --target x86_64-apple-darwin
+      - name: Build and verify isolated development bundle
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/package-app.sh --output .build/validation/Trama.app
       - name: Check patch whitespace
         run: git diff --check HEAD^ HEAD

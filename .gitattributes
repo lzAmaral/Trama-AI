@@ -1,1 +1,4 @@
 * text=auto
+
+# Preserve byte-for-byte upstream license texts, including original whitespace and line endings.
+ThirdPartyNotices/generated/texts/*.txt -text -whitespace
