@@ -6,6 +6,8 @@ App nativo para macOS em SwiftUI, com terminal e motor Rust para executar CLIs d
 
 ## Estado atual
 
+O projeto ativo tem nome e caminho visíveis no cabeçalho e no compositor fixo do rodapé. Escreva a tarefa, escolha o provedor e clique **Iniciar agente**; a criação abre uma aba com o terminal no painel principal. O agente aberto tem um campo próprio para enviar a próxima instrução. Fechar a aba mantém o processo em execução. Projeto, abas e visualização são restaurados localmente. Veja [o fluxo da área de trabalho](docs/WORKSPACE_FLOW.md).
+
 O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. Sessões podem ser renomeadas e registros encerrados movidos entre elas. Worktrees podem ser arquivados no lugar, preservando arquivos e branch; o quadro permite mostrar os arquivados. O modo **Demonstração** continua separado e identificado.
 
 O histórico tem exportação com prévia, ocultação literal opcional e revisão manual antes de salvar, além de retenção manual com candidatos e confirmação. A consulta de processos mostra descendentes locais e parentesco registrado quando disponível, com visibilidade incompleta; não representa toda a árvore lógica de subagentes do provedor.
@@ -38,7 +40,7 @@ open .build/Trama.app
 
 O bundle tem assinatura ad hoc para desenvolvimento, sem Developer ID ou notarização. Detalhes em [PACKAGING.md](docs/PACKAGING.md). O script também aceita `--release`.
 
-Cadastre uma pasta, escolha **Nova tarefa** e selecione um provedor instalado ou **terminal**. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela **não encerra** os agentes; use o controle de encerramento na tarefa.
+Cadastre e selecione uma pasta na barra lateral. No compositor do rodapé, escreva a tarefa, escolha um provedor instalado e clique **Iniciar agente** (⌘Return). **Novo agente** (⌘N) volta ao compositor; a criação abre o terminal automaticamente quando o registro aparece. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela ou a aba **não encerra** os agentes; use **Encerrar** no menu do agente.
 
 ## Dados e controles
 

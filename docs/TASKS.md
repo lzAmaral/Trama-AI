@@ -2,6 +2,23 @@
 
 O integrador define contratos, delega arquivos exclusivos e integra após revisão cruzada. Testes de CLI autenticado e verificação visual são critérios separados da compilação.
 
+## Área de projeto e envio de tarefas — 2026-11-07
+
+Escopo solicitado pelo usuário após testar a interface: reproduzir o fluxo útil do Octo para saber projeto ativo, agentes abertos e destino do prompt. Branch `feat/project-agent-workspace`, sobre a PR #4; Run Orca `run_6ee538fc19aa`. Contratos, referência MIT e limites em [WORKSPACE_FLOW.md](WORKSPACE_FLOW.md).
+
+| Responsável / tarefa | Ownership e resultado |
+| --- | --- |
+| Núcleo — `task_b11e55f8d807` | Novos WorkspaceNavigationState/Repository e 17 testes: projeto, abas por identidade, restauração, erro/corrupção, lock e reset com backup |
+| Motor — `task_cede420e0137` | RPC send_prompt e startIdentified, modelos/cliente e testes Swift/Rust; sem iniciar IA paga em testes |
+| Interface — `task_2556370a5cd7`, correções `task_edf9dfa69067` | Detalhe embutido, compositores, nomes automáticos, foco, painel solicitado e dimensões; sem edição da raiz |
+| Integrador | TramaApp, LiveWorkspaceModel/View, target TramaAppTests e 8 testes de apresentação, docs, integração, bundle e Git |
+| Revisão — `task_ca1bfe6eae1a`, revalidação final | Autor do motor revisa navegação/App de outros autores por leitura; achados de seleção inicial, nomes, foco, altura, pending e roteamento atribuídos e corrigidos |
+| Revisão — `task_4e5ae342c057`, correções `task_ea9875977bd0` | Outro autor reproduziu status paused já enfileirado e divergência Unicode; correção com parser limitado/último status e Cc alinhado foi revalidada independentemente com TCP controlado, 7 testes Rust e 5 Swift |
+
+Os rascunhos são somente memória. Fechar aba não encerra processo. Nenhuma captura do Octo foi usada como dado de teste ou transformada em recurso do aplicativo. A ferramenta de controle do computador recusou novamente o Trama; inspeção visual e teclado real não foram executados nem substituídos pela compilação. Suítes paralelas de processos geraram timeouts locais; o fechamento executa Rust sem concorrência entre casos e registra essa limitação, sem alterar prazos de produto.
+
+Fechamento local: `swift test` com `TRAMA_TEST_ENGINE_PATH` passou **132 testes**, incluindo **9 AppTests** de comportamento do modelo/compositor, sem pular as integrações opt-in. Cargo build locked e Cargo test locked/offline com `--test-threads=1` passaram **35 testes** (3 unitários, 12 delivery, 7 prompt e 13 lifecycle). As **16 verificações Python** passaram; avisos cobrem ambos os targets macOS, e `git diff --check` está limpo. O bundle isolado `.build/validation/Trama.app` foi regenerado após as correções e passou `codesign --verify --deep --strict` com assinatura ad hoc. A última revalidação de UI (`task_02a2ea12e2ac`) confirmou navegação/altura por leitura e apontou filtro Cf restante no compositor; integrador alinhou Cc e verificou o teste da própria política da view com ZWJ/ZWNJ e controles C0/C1.
+
 ## Supervisão e entrega — 2026-11-07
 
 Escopo autorizado pelo usuário: inbox de intervenções, comentários no diff, vínculo de PR/CI e preparação de piloto com métricas locais. Run Orca `run_34152863a708`, branch `feat/review-delivery-workflow`, sobre a entrega da PR #3. Contratos de comportamento em [DELIVERY_WORKFLOW.md](DELIVERY_WORKFLOW.md) e roteiro em [PILOT.md](PILOT.md).

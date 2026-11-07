@@ -27,6 +27,8 @@ use std::{
 mod delivery;
 #[path = "rpc_m3.rs"]
 mod m3;
+#[path = "rpc_prompt.rs"]
+mod prompt;
 
 pub const OPERATIONS: &[&str] = &[
     "inspect",
@@ -55,6 +57,7 @@ pub const OPERATIONS: &[&str] = &[
     "diff_snapshot",
     "review_preview",
     "send_review",
+    "send_prompt",
     "github_pr",
 ];
 const MAX_REQUEST: u64 = 65_536;
@@ -307,7 +310,7 @@ fn dispatch(home: PathBuf, request: Request) -> io::Result<Value> {
                 false,
             )?;
             wait_for_holder(launcher.store(), record.id)?;
-            Ok(json!({"agentId":record.id}))
+            Ok(json!({"agentId":record.id,"createdAtMs":record.created_at_ms}))
         }
         "create_session" => {
             let name = request
@@ -423,6 +426,7 @@ fn agent_action(store: Store, request: Request) -> io::Result<Value> {
         "diff_snapshot" => delivery::diff_snapshot(&record),
         "review_preview" => delivery::review_preview(&store, &record, &request),
         "send_review" => delivery::send_review(&store, &record, &request),
+        "send_prompt" => prompt::send_prompt(&store, &record, &request),
         "github_pr" => delivery::github_pr(&record, &request),
         "move_agent" => m3::move_agent(&store, record, &request),
         "archive_worktree" => m3::archive_worktree(&store, &record, &request),

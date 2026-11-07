@@ -32,6 +32,8 @@ O processo herda o ambiente do aplicativo para compatibilidade com CLIs. Isso po
 
 ## Revisão e piloto
 
+O envio de instrução a um agente aberto usa confirmação do botão, identidade exata e a mesma conexão autenticada; recusa estados observados inadequados, controles C0/C1 e payload excessivo, sem shell ou retry. O parser de estados tem limites de frame, bytes e prazo e considera os updates já disponíveis. O protocolo upstream não permite validar estado e Input atomicamente: existe uma janela residual entre a última observação e o recebimento, sem garantia de que o provedor permaneceu no mesmo prompt. O reconhecimento é somente de transporte. [Contratos da área de trabalho](WORKSPACE_FLOW.md).
+
 Inbox, comentários, vínculos de PR e medições ficam em `Engine/trama-delivery-workflow.json`, com gravação atômica e lock não bloqueante entre instâncias. Dados corrompidos ou incompatíveis bloqueiam alterações e são preservados. Notas e títulos de PR são dados funcionais e podem conter informações sensíveis; esse arquivo não tem criptografia própria. A exportação de métricas contém apenas contagens e durações. Medições vêm desativadas; desligá-las limpa a janela de telemetria local sem apagar inbox, comentários ou vínculos.
 
 Comentários pertencem a uma identidade de agente e a um hash do diff. O envio exige prévia exata, confirmação e conferência de versão no motor; shell, sessão interrompida, aprovação pendente e IA trabalhando são recusados. Entrega ao PTY não prova que o provedor aplicou a revisão. Não há retry automático após erro ou timeout. O usuário continua responsável pelas aprovações do CLI. Notificações locais dependem de opt-in separado e usam texto genérico, sem nomes, tarefas, caminhos ou comentários.

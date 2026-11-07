@@ -13,7 +13,7 @@ struct TramaApp: App {
                 .preferredColorScheme(.dark)
                 .tint(TerminalTheme.accent)
         }
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 1280, height: 820)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Adicionar projeto…", action: workspace.chooseProject)
@@ -75,6 +75,7 @@ private final class WorkspaceModel: ObservableObject {
 
 private struct WorkspaceView: View {
     @ObservedObject var workspace: WorkspaceModel
+    @StateObject private var live = LiveWorkspaceModel()
     @State private var showsEngine = false
 
     var body: some View {
@@ -87,7 +88,7 @@ private struct WorkspaceView: View {
                     if !workspace.canSave {
                         loadError
                     } else if !workspace.showsDemo {
-                        LiveWorkspaceView(projects: workspace.projects, selectedProjectID: $workspace.selectedID)
+                        LiveWorkspaceView(projects: workspace.projects, selectedProjectID: $workspace.selectedID, model: live)
                     } else {
                         AgentBoardView(projects: workspace.projects,
                                        selectedProjectID: $workspace.selectedID,
@@ -99,11 +100,9 @@ private struct WorkspaceView: View {
             }
             TerminalRule()
             HStack(spacing: 12) {
-                Text("trama >").foregroundStyle(TerminalTheme.accent)
-                Text(workspace.showsDemo ? "demonstração" : "sessões reais")
+                Text(workspace.showsDemo ? "Demonstração · dados fictícios" : (workspace.selectedProject.map { "Projeto: " + $0.name } ?? "Nenhum projeto ativo · escolha uma pasta na barra lateral"))
                 Spacer()
-                Text(workspace.canSave ? "local" : "gravação suspensa")
-                Text("⌘O adicionar projeto")
+                Text(workspace.canSave ? "Fechar uma aba mantém o agente em execução" : "Gravação de projetos suspensa")
             }
             .font(TerminalTheme.mono(12))
             .foregroundStyle(TerminalTheme.secondary)
@@ -112,6 +111,23 @@ private struct WorkspaceView: View {
             .background(TerminalTheme.sidebar)
         }
         .font(TerminalTheme.mono(13))
+        .task {
+            live.configure(projects: workspace.projects)
+            if let id = live.navigation.selectedProjectID, workspace.projects.contains(where: { $0.id == id }) {
+                workspace.selectedID = id
+            }
+            while !Task.isCancelled {
+                await live.refresh()
+                do { try await Task.sleep(for: .seconds(2)) } catch { break }
+            }
+        }
+        .onChange(of: workspace.projects) { _, projects in live.configure(projects: projects) }
+        .onChange(of: workspace.selectedID) { _, id in
+            if live.navigation.selectedProjectID != id { live.selectProject(id) }
+        }
+        .onChange(of: live.navigation.selectedProjectID) { _, id in
+            if workspace.selectedID != id { workspace.selectedID = id }
+        }
         .foregroundStyle(TerminalTheme.primary)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -144,22 +160,26 @@ private struct WorkspaceView: View {
                     Text(">").foregroundStyle(TerminalTheme.accent)
                 }
                 .font(TerminalTheme.mono(24, weight: .semibold))
-                Text("projetos / agentes")
+                Text("Projetos e agentes")
                     .font(TerminalTheme.mono(12))
                     .foregroundStyle(TerminalTheme.secondary)
             }
             .padding(20)
             TerminalRule()
             List(selection: $workspace.selectedID) {
-                Label("Visão geral", systemImage: "rectangle.split.3x1")
+                Label("Todos os projetos", systemImage: "rectangle.split.3x1")
                     .font(TerminalTheme.mono(13))
                     .tag(Optional<UUID>.none)
-                Section("projetos [\(workspace.projects.count)]") {
+                Section("Projetos") {
                     ForEach(workspace.projects) { project in
-                        Label(project.name, systemImage: "folder")
-                            .font(TerminalTheme.mono(13))
-                            .lineLimit(1)
-                            .help(project.path)
+                        HStack(spacing: 8) {
+                            Label(project.name, systemImage: "folder").lineLimit(1)
+                            Spacer(minLength: 0)
+                            let count = live.agents.filter { $0.isAlive && WorkspaceNavigationState.matches(agent: $0, project: project) }.count
+                            Text("\(count)").monospacedDigit().foregroundStyle(TerminalTheme.secondary)
+                                .accessibilityLabel("\(count) agentes ativos")
+                        }
+                            .font(TerminalTheme.mono(13)).help(project.path)
                             .tag(Optional(project.id))
                             .padding(.vertical, 4)
                     }
@@ -167,6 +187,7 @@ private struct WorkspaceView: View {
             }
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
+            .disabled(live.busy)
             TerminalRule()
             Button(action: workspace.chooseProject) {
                 Label("Adicionar projeto", systemImage: "plus")

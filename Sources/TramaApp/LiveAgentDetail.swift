@@ -94,6 +94,10 @@ struct LiveAgentDetail: View {
     @ObservedObject var model: LiveWorkspaceModel
     let agentID: UInt32
     let initial: EngineAgent
+    let isEmbedded: Bool
+    let onClose: (() -> Void)?
+    let initialTab: String
+    let panelRequestID: UUID?
     @StateObject private var terminal: TerminalSessionModel
     @Environment(\.dismiss) private var dismiss
     @State private var tab = "terminal"
@@ -115,8 +119,11 @@ struct LiveAgentDetail: View {
     @State private var processError: String?
     @State private var loadingProcesses = false
 
-    init(model: LiveWorkspaceModel, agentID: UInt32, initial: EngineAgent, initialTab: String = "terminal") {
+    init(model: LiveWorkspaceModel, agentID: UInt32, initial: EngineAgent, initialTab: String = "terminal",
+         isEmbedded: Bool = false, onClose: (() -> Void)? = nil, panelRequestID: UUID? = nil) {
         self.model = model; self.agentID = agentID; self.initial = initial
+        self.isEmbedded = isEmbedded; self.onClose = onClose
+        self.initialTab = initialTab; self.panelRequestID = panelRequestID
         _tab = State(initialValue: initialTab)
         _terminal = StateObject(wrappedValue: TerminalSessionModel(client: model.client, id: agentID, createdAtMs: initial.createdAtMs) { [weak workflow = model.workflow] sentAt in
             if let ref = initial.deliveryReference { workflow?.inputDelivered(ref, sentAt: sentAt) }
@@ -130,114 +137,11 @@ struct LiveAgentDetail: View {
     private var isAlive: Bool { agent.isAlive && identityAvailable }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("\(agent.name) #\(agent.id)").font(TerminalTheme.mono(18, weight: .medium))
-                    .accessibilityAddTraits(.isHeader)
-                Text(liveStateTitle(agent.state)).foregroundStyle(liveStateColor(agent.state))
-                Spacer()
-                Button("Fechar") { dismiss() }.keyboardShortcut("w")
-                    .help("Fechar detalhes (⌘W). Escape permanece disponível para o terminal.")
-            }
-            Text("\(agent.kind) · \(agent.session) · \(agent.cwd)")
-                .foregroundStyle(TerminalTheme.secondary).lineLimit(2).textSelection(.enabled)
-            HStack {
-                Picker("Painel", selection: $tab) {
-                    Text("Terminal").tag("terminal")
-                    Text("Alterações").tag("diff")
-                    Text("PR/CI").tag("pr")
-                    Text("Histórico").tag("logs")
-                    Text("Tarefa").tag("task")
-                    Text("Processos").tag("processes")
-                }.pickerStyle(.segmented).frame(minWidth: 400)
-            }
-            HStack {
-                Button("Mover para sessão…") { destinationSession = agent.session; showsMove = true }.disabled(model.busy || agent.state != "exited")
-                    .help("Encerre o agente antes de mudar sua sessão")
-                if agent.branch != nil && agent.archived != true {
-                    Button("Arquivar worktree…") { confirmArchive = true }.disabled(model.busy || agent.state != "exited")
-                }
-                if agent.archived == true { Text("Worktree arquivado").foregroundStyle(TerminalTheme.secondary) }
-                Spacer()
-                if agent.state == "lost" && agent.archived != true {
-                    Button("Retomar") {
-                        guard identityAvailable else { return }
-                        Task { await model.perform {
-                            guard identityAvailable else { return }
-                            try await model.client.resume(agentId: agentID, createdAtMs: initial.createdAtMs)
-                        } }
-                    }
-                        .disabled(model.busy)
-                }
-                if agent.state == "exited" && agent.branch == nil {
-                    Button("Remover registro…", role: .destructive) { confirmRemove = true }
-                        .disabled(model.busy)
-                }
-                Button("Encerrar", role: .destructive) { confirmStop = true }.disabled(!isAlive || model.busy)
-            }.disabled(!identityAvailable)
-            if tab == "terminal" {
-                NativeTerminalView(snapshot: terminal.snapshot, name: agent.name, isInteractive: isAlive && !model.busy,
-                                   onInput: { if isAlive && !model.busy { terminal.input($0) } },
-                                   onResize: { rows, cols in terminal.resize(rows: rows, cols: cols, active: isAlive) })
-                    .id(agentID)
-                    .frame(minHeight: 360)
-                    .overlay(Rectangle().stroke(TerminalTheme.border))
-                if isAlive && !terminal.hasSnapshot && terminal.error == nil { ProgressView("Carregando terminal…") }
-                if !isAlive {
-                    Text(terminal.hasSnapshot
-                         ? "Sessão \(liveStateTitle(agent.state).lowercased()). Última tela capturada nesta janela."
-                         : "Sessão \(liveStateTitle(agent.state).lowercased()). Consulte o histórico para ver a saída persistida.")
-                        .foregroundStyle(TerminalTheme.secondary)
-                }
-                if let error = terminal.actionError ?? terminal.error, isAlive { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3) }
-            } else if tab == "diff" {
-                DeliveryReviewView(client: model.client, agent: agent, workflow: model.workflow) { snapshot in
-                    reviewedDiffAvailable = snapshot?.text.isEmpty == false
-                }.id(reviewReloadID)
-                HStack {
-                    if agent.branch != nil && agent.archived != true {
-                        TextField("Mensagem do merge", text: $message).textFieldStyle(.roundedBorder)
-                        Button("Revisar merge…") { confirmMerge = true }
-                            .disabled(model.busy || !identityAvailable || !reviewedDiffAvailable || message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || agent.state != "exited")
-                    }
-                }
-                if agent.branch != nil {
-                    Text(agent.archived == true ? "Worktree arquivado: pasta e alterações preservadas; integração indisponível." : "Encerre o agente e revise o diff antes de integrar o worktree ao projeto.")
-                        .foregroundStyle(TerminalTheme.secondary)
-                }
-            } else if tab == "pr" {
-                DeliveryPullRequestView(client: model.client, agent: agent, workflow: model.workflow)
-            } else if tab == "logs" {
-                if loadingLogs { ProgressView("Lendo histórico…") }
-                if let logError { Text(logError).foregroundStyle(TerminalTheme.warning).textSelection(.enabled) }
-                HStack {
-                    Button(loadingLogs ? "Lendo histórico…" : "Atualizar histórico") { Task { await loadLogs() } }.disabled(loadingLogs)
-                    Button("Preparar exportação…") { showsExport = true }
-                }
-                ScrollView([.horizontal, .vertical]) {
-                    Text(logText.isEmpty ? (loadingLogs ? "" : (logError == nil ? "Nenhum histórico disponível." : "")) : logText)
-                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                }.frame(minHeight: 360)
-            } else if tab == "processes" {
-                processPanel
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if let nested = agent.nested {
-                            Text("Processo aninhado: \(nested.kind) · PID \(nested.pid)")
-                                .foregroundStyle(TerminalTheme.accent)
-                        }
-                        Text(agent.task.isEmpty ? "Terminal interativo sem tarefa inicial." : agent.task)
-                        Text(agent.activity).foregroundStyle(TerminalTheme.secondary)
-                    }.textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                }.frame(minHeight: 360)
-            }
-            if model.busy { ProgressView("Aplicando operação…").controlSize(.small) }
-            if !identityAvailable { Text("Este registro não está disponível no quadro atual. Reabra os detalhes após atualizar; entrada desativada.").foregroundStyle(TerminalTheme.warning) }
-            if let notice { Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(3) }
-            if let error = model.error { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3) }
-        }
-        .padding(20).frame(minWidth: 760, idealWidth: 960, minHeight: 600, idealHeight: 700)
+        detailLayout
+        .padding(isEmbedded ? 8 : 20)
+        .frame(minWidth: isEmbedded ? nil : 760, idealWidth: isEmbedded ? nil : 960,
+               maxWidth: .infinity, minHeight: isEmbedded ? nil : 600,
+               idealHeight: isEmbedded ? nil : 700, maxHeight: .infinity)
         .font(TerminalTheme.mono(12))
         .foregroundStyle(TerminalTheme.primary).background(TerminalTheme.background)
         .preferredColorScheme(.dark)
@@ -246,6 +150,7 @@ struct LiveAgentDetail: View {
             if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: tab) }
         }
         .onDisappear { terminal.suspend() }
+        .onChange(of: panelRequestID) { _, _ in tab = initialTab }
         .onChange(of: identityAvailable) { _, available in
             if !available {
                 terminal.suspend(); reviewedDiffAvailable = false
@@ -304,7 +209,7 @@ struct LiveAgentDetail: View {
                     await model.perform {
                         guard identityAvailable else { return }
                         try await model.client.remove(agentId: agentID, confirmed: true, createdAtMs: initial.createdAtMs)
-                        dismiss()
+                        close()
                     }
                 }
             }
@@ -322,6 +227,213 @@ struct LiveAgentDetail: View {
                 } }
             }
         } message: { Text("Origem: \(agent.branch ?? "")\nProjeto: \(agent.project)\nRevise o diff. Esta ação cria commits e integra alterações ao projeto.") }
+    }
+
+    @ViewBuilder private var detailLayout: some View {
+        if isEmbedded {
+            GeometryReader { geometry in
+                if tab == "terminal" {
+                    embeddedTerminalContent(height: geometry.size.height)
+                } else {
+                    detailContent
+                }
+            }
+        } else {
+            detailContent
+        }
+    }
+
+    private var detailContent: some View {
+        VStack(alignment: .leading, spacing: isEmbedded ? 6 : 12) {
+            detailHeader
+            if !isEmbedded {
+                Text("\(agent.kind) · \(agent.session) · \(agent.cwd)")
+                    .foregroundStyle(TerminalTheme.secondary).lineLimit(2).textSelection(.enabled)
+            }
+            panelPicker
+            if !isEmbedded {
+                HStack {
+                    agentOptions
+                    Text(agent.session).foregroundStyle(TerminalTheme.secondary).lineLimit(1)
+                        .help("Sessão: \(agent.session)")
+                    if agent.archived == true { Text("Worktree arquivado").foregroundStyle(TerminalTheme.secondary) }
+                    Spacer()
+                    resumeAction
+                    Button("Encerrar", role: .destructive) { confirmStop = true }.disabled(!isAlive || model.busy)
+                }.disabled(!identityAvailable)
+            }
+            if tab == "terminal" {
+                terminalView
+                    .frame(minHeight: isEmbedded ? 64 : 240, maxHeight: .infinity)
+                terminalMessages
+                promptComposer
+            } else if tab == "diff" {
+                DeliveryReviewView(client: model.client, agent: agent, workflow: model.workflow) { snapshot in
+                    reviewedDiffAvailable = snapshot?.text.isEmpty == false
+                }.id(reviewReloadID)
+                HStack {
+                    if agent.branch != nil && agent.archived != true {
+                        TextField("Mensagem do merge", text: $message).textFieldStyle(.roundedBorder)
+                        Button("Revisar merge…") { confirmMerge = true }
+                            .disabled(model.busy || !identityAvailable || !reviewedDiffAvailable || message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || agent.state != "exited")
+                    }
+                }
+                if agent.branch != nil {
+                    Text(agent.archived == true ? "Worktree arquivado: pasta e alterações preservadas; integração indisponível." : "Encerre o agente e revise o diff antes de integrar o worktree ao projeto.")
+                        .foregroundStyle(TerminalTheme.secondary)
+                }
+            } else if tab == "pr" {
+                DeliveryPullRequestView(client: model.client, agent: agent, workflow: model.workflow)
+            } else if tab == "logs" {
+                if loadingLogs { ProgressView("Lendo histórico…") }
+                if let logError { Text(logError).foregroundStyle(TerminalTheme.warning).textSelection(.enabled) }
+                HStack {
+                    Button(loadingLogs ? "Lendo histórico…" : "Atualizar histórico") { Task { await loadLogs() } }.disabled(loadingLogs)
+                    Button("Preparar exportação…") { showsExport = true }
+                }
+                ScrollView([.horizontal, .vertical]) {
+                    Text(logText.isEmpty ? (loadingLogs ? "" : (logError == nil ? "Nenhum histórico disponível." : "")) : logText)
+                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                }.frame(minHeight: isEmbedded ? 80 : 360, maxHeight: .infinity)
+            } else if tab == "processes" {
+                processPanel
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if let nested = agent.nested {
+                            Text("Processo aninhado: \(nested.kind) · PID \(nested.pid)")
+                                .foregroundStyle(TerminalTheme.accent)
+                        }
+                        Text(agent.task.isEmpty ? "Terminal interativo sem tarefa inicial." : agent.task)
+                        Text(agent.activity).foregroundStyle(TerminalTheme.secondary)
+                    }.textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                }.frame(minHeight: isEmbedded ? 80 : 360, maxHeight: .infinity)
+            }
+            detailNotices
+        }
+    }
+
+    // Keep the native terminal outside the scroll region at every window size.
+    // Bound only the composer/messages area, so additional errors cannot push
+    // its controls below the viewport and resizing does not replace the terminal.
+    private func embeddedTerminalContent(height: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            detailHeader
+            panelPicker
+            terminalView.frame(minHeight: 48, maxHeight: .infinity)
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 8) {
+                    promptComposer
+                    terminalMessages
+                    detailNotices
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 2)
+            }.frame(height: min(180, max(0, height - 116)))
+                .accessibilityLabel("Instrução e mensagens de \(agent.name)")
+        }
+    }
+
+    private var detailHeader: some View {
+        HStack {
+            Text("\(agent.name) #\(agent.id)").font(TerminalTheme.mono(isEmbedded ? 15 : 18, weight: .medium))
+                .lineLimit(1).truncationMode(.middle)
+                .accessibilityAddTraits(.isHeader)
+            Text(liveStateTitle(agent.state)).foregroundStyle(liveStateColor(agent.state))
+            Spacer()
+            if isEmbedded {
+                agentOptions
+                resumeAction
+            }
+            Button("Fechar", action: close).keyboardShortcut("w")
+                .help("Fechar detalhes (⌘W). Escape permanece disponível para o terminal.")
+        }
+    }
+
+    private var panelPicker: some View {
+        Picker("Painel", selection: $tab) {
+            Text("Terminal").tag("terminal")
+            Text("Alterações").tag("diff")
+            Text("PR/CI").tag("pr")
+            Text("Histórico").tag("logs")
+            Text("Tarefa").tag("task")
+            Text("Processos").tag("processes")
+        }.pickerStyle(.segmented)
+    }
+
+    private var terminalView: some View {
+        NativeTerminalView(snapshot: terminal.snapshot, name: agent.name, isInteractive: isAlive && !model.busy,
+                           onInput: { if isAlive && !model.busy { terminal.input($0) } },
+                           onResize: { rows, cols in terminal.resize(rows: rows, cols: cols, active: isAlive) })
+            .id(initial.deliveryReference)
+            .overlay(Rectangle().stroke(TerminalTheme.border))
+    }
+
+    @ViewBuilder private var terminalMessages: some View {
+        if isAlive && !terminal.hasSnapshot && terminal.error == nil {
+            ProgressView("Carregando terminal…").controlSize(.small)
+        }
+        if !isAlive {
+            Text(terminal.hasSnapshot
+                 ? "Sessão \(liveStateTitle(agent.state).lowercased()). Última tela capturada nesta janela."
+                 : "Sessão \(liveStateTitle(agent.state).lowercased()). Consulte o histórico para ver a saída persistida.")
+                .foregroundStyle(TerminalTheme.secondary)
+        }
+        if let error = terminal.actionError ?? terminal.error, isAlive {
+            Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(2)
+        }
+    }
+
+    private var promptComposer: some View {
+        AgentPromptComposer(model: model, agent: agent, identityAvailable: identityAvailable)
+            .id(initial.deliveryReference)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder private var detailNotices: some View {
+        if model.busy { ProgressView("Aplicando operação…").controlSize(.small) }
+        if !identityAvailable {
+            Text("Este registro não está disponível no quadro atual. Reabra os detalhes após atualizar; entrada desativada.")
+                .foregroundStyle(TerminalTheme.warning)
+        }
+        if let notice { Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(3) }
+        if let error = model.error { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3) }
+    }
+
+    private var agentOptions: some View {
+        Menu("Opções") {
+            Text("Sessão: \(agent.session)")
+            Button("Mover para sessão…") { destinationSession = agent.session; showsMove = true }
+                .disabled(model.busy || agent.state != "exited")
+            if agent.branch != nil && agent.archived != true {
+                Button("Arquivar worktree…") { confirmArchive = true }
+                    .disabled(model.busy || agent.state != "exited")
+            }
+            if agent.archived == true { Text("Worktree arquivado") }
+            if agent.state == "exited" && agent.branch == nil {
+                Button("Remover registro…", role: .destructive) { confirmRemove = true }.disabled(model.busy)
+            }
+            if isEmbedded {
+                Divider()
+                Button("Encerrar", role: .destructive) { confirmStop = true }.disabled(!isAlive || model.busy)
+            }
+        }.fixedSize().disabled(!identityAvailable)
+    }
+
+    @ViewBuilder private var resumeAction: some View {
+        if agent.state == "lost" && agent.archived != true {
+            Button("Retomar") {
+                guard identityAvailable else { return }
+                Task { await model.perform {
+                    guard identityAvailable else { return }
+                    try await model.client.resume(agentId: agentID, createdAtMs: initial.createdAtMs)
+                } }
+            }.disabled(model.busy || !identityAvailable)
+        }
+    }
+
+    private func close() {
+        terminal.suspend()
+        if isEmbedded { onClose?() } else { dismiss() }
     }
 
     private var movePanel: some View {
@@ -379,7 +491,7 @@ struct LiveAgentDetail: View {
                     }
                 }.textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.frame(minHeight: 360)
+        }.frame(minHeight: isEmbedded ? 80 : 360, maxHeight: .infinity)
     }
 
     @MainActor private func loadProcesses() async {

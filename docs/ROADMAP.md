@@ -26,6 +26,7 @@ Implementação não implica paridade completa com Octo. `nested` identifica um 
 
 ## M3 — Evolução de produto
 
+- [x] Área de projeto com caminho explícito, compositor fixo, abas de agentes e envio de nova instrução; testes de navegação, apresentação e transporte controlado. [Fluxo e limites](WORKSPACE_FLOW.md).
 - [x] Inbox de intervenções, comentários versionados no diff e vínculo manual com PR/CI — revisão cruzada e testes com processos controlados.
 - [x] Instrumentação local opt-in e [roteiro de piloto](PILOT.md), com exportação agregada sem conteúdo.
 - [ ] Executar o primeiro piloto com o usuário e registrar resultados; verificação visual, alertas macOS e integração autenticada continuam pendentes.
