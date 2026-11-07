@@ -78,6 +78,15 @@ public struct OctoEngineClient: Sendable {
         return result.agentId
     }
 
+    /// Creates once and returns the exact identity acknowledged by that start request.
+    public func startIdentified(kind: String, cwd: String, name: String, task: String,
+                                session: String = "default", isolate: Bool = false) async throws -> DeliveryAgentReference {
+        let result: Started = try await rpc(EngineRequest(operation: "start", kind: kind, cwd: cwd,
+            name: name, task: task, session: session, isolate: isolate), longRunning: true)
+        guard let createdAtMs = result.createdAtMs, createdAtMs > 0 else { throw EngineClientError.invalidResponse }
+        return DeliveryAgentReference(id: result.agentId, createdAtMs: createdAtMs)
+    }
+
     public func sendInput(agentId: UInt32, data: Data, createdAtMs: UInt64? = nil) async throws {
         let _: Empty = try await rpc(EngineRequest(operation: "input", agentId: agentId,
                                                     input: data.base64EncodedString(), createdAtMs: createdAtMs))
@@ -208,6 +217,22 @@ public struct OctoEngineClient: Sendable {
         return result
     }
 
+    /// The user's send action confirms this text. Sends once to an existing AI prompt;
+    /// acknowledgment proves transport delivery only. Never retries an uncertain result.
+    public func sendPrompt(agentId: UInt32, createdAtMs: UInt64, text: String,
+                           confirmed: Bool) async throws -> EnginePromptDelivery {
+        guard confirmed, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              text.utf8.count <= 24_000 - 13,
+              !text.unicodeScalars.contains(where: {
+                  $0.properties.generalCategory == .control && $0 != "\n" && $0 != "\t"
+              }) else { throw EngineClientError.invalidRequest }
+        let result: EnginePromptDelivery = try await rpc(EngineRequest(operation: "send_prompt", agentId: agentId,
+            message: text, confirmed: true, createdAtMs: createdAtMs))
+        guard result.agentId == agentId, result.createdAtMs == createdAtMs,
+              result.deliveredToPTY else { throw EngineClientError.invalidResponse }
+        return result
+    }
+
     /// Manual read only. Explicit confirmation authorizes gh to access its credentials and github.com.
     public func githubPR(agentId: UInt32, createdAtMs: UInt64, number: Int? = nil, confirmed: Bool) async throws -> EngineGitHubPR {
         guard confirmed, number.map({ (1...Int(UInt32.max)).contains($0) }) ?? true else {
@@ -251,7 +276,7 @@ public struct OctoEngineClient: Sendable {
     }
 
     private struct Empty: Decodable, Sendable {}
-    private struct Started: Decodable, Sendable { let agentId: UInt32 }
+    private struct Started: Decodable, Sendable { let agentId: UInt32; let createdAtMs: UInt64? }
     private struct Skills: Decodable, Sendable { let skills: [EngineSkill] }
     private struct Diff: Decodable, Sendable { let text: String }
     private struct Message: Decodable, Sendable { let message: String }

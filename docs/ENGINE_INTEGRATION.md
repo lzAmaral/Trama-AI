@@ -20,6 +20,7 @@ O binário também despacha `__holder`, `__agents` e `__hook`, necessários porq
 | --- | --- |
 | list | Registros, sessões e status consultado dos holders |
 | start | Provedor, pasta, nome, tarefa, sessão e worktree opcional |
+| send_prompt | Texto confirmado para IA já aberta; identidade, runtime autenticado e estados observados são conferidos; envio único sem retry |
 | create_session | Cria agrupamento persistente |
 | rename_session / move_agent | Renomeia agrupamento ou move registro; exige agentes afetados encerrados e destino sem colisão |
 | input / resize / snapshot | Entrada PTY, dimensões e viewport ANSI |
