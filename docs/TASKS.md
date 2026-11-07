@@ -2,6 +2,19 @@
 
 O integrador define contratos, delega arquivos exclusivos e integra após revisão cruzada. Testes de CLI autenticado e verificação visual são critérios separados da compilação.
 
+## Fechamento local — 2026-11-07
+
+Execução supervisionada pela skill Orca `orchestration`, Run `run_5a079d025dc2`, na branch `feat/remaining-local-capabilities`. A autorização abrange as capacidades planejadas; testes continuam restritos a processos controlados, sem tarefas pagas, leitura de credenciais ou publicação automática.
+
+| Responsável / tarefa Orca | Objetivo e arquivos exclusivos | Dependências / aceite |
+| --- | --- | --- |
+| Motor — `task_595f34f7317f` | Sessões, worktrees, histórico e avaliação de árvore observável; `Engine/src/rpc.rs`, módulos novos, testes Rust, `EngineSessionModels.swift`, `OctoEngineClient.swift` e testes de contrato/integração correspondentes | Contratos aprovados pelo integrador antes da implementação; upstream fixado; shell/Git temporários e erros testados |
+| Interface — `task_74fad74e1a15` | Teclado, acessibilidade, estados de apresentação e conexão das capacidades aprovadas; `Sources/TramaApp/*.swift`, mais a fila `TerminalActionQueue.swift` e seus testes por alinhamento do integrador | Melhorias iniciais independentes; novos controles usam contrato aprovado do motor; build e testes comportamentais da fila |
+| Distribuição — `task_42593c81204f` | Avisos transitivos reproduzíveis, medição de transporte com saída intensa e preparação opt-in da distribuição; `scripts/*` e `ThirdPartyNotices/*` | Sem identidade/certificado, envio à Apple ou publicação; validar scripts, preservar bundle anterior em falha e registrar números reais |
+| Integrador | Contratos, documentação, CI, validação integrada, revisão visual quando disponível e coordenação da revisão independente | `swift build`, `swift test` com motor real, build/test Rust locked, diff completo e `git diff --check` |
+
+Antes da integração, outro worker revisa o código de cada autor. Validações autenticadas, Developer ID/notarização e revisão de um atualizador com canal autenticado exigem evidências próprias; não se tornam concluídas pela criação de scripts. A árvore de processos observável não comprova a árvore lógica de subagentes dos provedores. Acesso remoto permanece objeto de avaliação separada, sem listener, túnel ou bridge habilitado.
+
 | ID | Entrega | Dependências | Estado e evidência |
 | --- | --- | --- | --- |
 | E01 | Biblioteca Rust fixada + inspeção | — | Implementado; contrato real testado |
@@ -11,12 +24,14 @@ O integrador define contratos, delega arquivos exclusivos e integra após revis�
 | E05 | Quadro real | E04 | Implementado; filtros, busca, estados lost/exited; revisão visual pendente |
 | E06 | Terminal nativo | E04 | SwiftTerm, entrada, resize e snapshot; PTY testado; interação visual pendente |
 | E07 | Execução de provedores | E05, E06 | Launcher conectado e aprovações preservadas; smoke autenticado de cada CLI pendente |
-| E08 | Sessões, recuperação e skills | E04 | Implementado; recuperação testada; não inclui árvore completa de subagentes ou editor avançado de sessões |
-| E09 | Worktrees, diff e merge | E04 | Implementado; shell + Git temporários, confirmação e bloqueio de agente vivo testados |
+| E08 | Sessões, recuperação e skills | E04 | Implementado; recuperação, renomeação e movimento de registros encerrados testados; parentesco registrado/processos locais incompletos, sem árvore lógica universal |
+| E09 | Worktrees, diff, merge e arquivo | E04 | Implementado; shell + Git temporários, confirmação e bloqueio de agente vivo; arquivo no lugar preserva staged/unstaged/untracked/ignored e branch, sem liberar disco |
 | E10 | Consumo opcional | E02 | Implementado manualmente; contrato e rejeição sem consentimento testados; endpoint/conta real por provedor pendentes |
-| E11 | Empacotamento | E05, E06 | Script de bundle local ad hoc; distribuição Developer ID/notarizada e atualizador pendentes |
+| E11 | Empacotamento | E05, E06 | Bundle isolado ad hoc verificado; ferramenta de distribuição opt-in testada com fixtures; Developer ID/notarização reais pendentes; política de atualização documentada, sem atualizador |
+| E12 | Logs revisáveis | E04, E06 | Exportação salva prévia exata após revisão; retenção manual exige candidatos/token e confirmação, com testes de estado, symlinks e plano obsoleto |
+| E13 | Transporte sob carga | E04 | Duas medições de shell controlado com 3,64 MB; não mede desenho, digitação ou CPU/memória da UI |
 
-## Responsabilidades desta entrega
+## Responsabilidades da integração inicial
 
 - Motor: RPC, lifecycle, validação e testes Rust.
 - Transporte Swift: modelos, cliente e testes de contrato/integração.
@@ -30,9 +45,35 @@ Arquivos compartilhados só mudam após alinhamento. Não há execução automá
 1. Abrir o bundle e revisar teclado, acessibilidade, estados vazios/erro, seleção e redimensionamento com o usuário.
 2. Validar tarefa curta em cada provedor instalado/autenticado, incluindo pedido de aprovação e interrupção.
 3. Consultar consumo manualmente em cada conta que o usuário escolher e revisar o adaptador correspondente.
-4. Configurar assinatura/notarização quando houver identidade de distribuição e reunir os avisos transitivos.
+4. Configurar assinatura/notarização quando houver identidade de distribuição e revisar as obrigações de avisos/fontes correspondentes; textos do grafo macOS já foram reunidos.
 
 Acesso remoto, árvores completas de subagentes e atualizações automáticas exigem entregas próprias; não são recursos habilitados nesta versão.
+
+## Resultado do fechamento local
+
+As oito tarefas Orca foram concluídas e seus workers liberados. As tarefas de revisão concluíram a análise; os achados não foram tratados como implementação pronta até que outro autor corrigisse e o revisor verificasse os cenários novamente.
+
+| Tarefa | Resultado / evidência |
+| --- | --- |
+| `task_595f34f7317f` — motor/núcleo | Contratos locais implementados; shell/Git, persistência e falhas verificados |
+| `task_74fad74e1a15` — interface/fila | Controles conectados, estados e teclado revisados em código; fila testável sem SwiftUI |
+| `task_42593c81204f` — ferramentas | Avisos, benchmark, bundle isolado e preparação opt-in de distribuição; evidências em `scripts/VALIDATION.md` |
+| `task_e5c66a189dee` — revisão motor/interface | Reproduziu journal inválido, seleção inexistente e resize A/B/A; correções de outros autores reverificadas, sem bloqueadores remanescentes |
+| `task_92011c195290` — revisão ferramentas | Identificou gravação incompleta dos avisos e cleanup ausente em HUP; confirmou preservação de bytes CRLF após ajuste de atributos |
+| `task_1f3dfedef3c7` — correções da interface | Seleção só usa sessões existentes; último resize prevalece sem perder reaplicação após retomada; 17 testes corretivos e harness independente aprovados |
+| `task_aaeaf81aad92` — correções motor/ferramentas | Journal valida snapshots completos antes de gravar; avisos usam staging; cleanup adia sinais tardios até confirmar encerramento ou informar recuperação |
+| `task_d1b0dfb0f9a9` — revisão final das ferramentas | Revalidou falhas de escrita/retry e sinais inclusive durante cleanup; conferiu JSONs/hash e avisos do bundle, sem bloqueadores remanescentes |
+
+Validação final do integrador com Swift 6.1.2 e toolchain Rust 1.99.1:
+
+- `swift build` e `TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test`: 66 testes aprovados, sem integrações ignoradas.
+- Build/test Rust com `--locked --manifest-path Engine/Cargo.toml`: 15 testes aprovados (2 unitários e 13 de lifecycle).
+- `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v`: 16 testes aprovados, incluindo oito subcasos de sinais.
+- Checks dos avisos de `aarch64-apple-darwin` e `x86_64-apple-darwin` aprovados: 184 pacotes inventariados, 150 textos distintos, zero faltantes nos dois grafos macOS. O check global retorna 1 para duas ausências Windows declaradas.
+- Bundle `.build/validation/Trama.app` compilado e verificado com assinatura ad hoc estrita; o app em uso foi preservado. Avisos comparados byte a byte, com line endings originais preservados no Git.
+- Diff de fonte revisado, arquivos gerados conferidos por hash e `git diff --check` aprovado. O CI ampliado executa testes das ferramentas, checks de avisos e bundle isolado; a evidência remota fica registrada na PR.
+
+Limites: CUA recusou acesso ao Trama, portanto não houve revisão visual, VoiceOver ou gravação. Não foram executadas tarefas de IA pagas, consultas autenticadas de consumo, certificados, notarização ou publicação. A árvore lógica universal de subagentes continua aberta; o recurso implementado observa somente registros e processos locais. Arquivamento não libera disco nem permite desarquivar nesta entrega; retenção manual pode ter efeito parcial em erro de I/O, e ocultação literal não garante remoção de todos os dados sensíveis. SIGKILL/perda de energia podem impedir cleanup. Consulte [ROADMAP.md](ROADMAP.md) e [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md).
 
 ## Cadastro entre instâncias — 2026-11-07
 

@@ -9,22 +9,29 @@ struct NewAgentView: View {
     @State private var kind = "terminal"
     @State private var name = "nova-tarefa"
     @State private var task = ""
-    @State private var session: String
+    @State private var session: String?
     @State private var isolate = false
     @State private var skills: [EngineSkill] = []
     @State private var loadingSkills = false
     @State private var skillError: String?
+    @FocusState private var nameFocused: Bool
+
+    private var sessionSelection: EngineSessionSelection {
+        EngineSessionSelection(sessions: model.sessions, preferredSession: session)
+    }
 
     init(model: LiveWorkspaceModel, projects: [Project], initialProjectID: UUID?, initialSession: String) {
         self.model = model
         self.projects = projects
         _projectID = State(initialValue: initialProjectID ?? projects.first?.id)
-        _session = State(initialValue: initialSession.isEmpty ? "default" : initialSession)
+        _session = State(initialValue: EngineSessionSelection(sessions: model.sessions,
+                                                            preferredSession: initialSession).selectedSession)
     }
 
     private var selectedProject: Project? { projects.first { $0.id == projectID } }
     private var valid: Bool {
-        selectedProject != nil && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        selectedProject != nil && sessionSelection.selectedSession != nil &&
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         model.providers.contains { $0.id == kind && $0.installed } && (kind == "terminal" || !task.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
@@ -42,21 +49,40 @@ struct NewAgentView: View {
                 Picker("Provedor", selection: $kind) {
                     ForEach(model.providers) { Text($0.id).tag($0.id) }
                 }
-                Picker("Sessão", selection: $session) {
-                    ForEach(model.sessions.isEmpty ? ["default"] : model.sessions, id: \.self) { Text($0).tag($0) }
-                }
-                TextField("Nome", text: $name)
+                Picker("Sessão", selection: Binding(
+                    get: { sessionSelection.selectedSession },
+                    set: { session = $0 }
+                )) {
+                    if sessionSelection.options.isEmpty {
+                        Text("Nenhuma sessão disponível").tag(nil as String?)
+                    }
+                    ForEach(sessionSelection.options, id: \.self) { Text($0).tag(Optional($0)) }
+                }.disabled(sessionSelection.options.isEmpty)
+                TextField("Nome", text: $name).focused($nameFocused)
                 Toggle("Isolar em um worktree Git", isOn: $isolate)
+            }.disabled(model.busy)
+            if sessionSelection.options.isEmpty {
+                Text("Crie uma sessão no quadro antes de iniciar uma tarefa.")
+                    .foregroundStyle(TerminalTheme.warning)
+            }
+            if model.loadingProviders { ProgressView("Verificando provedores locais…") }
+            if let error = model.providerError {
+                Text("Não foi possível detectar provedores: \(error)").foregroundStyle(TerminalTheme.warning).textSelection(.enabled)
+                Button("Verificar provedores novamente") { Task { await model.loadProviders() } }.disabled(model.loadingProviders)
+            } else if model.providers.isEmpty && !model.loadingProviders {
+                Text("Nenhum provedor instalado foi detectado. Verifique o motor local.").foregroundStyle(TerminalTheme.warning)
             }
             Text(kind == "terminal" ? "Comando inicial (opcional)" : "Tarefa")
             TextEditor(text: $task)
                 .font(TerminalTheme.mono(13))
+                .accessibilityLabel(kind == "terminal" ? "Comando inicial opcional" : "Tarefa do agente")
+                .disabled(model.busy)
                 .frame(minHeight: 100, maxHeight: 160)
                 .overlay(RoundedRectangle(cornerRadius: 4).stroke(TerminalTheme.border))
             if kind != "terminal" {
                 Button(loadingSkills ? "Lendo skills…" : "Carregar skills do projeto") {
                     Task { await loadSkills() }
-                }.disabled(loadingSkills || selectedProject == nil)
+                }.disabled(loadingSkills || selectedProject == nil || model.busy)
                 if let skillError { Text(skillError).foregroundStyle(TerminalTheme.warning) }
                 if !skills.isEmpty {
                     ScrollView {
@@ -69,7 +95,7 @@ struct NewAgentView: View {
                                         Text(skill.name)
                                         Text(skill.description).font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary).lineLimit(2)
                                     }.frame(maxWidth: .infinity, alignment: .leading)
-                                }.buttonStyle(.bordered)
+                                }.buttonStyle(.bordered).disabled(model.busy)
                             }
                         }
                     }.frame(maxHeight: 110)
@@ -84,15 +110,20 @@ struct NewAgentView: View {
                 Spacer()
                 if model.busy { ProgressView().controlSize(.small) }
                 Button("Iniciar sessão") {
-                    guard let project = selectedProject else { return }
+                    guard valid, !model.busy, let project = selectedProject,
+                          let requestedSession = sessionSelection.selectedSession else { return }
+                    let requestedKind = kind
+                    let requestedName = name
+                    let requestedTask = task
+                    let requestedIsolation = isolate
                     Task {
                         await model.perform {
-                            _ = try await model.client.start(kind: kind, cwd: project.path, name: name,
-                                                             task: task, session: session, isolate: isolate)
+                            _ = try await model.client.start(kind: requestedKind, cwd: project.path, name: requestedName,
+                                                             task: requestedTask, session: requestedSession, isolate: requestedIsolation)
                             dismiss()
                         }
                     }
-                }.buttonStyle(.borderedProminent).disabled(!valid || model.busy)
+                }.buttonStyle(.borderedProminent).keyboardShortcut(.return, modifiers: .command).disabled(!valid || model.busy)
             }
         }
         .padding(24).frame(width: 600)
@@ -100,8 +131,15 @@ struct NewAgentView: View {
         .background(TerminalTheme.background)
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(model.busy)
+        .onAppear { nameFocused = true; selectAvailableProvider() }
+        .onChange(of: model.sessions, initial: true) { _, _ in session = sessionSelection.selectedSession }
+        .onChange(of: model.providers) { _, _ in selectAvailableProvider() }
         .onChange(of: kind) { _, _ in skills = []; skillError = nil }
         .onChange(of: projectID) { _, _ in skills = []; skillError = nil }
+    }
+
+    private func selectAvailableProvider() {
+        if !model.providers.contains(where: { $0.id == kind }), let first = model.providers.first { kind = first.id }
     }
 
     @MainActor private func loadSkills() async {

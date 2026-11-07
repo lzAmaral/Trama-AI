@@ -52,6 +52,8 @@ struct UsageInspectorView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack { Text(title); Spacer(); Text("\(window.usedPercent, specifier: "%.0f")% usado") }
             ProgressView(value: min(100, max(0, window.usedPercent)), total: 100).tint(TerminalTheme.accent)
+                .accessibilityLabel("Consumo: \(title)")
+                .accessibilityValue(Text("\(window.usedPercent, specifier: "%.0f") por cento usado"))
             if let reset = window.resetsAtMs {
                 Text("Renova em \(Date(timeIntervalSince1970: Double(reset) / 1000).formatted())")
                     .font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary)
@@ -66,7 +68,9 @@ struct UsageInspectorView: View {
         defer { loading = false }
         do {
             let client = OctoEngineClient(executableURL: OctoEngineClient.defaultExecutableURL, homeURL: OctoEngineClient.defaultHomeURL)
-            usage = try await client.usage(kind: provider.id, confirmed: true)
+            let result = try await client.usage(kind: provider.id, confirmed: true)
+            try Task.checkCancellation()
+            usage = result
         } catch is CancellationError { } catch { self.error = error.localizedDescription }
     }
 }

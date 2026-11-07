@@ -47,6 +47,7 @@ struct EngineInspectorView: View {
                                 Spacer()
                                 if Self.usageProviders.contains(provider.id) && provider.installed {
                                     Button("Consumo…") { selectedUsageProvider = provider }
+                                        .accessibilityLabel("Consultar consumo de \(provider.id)")
                                 }
                                 Label(provider.installed ? "Detectado" : "Não encontrado",
                                       systemImage: provider.installed ? "checkmark.circle" : "minus.circle")

@@ -114,6 +114,46 @@ public struct OctoEngineClient: Sendable {
         let _: Empty = try await rpc(EngineRequest(operation: "create_session", session: name))
     }
 
+    public func renameSession(from: String, to: String) async throws {
+        let _: Empty = try await rpc(EngineRequest(operation: "rename_session", name: to, session: from))
+    }
+
+    public func moveAgent(agentId: UInt32, to session: String) async throws {
+        let _: Empty = try await rpc(EngineRequest(operation: "move_agent", agentId: agentId, session: session))
+    }
+
+    /// Requires confirmation that this archives in place and does not reclaim disk space.
+    public func archiveWorktree(agentId: UInt32, confirmed: Bool) async throws -> EngineWorktreeArchive {
+        guard confirmed else { throw EngineClientError.invalidRequest }
+        return try await rpc(EngineRequest(operation: "archive_worktree", agentId: agentId, confirmed: true))
+    }
+
+    public func processTree(agentId: UInt32) async throws -> EngineProcessTree {
+        try await rpc(EngineRequest(operation: "process_tree", agentId: agentId))
+    }
+
+    /// Preview only. Cleanup is manual and never applies to a running or interrupted holder.
+    public func logRetention(maxAgeDays: UInt32? = nil, maxFileBytes: UInt64? = nil) async throws -> EngineLogRetentionPlan {
+        guard maxAgeDays != nil || maxFileBytes != nil,
+              maxAgeDays.map({ (1...3650).contains($0) }) ?? true,
+              maxFileBytes.map({ $0 <= 1_073_741_824 }) ?? true else { throw EngineClientError.invalidRequest }
+        return try await rpc(EngineRequest(operation: "log_retention", maxAgeDays: maxAgeDays, maxFileBytes: maxFileBytes))
+    }
+
+    /// Apply only the exact reviewed plan. The engine rejects a stale plan before deleting files.
+    public func applyLogRetention(planToken: String, confirmed: Bool) async throws -> EngineLogRetentionResult {
+        guard confirmed, !planToken.isEmpty else { throw EngineClientError.invalidRequest }
+        return try await rpc(EngineRequest(operation: "apply_log_retention", confirmed: true, planToken: planToken))
+    }
+
+    /// Prepares a preview for sensitive-data review; confirmation does not imply complete sanitization.
+    public func exportLogs(agentId: UInt32, redactions: [String] = [], confirmed: Bool) async throws -> EngineLogExport {
+        guard confirmed, redactions.count <= 32,
+              redactions.allSatisfy({ !$0.isEmpty && $0.utf8.count <= 1024 }),
+              redactions.reduce(0, { $0 + $1.utf8.count }) <= 8192 else { throw EngineClientError.invalidRequest }
+        return try await rpc(EngineRequest(operation: "export_logs", agentId: agentId, confirmed: true, redactions: redactions))
+    }
+
     public func skills(kind: String, cwd: String) async throws -> [EngineSkill] {
         let result: Skills = try await rpc(EngineRequest(operation: "skills", kind: kind, cwd: cwd))
         return result.skills

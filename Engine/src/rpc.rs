@@ -23,6 +23,8 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+#[path = "rpc_m3.rs"]
+mod m3;
 
 pub const OPERATIONS: &[&str] = &[
     "inspect",
@@ -41,6 +43,13 @@ pub const OPERATIONS: &[&str] = &[
     "logs",
     "usage",
     "remove",
+    "rename_session",
+    "move_agent",
+    "archive_worktree",
+    "process_tree",
+    "log_retention",
+    "apply_log_retention",
+    "export_logs",
 ];
 const MAX_REQUEST: u64 = 65_536;
 const MAX_RESULT: usize = 900_000;
@@ -62,6 +71,10 @@ struct Request {
     cols: Option<u16>,
     message: Option<String>,
     confirmed: Option<bool>,
+    max_age_days: Option<u32>,
+    max_file_bytes: Option<u64>,
+    plan_token: Option<String>,
+    redactions: Option<Vec<String>>,
 }
 
 fn invalid(message: &str) -> io::Error {
@@ -182,17 +195,38 @@ fn dispatch(home: PathBuf, request: Request) -> io::Result<Value> {
         return Err(invalid("unsupported operation"));
     }
     let store = Store::open(Home::at(home))?;
-    let mutation = matches!(
+    let coordinated = matches!(
         request.operation.as_str(),
-        "start" | "stop" | "resume" | "create_session" | "merge" | "remove"
+        "start"
+            | "stop"
+            | "resume"
+            | "create_session"
+            | "merge"
+            | "remove"
+            | "rename_session"
+            | "move_agent"
+            | "archive_worktree"
+            | "log_retention"
+            | "apply_log_retention"
+            | "list"
+            | "details"
+            | "process_tree"
+            | "logs"
+            | "export_logs"
     );
-    let _lock = if mutation {
+    let _lock = if coordinated {
         Some(MutationLock::acquire(store.home())?)
     } else {
         None
     };
+    if coordinated {
+        m3::recover_rename(&store)?;
+    }
     match request.operation.as_str() {
         "list" => list(&store),
+        "rename_session" => m3::rename_session(&store, &request),
+        "log_retention" => m3::retention_plan(&store, &request),
+        "apply_log_retention" => m3::apply_retention(&store, &request),
         "usage" => {
             if request.confirmed != Some(true) {
                 return Err(invalid("explicit usage confirmation is required"));
@@ -279,7 +313,7 @@ fn dispatch(home: PathBuf, request: Request) -> io::Result<Value> {
 }
 
 fn list(store: &Store) -> io::Result<Value> {
-    let records = store.list_agents()?;
+    let records = m3::records(store)?;
     if records.len() > MAX_AGENTS {
         return Err(invalid("this version supports at most 64 stored agents"));
     }
@@ -315,7 +349,8 @@ fn describe(store: &Store, record: &AgentRecord) -> Value {
     };
     json!({"id":record.id,"name":record.name,"kind":kind.label(),"state":probe.state().label(),
            "session":record.session,"cwd":record.cwd,"project":record.project_dir(),"task":record.task,
-           "activity":activity,"branch":record.worktree.as_ref().map(|w| &w.branch), "nested":nested})
+           "activity":activity,"branch":record.worktree.as_ref().map(|w| &w.branch), "nested":nested,
+           "parentId":record.parent,"archived":m3::is_archived(store, record.id)})
 }
 
 fn wait_for_holder(store: &Store, id: u32) -> io::Result<()> {
@@ -346,7 +381,18 @@ fn agent_action(store: Store, request: Request) -> io::Result<Value> {
         .agent_id
         .ok_or_else(|| invalid("agentId is required"))?;
     let mut record = store.load_agent(id)?;
+    if m3::is_archived(&store, id)
+        && matches!(request.operation.as_str(), "resume" | "merge" | "input")
+    {
+        return Err(invalid(
+            "archived worktrees cannot be resumed, modified or merged",
+        ));
+    }
     match request.operation.as_str() {
+        "move_agent" => m3::move_agent(&store, record, &request),
+        "archive_worktree" => m3::archive_worktree(&store, &record, &request),
+        "process_tree" => m3::process_tree(&store, &record),
+        "export_logs" => m3::export_logs(&store, id, &request),
         "input" | "resize" => {
             let message = if request.operation == "input" {
                 let input = STANDARD
@@ -384,23 +430,7 @@ fn agent_action(store: Store, request: Request) -> io::Result<Value> {
             };
             Ok(json!({"agent":describe(&store, &record),"status":status}))
         }
-        "logs" => {
-            // Upstream uses a framed binary operation log; replay it instead of exposing binary records.
-            let path = store.home().output_log(id);
-            for candidate in [&path, &orkai::holder::oplog::rotated_path(&path)] {
-                if let Ok(metadata) = std::fs::metadata(candidate) {
-                    if metadata.len() > 16 * 1024 * 1024 {
-                        return Err(invalid("recorded log exceeds replay limit"));
-                    }
-                }
-            }
-            let text = cli::transcript(&store, id)?.unwrap_or_default().join("\n");
-            let mut start = text.len().saturating_sub(65_536);
-            while !text.is_char_boundary(start) {
-                start += 1;
-            }
-            Ok(json!({"text":&text[start..],"truncated":start > 0}))
-        }
+        "logs" => m3::logs(&store, id),
         "snapshot" => {
             let runtime = store
                 .read_runtime(id)?

@@ -22,3 +22,7 @@ xcuserdata/
 
 # Rust engine build artifacts
 Engine/target/
+
+# Local Python tooling caches
+__pycache__/
+*.py[cod]

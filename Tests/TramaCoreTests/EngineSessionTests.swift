@@ -200,4 +200,114 @@ struct EngineSessionTests {
         }
     }
 
+    @Test func sessionEditsTransmitNamesAsLiteralJSON() async throws {
+        try await fixture("""
+        /bin/cat > "$3/request.json"
+        printf '%s' '{"protocol":1,"ok":true,"result":{}}'
+        """) { client, root in
+            try await client.renameSession(from: "default", to: "revisão")
+            var request = try JSONDecoder().decode(EngineRequest.self,
+                from: Data(contentsOf: root.appendingPathComponent("request.json")))
+            #expect(request.operation == "rename_session")
+            #expect(request.session == "default")
+            #expect(request.name == "revisão")
+            try await client.moveAgent(agentId: 7, to: "revisão")
+            request = try JSONDecoder().decode(EngineRequest.self,
+                from: Data(contentsOf: root.appendingPathComponent("request.json")))
+            #expect(request.operation == "move_agent")
+            #expect(request.agentId == 7)
+            #expect(request.session == "revisão")
+        }
+    }
+
+    @Test func newDestructiveOperationsRequireConfirmationBeforeLaunch() async throws {
+        try await fixture("exit 90") { client, _ in
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.archiveWorktree(agentId: 7, confirmed: false) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.applyLogRetention(planToken: "plan", confirmed: false) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.applyLogRetention(planToken: "", confirmed: true) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.exportLogs(agentId: 7, confirmed: false) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.exportLogs(agentId: 7, redactions: [""], confirmed: true) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.exportLogs(agentId: 7, redactions: Array(repeating: "x", count: 33), confirmed: true) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.exportLogs(agentId: 7, redactions: [String(repeating: "ç", count: 513)], confirmed: true) }
+        }
+    }
+
+    @Test func archivePreservesWorktreeMetadata() async throws {
+        try await fixture("""
+        /bin/cat > "$3/request.json"
+        printf '%s' '{"protocol":1,"ok":true,"result":{"agentId":7,"path":"/tmp/worktree","branch":"orkai/worker","archivedAtMs":123,"preservesChanges":true}}'
+        """) { client, root in
+            let archive = try await client.archiveWorktree(agentId: 7, confirmed: true)
+            #expect(archive.path == "/tmp/worktree")
+            #expect(archive.preservesChanges)
+            #expect(archive.archivedAtMs == 123)
+            let request = try JSONDecoder().decode(EngineRequest.self,
+                from: Data(contentsOf: root.appendingPathComponent("request.json")))
+            #expect(request.operation == "archive_worktree")
+            #expect(request.confirmed == true)
+        }
+    }
+
+    @Test func processTreeKeepsParentEdgesAndIncompleteObservation() async throws {
+        try await fixture("""
+        /bin/cat >/dev/null
+        printf '%s' '{"protocol":1,"ok":true,"result":{"agentId":7,"rootPid":123,"nodes":[{"pid":123,"parentPid":null,"name":"sh","kind":null},{"pid":124,"parentPid":123,"name":"sleep","kind":null}],"complete":false,"limitations":["Local snapshot"],"observedAtMs":500}}'
+        """) { client, _ in
+            let tree = try await client.processTree(agentId: 7)
+            #expect(!tree.complete)
+            #expect(tree.nodes.last?.parentPid == tree.rootPid)
+            #expect(tree.limitations == ["Local snapshot"])
+        }
+    }
+
+    @Test func retentionValidatesPerFileThresholdsBeforeLaunching() async throws {
+        try await fixture("exit 90") { client, _ in
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.logRetention() }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.logRetention(maxAgeDays: 0) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.logRetention(maxAgeDays: 3651) }
+            await #expect(throws: EngineClientError.invalidRequest) { try await client.logRetention(maxFileBytes: 1_073_741_825) }
+        }
+    }
+
+    @Test func retentionPreviewAndApplyUseExactReviewedToken() async throws {
+        try await fixture("""
+        /bin/cat > "$3/request.json"
+        printf '%s' '{"protocol":1,"ok":true,"result":{"planToken":"reviewed-plan","candidates":[{"path":"agents/7/output.log","bytes":42}],"totalBytes":42,"maxAgeDays":30,"maxFileBytes":1024,"removedFiles":1,"removedBytes":42}}'
+        """) { client, root in
+            let preview = try await client.logRetention(maxAgeDays: 30, maxFileBytes: 1024)
+            #expect(preview.totalBytes == 42)
+            #expect(preview.candidates.first?.path == "agents/7/output.log")
+            var request = try JSONDecoder().decode(EngineRequest.self,
+                from: Data(contentsOf: root.appendingPathComponent("request.json")))
+            #expect(request.operation == "log_retention")
+            #expect(request.maxFileBytes == 1024)
+            #expect(request.maxAgeDays == 30)
+            #expect(request.confirmed == nil)
+            let applied = try await client.applyLogRetention(planToken: preview.planToken, confirmed: true)
+            #expect(applied.removedFiles == 1)
+            request = try JSONDecoder().decode(EngineRequest.self,
+                from: Data(contentsOf: root.appendingPathComponent("request.json")))
+            #expect(request.operation == "apply_log_retention")
+            #expect(request.planToken == "reviewed-plan")
+            #expect(request.confirmed == true)
+        }
+    }
+
+    @Test func exportPreservesExactPreviewAndReviewWarning() async throws {
+        try await fixture("""
+        /bin/cat > "$3/request.json"
+        printf '%s' '{"protocol":1,"ok":true,"result":{"text":"Reviewed █ output\\n","truncated":true,"requiresSensitiveReview":true,"warning":"Review before saving"}}'
+        """) { client, root in
+            let preview = try await client.exportLogs(agentId: 7, redactions: ["segredo ç"], confirmed: true)
+            #expect(preview.text == "Reviewed █ output\n")
+            #expect(preview.truncated)
+            #expect(preview.requiresSensitiveReview)
+            #expect(preview.warning == "Review before saving")
+            let request = try JSONDecoder().decode(EngineRequest.self,
+                from: Data(contentsOf: root.appendingPathComponent("request.json")))
+            #expect(request.operation == "export_logs")
+            #expect(request.redactions == ["segredo ç"])
+            #expect(request.confirmed == true)
+        }
+    }
 }

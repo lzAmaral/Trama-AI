@@ -7,6 +7,8 @@ import SwiftTerm
 /// Snapshots replace the visible screen; they are not appended as a transcript.
 struct NativeTerminalView: NSViewRepresentable {
     let snapshot: Data
+    let name: String
+    let isInteractive: Bool
     let onInput: (Data) -> Void
     let onResize: (Int, Int) -> Void
 
@@ -21,23 +23,28 @@ struct NativeTerminalView: NSViewRepresentable {
         view.nativeBackgroundColor = NSColor(red: 17 / 255, green: 18 / 255, blue: 20 / 255, alpha: 1)
         view.nativeForegroundColor = NSColor(red: 229 / 255, green: 231 / 255, blue: 235 / 255, alpha: 1)
         view.terminalDelegate = context.coordinator
-        view.setAccessibilityLabel("Terminal do agente")
+        view.setAccessibilityLabel("Terminal de \(name)")
+        view.setAccessibilityHelp("Entrada de comandos e saída do agente. As aprovações do provedor são respondidas neste terminal.")
         context.coordinator.apply(snapshot, to: view)
         return view
     }
 
     func updateNSView(_ view: TerminalView, context: Context) {
+        view.setAccessibilityLabel("Terminal de \(name)")
+        view.setAccessibilityHelp(isInteractive ? "Terminal interativo. Use o teclado para responder ao processo." : "Terminal somente para leitura neste momento.")
         context.coordinator.onInput = onInput
         context.coordinator.onResize = onResize
         context.coordinator.apply(snapshot, to: view)
     }
 
     static func dismantleNSView(_ view: TerminalView, coordinator: Coordinator) {
+        coordinator.active = false
         view.terminalDelegate = nil
     }
 
     @MainActor
     final class Coordinator: NSObject, @preconcurrency TerminalViewDelegate {
+        var active = true
         var onInput: (Data) -> Void
         var onResize: (Int, Int) -> Void
         private var lastSnapshot: Data?
@@ -73,8 +80,10 @@ struct NativeTerminalView: NSViewRepresentable {
             lastSize = (newCols, newRows)
             lastSnapshot = nil
             // A layout callback must not synchronously mutate the enclosing SwiftUI view.
-            let callback = onResize
-            Task { @MainActor in callback(newRows, newCols) }
+            Task { @MainActor [weak self] in
+                guard let self, active else { return }
+                onResize(newRows, newCols)
+            }
         }
 
         func send(source: TerminalView, data: ArraySlice<UInt8>) {
