@@ -15,9 +15,15 @@ private final class TerminalSessionModel: ObservableObject {
     private func makeActionQueue() -> TerminalActionQueue {
         let client = client
         let id = id
+        let createdAtMs = createdAtMs
+        let delivered = delivered
         return TerminalActionQueue(
-            sendInput: { data in try await client.sendInput(agentId: id, data: data) },
-            sendResize: { rows, cols in try await client.resize(agentId: id, rows: rows, cols: cols) },
+            sendInput: { data in
+                let sentAt = Date()
+                try await client.sendInput(agentId: id, data: data, createdAtMs: createdAtMs)
+                delivered(sentAt)
+            },
+            sendResize: { rows, cols in try await client.resize(agentId: id, rows: rows, cols: cols, createdAtMs: createdAtMs) },
             onFailure: { [weak self] failure in
                 switch failure {
                 case .input(let error): self?.actionError = "Falha ao enviar entrada. Ela não será reenviada automaticamente: \(error)"
@@ -27,8 +33,12 @@ private final class TerminalSessionModel: ObservableObject {
     }
     let client: OctoEngineClient
     let id: UInt32
+    let createdAtMs: UInt64?
+    let delivered: @MainActor (Date) -> Void
 
-    init(client: OctoEngineClient, id: UInt32) { self.client = client; self.id = id }
+    init(client: OctoEngineClient, id: UInt32, createdAtMs: UInt64?, delivered: @escaping @MainActor (Date) -> Void) {
+        self.client = client; self.id = id; self.createdAtMs = createdAtMs; self.delivered = delivered
+    }
 
     func poll() async {
         do {
@@ -87,12 +97,10 @@ struct LiveAgentDetail: View {
     @StateObject private var terminal: TerminalSessionModel
     @Environment(\.dismiss) private var dismiss
     @State private var tab = "terminal"
-    @State private var diffText = ""
+    @State private var reviewReloadID = UUID()
     @State private var logText = ""
-    @State private var loadingDiff = false
     @State private var reviewedDiffAvailable = false
     @State private var loadingLogs = false
-    @State private var diffError: String?
     @State private var logError: String?
     @State private var message = ""
     @State private var confirmStop = false
@@ -107,13 +115,19 @@ struct LiveAgentDetail: View {
     @State private var processError: String?
     @State private var loadingProcesses = false
 
-    init(model: LiveWorkspaceModel, agentID: UInt32, initial: EngineAgent) {
+    init(model: LiveWorkspaceModel, agentID: UInt32, initial: EngineAgent, initialTab: String = "terminal") {
         self.model = model; self.agentID = agentID; self.initial = initial
-        _terminal = StateObject(wrappedValue: TerminalSessionModel(client: model.client, id: agentID))
+        _tab = State(initialValue: initialTab)
+        _terminal = StateObject(wrappedValue: TerminalSessionModel(client: model.client, id: agentID, createdAtMs: initial.createdAtMs) { [weak workflow = model.workflow] sentAt in
+            if let ref = initial.deliveryReference { workflow?.inputDelivered(ref, sentAt: sentAt) }
+        })
     }
 
-    private var agent: EngineAgent { model.agents.first { $0.id == agentID } ?? initial }
-    private var isAlive: Bool { agent.isAlive }
+    private var agent: EngineAgent { model.agents.first { $0.id == agentID && $0.deliveryReference == initial.deliveryReference } ?? initial }
+    private var identityAvailable: Bool {
+        initial.createdAtMs != nil && model.agents.contains { $0.id == agentID && $0.deliveryReference == initial.deliveryReference }
+    }
+    private var isAlive: Bool { agent.isAlive && identityAvailable }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -131,6 +145,7 @@ struct LiveAgentDetail: View {
                 Picker("Painel", selection: $tab) {
                     Text("Terminal").tag("terminal")
                     Text("Alterações").tag("diff")
+                    Text("PR/CI").tag("pr")
                     Text("Histórico").tag("logs")
                     Text("Tarefa").tag("task")
                     Text("Processos").tag("processes")
@@ -145,7 +160,13 @@ struct LiveAgentDetail: View {
                 if agent.archived == true { Text("Worktree arquivado").foregroundStyle(TerminalTheme.secondary) }
                 Spacer()
                 if agent.state == "lost" && agent.archived != true {
-                    Button("Retomar") { Task { await model.perform { try await model.client.resume(agentId: agentID) } } }
+                    Button("Retomar") {
+                        guard identityAvailable else { return }
+                        Task { await model.perform {
+                            guard identityAvailable else { return }
+                            try await model.client.resume(agentId: agentID, createdAtMs: initial.createdAtMs)
+                        } }
+                    }
                         .disabled(model.busy)
                 }
                 if agent.state == "exited" && agent.branch == nil {
@@ -153,7 +174,7 @@ struct LiveAgentDetail: View {
                         .disabled(model.busy)
                 }
                 Button("Encerrar", role: .destructive) { confirmStop = true }.disabled(!isAlive || model.busy)
-            }
+            }.disabled(!identityAvailable)
             if tab == "terminal" {
                 NativeTerminalView(snapshot: terminal.snapshot, name: agent.name, isInteractive: isAlive && !model.busy,
                                    onInput: { if isAlive && !model.busy { terminal.input($0) } },
@@ -170,25 +191,22 @@ struct LiveAgentDetail: View {
                 }
                 if let error = terminal.actionError ?? terminal.error, isAlive { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3) }
             } else if tab == "diff" {
-                if loadingDiff { ProgressView("Lendo alterações…") }
-                ScrollView([.horizontal, .vertical]) {
-                    Text(diffText.isEmpty ? (loadingDiff ? "" : (diffError == nil ? "Nenhuma alteração disponível." : "")) : diffText)
-                        .font(TerminalTheme.mono(12)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                }.frame(minHeight: 320)
-                if let diffError { Text(diffError).foregroundStyle(TerminalTheme.warning).textSelection(.enabled) }
+                DeliveryReviewView(client: model.client, agent: agent, workflow: model.workflow) { snapshot in
+                    reviewedDiffAvailable = snapshot?.text.isEmpty == false
+                }.id(reviewReloadID)
                 HStack {
-                    Button("Atualizar diff") { Task { await loadDiff() } }.disabled(loadingDiff)
                     if agent.branch != nil && agent.archived != true {
                         TextField("Mensagem do merge", text: $message).textFieldStyle(.roundedBorder)
                         Button("Revisar merge…") { confirmMerge = true }
-                            .disabled(model.busy || loadingDiff || !reviewedDiffAvailable || message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || agent.state != "exited")
+                            .disabled(model.busy || !identityAvailable || !reviewedDiffAvailable || message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || agent.state != "exited")
                     }
                 }
                 if agent.branch != nil {
                     Text(agent.archived == true ? "Worktree arquivado: pasta e alterações preservadas; integração indisponível." : "Encerre o agente e revise o diff antes de integrar o worktree ao projeto.")
                         .foregroundStyle(TerminalTheme.secondary)
                 }
+            } else if tab == "pr" {
+                DeliveryPullRequestView(client: model.client, agent: agent, workflow: model.workflow)
             } else if tab == "logs" {
                 if loadingLogs { ProgressView("Lendo histórico…") }
                 if let logError { Text(logError).foregroundStyle(TerminalTheme.warning).textSelection(.enabled) }
@@ -215,6 +233,7 @@ struct LiveAgentDetail: View {
                 }.frame(minHeight: 360)
             }
             if model.busy { ProgressView("Aplicando operação…").controlSize(.small) }
+            if !identityAvailable { Text("Este registro não está disponível no quadro atual. Reabra os detalhes após atualizar; entrada desativada.").foregroundStyle(TerminalTheme.warning) }
             if let notice { Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(3) }
             if let error = model.error { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3) }
         }
@@ -222,8 +241,18 @@ struct LiveAgentDetail: View {
         .font(TerminalTheme.mono(12))
         .foregroundStyle(TerminalTheme.primary).background(TerminalTheme.background)
         .preferredColorScheme(.dark)
-        .onAppear { terminal.reconnect() }
+        .onAppear {
+            terminal.reconnect()
+            if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: tab) }
+        }
         .onDisappear { terminal.suspend() }
+        .onChange(of: identityAvailable) { _, available in
+            if !available {
+                terminal.suspend(); reviewedDiffAvailable = false
+                confirmStop = false; confirmRemove = false; confirmMerge = false; confirmArchive = false
+                showsMove = false; showsExport = false
+            }
+        }
         .task {
             while !Task.isCancelled {
                 if isAlive && tab == "terminal" { await terminal.poll() }
@@ -231,7 +260,7 @@ struct LiveAgentDetail: View {
             }
         }
         .task(id: tab) {
-            if tab == "diff" { await loadDiff() }
+            if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: tab) }
             if tab == "logs" { await loadLogs() }
             if tab == "processes" { await loadProcesses() }
         }
@@ -240,10 +269,11 @@ struct LiveAgentDetail: View {
         .alert("Arquivar este worktree?", isPresented: $confirmArchive) {
             Button("Cancelar", role: .cancel) { }
             Button("Arquivar") {
-                guard agent.state == "exited", agent.archived != true else { return }
+                guard identityAvailable, agent.state == "exited", agent.archived != true else { return }
                 Task {
                     await model.perform {
-                        let result = try await model.client.archiveWorktree(agentId: agentID, confirmed: true)
+                        guard identityAvailable else { return }
+                        let result = try await model.client.archiveWorktree(agentId: agentID, confirmed: true, createdAtMs: initial.createdAtMs)
                         notice = "Worktree arquivado. Pasta e branch preservadas em \(result.path)."
                     }
                 }
@@ -258,15 +288,22 @@ struct LiveAgentDetail: View {
         }
         .alert("Encerrar esta sessão?", isPresented: $confirmStop) {
             Button("Cancelar", role: .cancel) { }
-            Button("Encerrar", role: .destructive) { Task { await model.perform { try await model.client.stop(agentId: agentID) } } }
+            Button("Encerrar", role: .destructive) {
+                guard identityAvailable else { return }
+                Task { await model.perform {
+                    guard identityAvailable else { return }
+                    try await model.client.stop(agentId: agentID, createdAtMs: initial.createdAtMs)
+                } }
+            }
         } message: { Text("O processo de \(agent.name) será encerrado. Os arquivos já alterados permanecem no projeto ou worktree.") }
         .alert("Remover registro e histórico?", isPresented: $confirmRemove) {
             Button("Cancelar", role: .cancel) { }
             Button("Remover", role: .destructive) {
-                guard agent.state == "exited", agent.branch == nil else { return }
+                guard identityAvailable, agent.state == "exited", agent.branch == nil else { return }
                 Task {
                     await model.perform {
-                        try await model.client.remove(agentId: agentID, confirmed: true)
+                        guard identityAvailable else { return }
+                        try await model.client.remove(agentId: agentID, confirmed: true, createdAtMs: initial.createdAtMs)
                         dismiss()
                     }
                 }
@@ -277,8 +314,12 @@ struct LiveAgentDetail: View {
         .alert("Integrar alterações ao projeto?", isPresented: $confirmMerge) {
             Button("Cancelar", role: .cancel) { }
             Button("Integrar") {
-                guard agent.state == "exited", agent.branch != nil, agent.archived != true, reviewedDiffAvailable else { return }
-                Task { await model.perform { notice = try await model.client.merge(agentId: agentID, message: message); await loadDiff() } }
+                guard identityAvailable, agent.state == "exited", agent.branch != nil, agent.archived != true, reviewedDiffAvailable else { return }
+                Task { await model.perform {
+                    guard identityAvailable else { return }
+                    notice = try await model.client.merge(agentId: agentID, message: message, createdAtMs: initial.createdAtMs)
+                    await loadDiff()
+                } }
             }
         } message: { Text("Origem: \(agent.branch ?? "")\nProjeto: \(agent.project)\nRevise o diff. Esta ação cria commits e integra alterações ao projeto.") }
     }
@@ -297,11 +338,12 @@ struct LiveAgentDetail: View {
                 Spacer()
                 if model.busy { ProgressView().controlSize(.small) }
                 Button("Mover") {
-                    guard agent.state == "exited" else { return }
+                    guard identityAvailable, agent.state == "exited" else { return }
                     let destination = destinationSession
                     Task {
                         await model.perform {
-                            try await model.client.moveAgent(agentId: agentID, to: destination)
+                            guard identityAvailable else { return }
+                            try await model.client.moveAgent(agentId: agentID, to: destination, createdAtMs: initial.createdAtMs)
                             showsMove = false
                         }
                     }
@@ -364,17 +406,7 @@ struct LiveAgentDetail: View {
     }
 
     @MainActor private func loadDiff() async {
-        guard !loadingDiff else { return }
         reviewedDiffAvailable = false
-        loadingDiff = true
-        diffError = nil
-        defer { loadingDiff = false }
-        do {
-            let state = agent.state
-            let result = try await model.client.diff(agentId: agentID)
-            try Task.checkCancellation()
-            diffText = result
-            reviewedDiffAvailable = state == agent.state
-        } catch is CancellationError { } catch { diffError = "Não foi possível ler as alterações: \(error.localizedDescription)" }
+        reviewReloadID = UUID()
     }
 }

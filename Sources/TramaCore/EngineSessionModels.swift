@@ -14,10 +14,12 @@ public struct EngineAgent: Codable, Identifiable, Sendable, Equatable {
     public let nested: EngineNested?
     public let archived: Bool?
     public let parentId: UInt32?
+    public let createdAtMs: UInt64?
 
     public init(id: UInt32, name: String, kind: String, state: String, session: String,
                 cwd: String, project: String, task: String, activity: String, branch: String? = nil,
-                nested: EngineNested? = nil, archived: Bool? = nil, parentId: UInt32? = nil) {
+                nested: EngineNested? = nil, archived: Bool? = nil, parentId: UInt32? = nil,
+                createdAtMs: UInt64? = nil) {
         self.id = id
         self.name = name
         self.kind = kind
@@ -31,6 +33,7 @@ public struct EngineAgent: Codable, Identifiable, Sendable, Equatable {
         self.nested = nested
         self.archived = archived
         self.parentId = parentId
+        self.createdAtMs = createdAtMs
     }
 
     public var isAlive: Bool { ["idle", "working", "paused", "done"].contains(state) }
@@ -85,13 +88,20 @@ public struct EngineRequest: Codable, Sendable {
     public var maxFileBytes: UInt64?
     public var planToken: String?
     public var redactions: [String]?
+    public var createdAtMs: UInt64?
+    public var expectedVersion: String?
+    public var reviewToken: String?
+    public var notes: [EngineReviewNote]?
+    public var number: Int?
 
     public init(operation: String, agentId: UInt32? = nil, kind: String? = nil,
                 cwd: String? = nil, name: String? = nil, task: String? = nil,
                 session: String? = nil, isolate: Bool? = nil, input: String? = nil,
                 rows: Int? = nil, cols: Int? = nil, message: String? = nil, confirmed: Bool? = nil,
                 maxAgeDays: UInt32? = nil, maxFileBytes: UInt64? = nil, planToken: String? = nil,
-                redactions: [String]? = nil) {
+                redactions: [String]? = nil, createdAtMs: UInt64? = nil,
+                expectedVersion: String? = nil, reviewToken: String? = nil,
+                notes: [EngineReviewNote]? = nil, number: Int? = nil) {
         self.operation = operation
         self.agentId = agentId
         self.kind = kind
@@ -109,6 +119,11 @@ public struct EngineRequest: Codable, Sendable {
         self.maxFileBytes = maxFileBytes
         self.planToken = planToken
         self.redactions = redactions
+        self.createdAtMs = createdAtMs
+        self.expectedVersion = expectedVersion
+        self.reviewToken = reviewToken
+        self.notes = notes
+        self.number = number
     }
 }
 

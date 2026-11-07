@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import Combine
 import SwiftUI
 import TramaCore
 
@@ -6,6 +8,8 @@ import TramaCore
 final class LiveWorkspaceModel: ObservableObject {
     let client = OctoEngineClient(executableURL: OctoEngineClient.defaultExecutableURL,
                                  homeURL: OctoEngineClient.defaultHomeURL, timeout: 30)
+    let workflow = DeliveryWorkflowViewModel(engineHome: OctoEngineClient.defaultHomeURL)
+    private var workflowUpdates: AnyCancellable?
     @Published var agents: [EngineAgent] = []
     @Published var sessions: [String] = []
     @Published var providers: [EngineProvider] = []
@@ -17,6 +21,10 @@ final class LiveWorkspaceModel: ObservableObject {
     @Published var loadingProviders = false
     @Published var providerError: String?
 
+    init() {
+        workflowUpdates = workflow.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }
+    }
+
     func refresh() async {
         guard !refreshing else { return }
         refreshing = true
@@ -26,6 +34,7 @@ final class LiveWorkspaceModel: ObservableObject {
             try Task.checkCancellation()
             agents = result.agents
             sessions = result.sessions
+            workflow.observe(result.agents)
             connectionError = nil
         } catch is CancellationError { } catch {
             self.connectionError = error.localizedDescription
@@ -76,6 +85,13 @@ struct LiveWorkspaceView: View {
     @State private var sessionToRename = ""
     @State private var showsRetention = false
     @State private var showsArchived = false
+    @State private var inboxOnly = false
+    @State private var showsInbox = false
+    @State private var showsPilot = false
+    @State private var inboxAgent: EngineAgent?
+    @State private var selectedPanel = "terminal"
+    @State private var inboxPanel = "terminal"
+    @State private var lastInboxID: UUID?
     @FocusState private var searchFocused: Bool
     private let states = ["paused", "working", "done", "idle", "lost", "exited"]
 
@@ -88,7 +104,8 @@ struct LiveWorkspaceView: View {
         return model.agents.filter { agent in
             (path == nil || URL(fileURLWithPath: agent.project).standardizedFileURL.resolvingSymlinksInPath().path == path) &&
             (session.isEmpty || agent.session == session) &&
-            (showsArchived || agent.archived != true) &&
+            (showsArchived || inboxOnly || agent.archived != true) &&
+            (!inboxOnly || model.workflow.pending.contains { $0.agentRef == agent.deliveryReference }) &&
             (search.isEmpty || [agent.name, agent.task, agent.kind, agent.project].contains { $0.localizedStandardContains(search) })
         }
     }
@@ -96,6 +113,10 @@ struct LiveWorkspaceView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header.padding(20)
+            DeliveryInboxBar(workflow: model.workflow, onlyPending: $inboxOnly,
+                             showsInbox: $showsInbox, showsPilot: $showsPilot,
+                             next: openNextIntervention)
+                .padding(.horizontal, 20).padding(.bottom, 12)
             TerminalRule()
             if let error = model.error ?? model.connectionError {
                 HStack(alignment: .top) {
@@ -105,59 +126,7 @@ struct LiveWorkspaceView: View {
                     Button("Atualizar") { Task { await model.refresh() } }.disabled(model.refreshing)
                 }.padding(16)
             }
-            if !model.hasLoaded {
-                ProgressView("Carregando sessões locais…")
-                    .padding(24).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else if filtered.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(model.connectionError != nil ? "[erro] Sessões indisponíveis" : (model.agents.isEmpty ? "[info] Nenhum agente registrado" : "[info] Nenhum resultado neste filtro"))
-                        .foregroundStyle(model.connectionError != nil ? TerminalTheme.warning : TerminalTheme.accent)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(model.connectionError != nil
-                         ? "Atualize o quadro para tentar conectar ao motor local novamente."
-                         : (projects.isEmpty ? "Adicione uma pasta na barra lateral para iniciar uma tarefa."
-                            : (model.agents.isEmpty ? "Inicie uma tarefa para acompanhar agentes reais neste quadro." : "Experimente outro termo, sessão ou projeto.")))
-                        .foregroundStyle(TerminalTheme.secondary)
-                    if !search.isEmpty || !session.isEmpty || selectedProjectID != nil {
-                        Button("Limpar filtros") { search = ""; session = ""; selectedProjectID = nil }
-                    }
-                    Spacer()
-                }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            } else if listMode {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(filtered) { agent in card(agent) }
-                    }.padding(20)
-                }
-            } else {
-                GeometryReader { geometry in
-                    ScrollView([.horizontal, .vertical]) {
-                        HStack(alignment: .top, spacing: 16) {
-                            ForEach(states, id: \.self) { state in
-                                let items = filtered.filter { $0.state == state }
-                                if !items.isEmpty || !["lost", "exited"].contains(state) {
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        HStack {
-                                            Text(liveStateTitle(state)).foregroundStyle(liveStateColor(state))
-                                            Spacer()
-                                            Text("\(items.count)").foregroundStyle(TerminalTheme.secondary)
-                                        }
-                                        if items.isEmpty { Text("Sem agentes").foregroundStyle(TerminalTheme.secondary) }
-                                        ForEach(items) { agent in card(agent) }
-                                    }.frame(width: max(240, (geometry.size.width - 88) / 4))
-                                }
-                            }
-                            let unknown = filtered.filter { !states.contains($0.state) }
-                            if !unknown.isEmpty {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Estado desconhecido")
-                                    ForEach(unknown) { agent in card(agent) }
-                                }.frame(width: 240)
-                            }
-                        }.padding(20)
-                    }
-                }
-            }
+            agentContent
             TerminalRule()
             Text(model.connectionError != nil && !model.agents.isEmpty
                  ? "Sessões reais · dados da última atualização; conexão indisponível"
@@ -168,6 +137,7 @@ struct LiveWorkspaceView: View {
         .foregroundStyle(TerminalTheme.primary)
         .background(TerminalTheme.background)
         .task {
+            model.workflow.update { try model.workflow.repository.recordVisit() }
             await model.loadProviders()
             while !Task.isCancelled {
                 await model.refresh()
@@ -177,6 +147,9 @@ struct LiveWorkspaceView: View {
         .onChange(of: model.sessions) { _, names in
             if !session.isEmpty && !names.contains(session) { session = "" }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.workflow.update { try model.workflow.repository.recordVisit() }
+        }
         .background {
             Button("Buscar agentes") { searchFocused = true }
                 .keyboardShortcut("f").hidden()
@@ -185,8 +158,14 @@ struct LiveWorkspaceView: View {
             NewAgentView(model: model, projects: projects, initialProjectID: selectedProjectID, initialSession: session)
         }
         .sheet(isPresented: $showsRetention) { LogRetentionView(client: model.client) }
+        .sheet(isPresented: $showsInbox, onDismiss: {
+            if let agent = inboxAgent { inboxAgent = nil; selectedPanel = inboxPanel; selectedAgent = agent }
+        }) {
+            DeliveryInboxView(workflow: model.workflow, agents: model.agents) { agent, panel in inboxAgent = agent; inboxPanel = panel }
+        }
+        .sheet(isPresented: $showsPilot) { DeliveryPilotView(workflow: model.workflow) }
         .sheet(item: $selectedAgent) { agent in
-            LiveAgentDetail(model: model, agentID: agent.id, initial: agent)
+            LiveAgentDetail(model: model, agentID: agent.id, initial: agent, initialTab: selectedPanel)
         }
         .alert("Nova sessão", isPresented: $showsNewSession) {
             TextField("Nome da sessão", text: $newSession)
@@ -214,6 +193,62 @@ struct LiveWorkspaceView: View {
         } message: { Text("Os agentes de \(sessionToRename) passarão a usar o novo nome.") }
     }
 
+    @ViewBuilder private var agentContent: some View {
+        if !model.hasLoaded {
+            ProgressView("Carregando sessões locais…")
+                .padding(24).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        } else if filtered.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(model.connectionError != nil ? "[erro] Sessões indisponíveis" : (model.agents.isEmpty ? "[info] Nenhum agente registrado" : "[info] Nenhum resultado neste filtro"))
+                    .foregroundStyle(model.connectionError != nil ? TerminalTheme.warning : TerminalTheme.accent)
+                    .accessibilityAddTraits(.isHeader)
+                Text(model.connectionError != nil
+                     ? "Atualize o quadro para tentar conectar ao motor local novamente."
+                     : (projects.isEmpty ? "Adicione uma pasta na barra lateral para iniciar uma tarefa."
+                        : (model.agents.isEmpty ? "Inicie uma tarefa para acompanhar agentes reais neste quadro." : "Experimente outro termo, sessão ou projeto.")))
+                    .foregroundStyle(TerminalTheme.secondary)
+                if !search.isEmpty || !session.isEmpty || selectedProjectID != nil || inboxOnly {
+                    Button("Limpar filtros") { search = ""; session = ""; selectedProjectID = nil; inboxOnly = false }
+                }
+                Spacer()
+            }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        } else if listMode {
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(filtered) { agent in card(agent) }
+                }.padding(20)
+            }
+        } else {
+            GeometryReader { geometry in
+                ScrollView([.horizontal, .vertical]) {
+                    HStack(alignment: .top, spacing: 16) {
+                        ForEach(states, id: \.self) { state in
+                            let items = filtered.filter { $0.state == state }
+                            if !items.isEmpty || !["lost", "exited"].contains(state) {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack {
+                                        Text(liveStateTitle(state)).foregroundStyle(liveStateColor(state))
+                                        Spacer()
+                                        Text("\(items.count)").foregroundStyle(TerminalTheme.secondary)
+                                    }
+                                    if items.isEmpty { Text("Sem agentes").foregroundStyle(TerminalTheme.secondary) }
+                                    ForEach(items) { agent in card(agent) }
+                                }.frame(width: max(240, (geometry.size.width - 88) / 4))
+                            }
+                        }
+                        let unknown = filtered.filter { !states.contains($0.state) }
+                        if !unknown.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Estado desconhecido")
+                                ForEach(unknown) { agent in card(agent) }
+                            }.frame(width: 240)
+                        }
+                    }.padding(20)
+                }
+            }
+        }
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -225,7 +260,7 @@ struct LiveWorkspaceView: View {
                     .keyboardShortcut("n")
                     .help("Iniciar uma sessão real em um projeto cadastrado (⌘N)")
             }
-            Text("\(filtered.count) agentes · \(filtered.filter { $0.state == "paused" }.count) precisam de você")
+            Text("\(filtered.count) agentes neste filtro")
                 .foregroundStyle(TerminalTheme.secondary)
             ViewThatFits(in: .horizontal) {
                 HStack { filters; searchField }
@@ -296,12 +331,68 @@ struct LiveWorkspaceView: View {
             if let parent = agent.parentId { Text("Agente pai: #\(parent)").foregroundStyle(TerminalTheme.secondary) }
             Text(agent.activity.isEmpty ? agent.task : agent.activity).lineLimit(5)
                 .foregroundStyle(TerminalTheme.secondary)
-            Button("Abrir agente") { selectedAgent = agent }
+            Button("Abrir agente") { open(agent) }
                 .accessibilityLabel("Abrir \(agent.name), agente \(agent.id), \(liveStateTitle(agent.state))")
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
         .background(TerminalTheme.surface, in: RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(agent.state == "paused" ? TerminalTheme.warning : TerminalTheme.border))
+    }
+
+    private func open(_ agent: EngineAgent, panel: String = "terminal") {
+        if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: panel) }
+        selectedPanel = panel
+        selectedAgent = agent
+    }
+
+    private func openNextIntervention() {
+        let candidates = model.workflow.pending.sorted {
+            if ($0.readAt == nil) != ($1.readAt == nil) { return $0.readAt == nil }
+            return $0.createdAt < $1.createdAt
+        }
+        let available = candidates.filter { item in model.agents.contains { $0.deliveryReference == item.agentRef } }
+        let next = available.first { $0.readAt == nil } ?? {
+            guard !available.isEmpty else { return nil as DeliveryIntervention? }
+            if let index = available.firstIndex(where: { $0.id == lastInboxID }) { return available[(index + 1) % available.count] }
+            return available.first
+        }()
+        if let next, let agent = model.agents.first(where: { $0.deliveryReference == next.agentRef }) {
+            lastInboxID = next.id
+            open(agent, panel: interventionPanel(next))
+        } else { showsInbox = true }
+    }
+}
+
+private struct DeliveryInboxBar: View {
+    @ObservedObject var workflow: DeliveryWorkflowViewModel
+    @Binding var onlyPending: Bool
+    @Binding var showsInbox: Bool
+    @Binding var showsPilot: Bool
+    let next: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ViewThatFits(in: .horizontal) {
+                HStack { controls }
+                VStack(alignment: .leading, spacing: 8) { controls }
+            }
+            if let error = workflow.error {
+                HStack(alignment: .top) {
+                    Text(error).foregroundStyle(TerminalTheme.warning).textSelection(.enabled)
+                    Button("Reler dados locais") { workflow.reload() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var controls: some View {
+        Button(workflow.snapshot == nil ? "Inbox indisponível" : "Inbox · \(workflow.pending.count) pendentes · \(workflow.unreadCount) não vistos") { showsInbox = true }
+            .keyboardShortcut("i", modifiers: [.command, .shift])
+        Toggle("Só inbox", isOn: $onlyPending).toggleStyle(.checkbox).disabled(workflow.snapshot == nil)
+        Button("Próximo item") { next() }.keyboardShortcut("n", modifiers: [.command, .shift])
+            .disabled(workflow.pending.isEmpty)
+            .help("Abrir próximo item da inbox (⌘⇧N). Não envia resposta ao CLI.")
+        Button("Piloto e alertas…") { showsPilot = true }
     }
 }
 

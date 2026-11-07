@@ -78,9 +78,9 @@ public struct OctoEngineClient: Sendable {
         return result.agentId
     }
 
-    public func sendInput(agentId: UInt32, data: Data) async throws {
+    public func sendInput(agentId: UInt32, data: Data, createdAtMs: UInt64? = nil) async throws {
         let _: Empty = try await rpc(EngineRequest(operation: "input", agentId: agentId,
-                                                    input: data.base64EncodedString()))
+                                                    input: data.base64EncodedString(), createdAtMs: createdAtMs))
     }
 
     public func snapshot(agentId: UInt32) async throws -> EngineSnapshot {
@@ -89,25 +89,25 @@ public struct OctoEngineClient: Sendable {
         return result
     }
 
-    public func resize(agentId: UInt32, rows: Int, cols: Int) async throws {
+    public func resize(agentId: UInt32, rows: Int, cols: Int, createdAtMs: UInt64? = nil) async throws {
         guard (2...100).contains(rows), (10...240).contains(cols) else {
             throw EngineClientError.invalidRequest
         }
-        let _: Empty = try await rpc(EngineRequest(operation: "resize", agentId: agentId, rows: rows, cols: cols))
+        let _: Empty = try await rpc(EngineRequest(operation: "resize", agentId: agentId, rows: rows, cols: cols, createdAtMs: createdAtMs))
     }
 
-    public func stop(agentId: UInt32) async throws {
-        let _: Empty = try await rpc(EngineRequest(operation: "stop", agentId: agentId), longRunning: true)
+    public func stop(agentId: UInt32, createdAtMs: UInt64? = nil) async throws {
+        let _: Empty = try await rpc(EngineRequest(operation: "stop", agentId: agentId, createdAtMs: createdAtMs), longRunning: true)
     }
 
     /// Removes only an exited record without a worktree after explicit user confirmation.
-    public func remove(agentId: UInt32, confirmed: Bool) async throws {
+    public func remove(agentId: UInt32, confirmed: Bool, createdAtMs: UInt64? = nil) async throws {
         guard confirmed else { throw EngineClientError.invalidRequest }
-        let _: Empty = try await rpc(EngineRequest(operation: "remove", agentId: agentId, confirmed: true))
+        let _: Empty = try await rpc(EngineRequest(operation: "remove", agentId: agentId, confirmed: true, createdAtMs: createdAtMs))
     }
 
-    public func resume(agentId: UInt32) async throws {
-        let _: Empty = try await rpc(EngineRequest(operation: "resume", agentId: agentId), longRunning: true)
+    public func resume(agentId: UInt32, createdAtMs: UInt64? = nil) async throws {
+        let _: Empty = try await rpc(EngineRequest(operation: "resume", agentId: agentId, createdAtMs: createdAtMs), longRunning: true)
     }
 
     public func createSession(name: String) async throws {
@@ -118,14 +118,14 @@ public struct OctoEngineClient: Sendable {
         let _: Empty = try await rpc(EngineRequest(operation: "rename_session", name: to, session: from))
     }
 
-    public func moveAgent(agentId: UInt32, to session: String) async throws {
-        let _: Empty = try await rpc(EngineRequest(operation: "move_agent", agentId: agentId, session: session))
+    public func moveAgent(agentId: UInt32, to session: String, createdAtMs: UInt64? = nil) async throws {
+        let _: Empty = try await rpc(EngineRequest(operation: "move_agent", agentId: agentId, session: session, createdAtMs: createdAtMs))
     }
 
     /// Requires confirmation that this archives in place and does not reclaim disk space.
-    public func archiveWorktree(agentId: UInt32, confirmed: Bool) async throws -> EngineWorktreeArchive {
+    public func archiveWorktree(agentId: UInt32, confirmed: Bool, createdAtMs: UInt64? = nil) async throws -> EngineWorktreeArchive {
         guard confirmed else { throw EngineClientError.invalidRequest }
-        return try await rpc(EngineRequest(operation: "archive_worktree", agentId: agentId, confirmed: true))
+        return try await rpc(EngineRequest(operation: "archive_worktree", agentId: agentId, confirmed: true, createdAtMs: createdAtMs))
     }
 
     public func processTree(agentId: UInt32) async throws -> EngineProcessTree {
@@ -175,10 +175,78 @@ public struct OctoEngineClient: Sendable {
         return result.text
     }
 
+    public func diffSnapshot(agentId: UInt32) async throws -> EngineDiffSnapshot {
+        let result: EngineDiffSnapshot = try await rpc(EngineRequest(operation: "diff_snapshot", agentId: agentId))
+        guard Self.isDigest(result.version), Self.isOID(result.headOid), result.text.utf8.count <= 512_000 else {
+            throw EngineClientError.invalidResponse
+        }
+        return result
+    }
+
+    /// Returns the exact batch to display before asking the user to confirm delivery.
+    public func previewReview(agentId: UInt32, createdAtMs: UInt64, expectedVersion: String,
+                              notes: [EngineReviewNote]) async throws -> EngineReviewPreview {
+        try Self.validateReview(version: expectedVersion, notes: notes)
+        let result: EngineReviewPreview = try await rpc(EngineRequest(operation: "review_preview", agentId: agentId,
+            createdAtMs: createdAtMs, expectedVersion: expectedVersion, notes: notes))
+        guard result.createdAtMs == createdAtMs, result.version == expectedVersion,
+              result.noteCount == notes.count, Self.isDigest(result.token), !result.text.isEmpty,
+              result.text.utf8.count + 13 <= 24_000 else { throw EngineClientError.invalidResponse }
+        return result
+    }
+
+    /// Sends one confirmed batch, without retries. Acknowledgment proves transport delivery only.
+    public func sendReview(agentId: UInt32, createdAtMs: UInt64, expectedVersion: String,
+                           notes: [EngineReviewNote], reviewToken: String, confirmed: Bool) async throws -> EngineReviewDelivery {
+        guard confirmed, Self.isDigest(reviewToken) else { throw EngineClientError.invalidRequest }
+        try Self.validateReview(version: expectedVersion, notes: notes)
+        let result: EngineReviewDelivery = try await rpc(EngineRequest(operation: "send_review", agentId: agentId,
+            confirmed: true, createdAtMs: createdAtMs, expectedVersion: expectedVersion,
+            reviewToken: reviewToken, notes: notes), longRunning: true)
+        guard result.agentId == agentId, result.createdAtMs == createdAtMs, result.version == expectedVersion,
+              result.noteCount == notes.count, result.deliveredToPTY else { throw EngineClientError.invalidResponse }
+        return result
+    }
+
+    /// Manual read only. Explicit confirmation authorizes gh to access its credentials and github.com.
+    public func githubPR(agentId: UInt32, createdAtMs: UInt64, number: Int? = nil, confirmed: Bool) async throws -> EngineGitHubPR {
+        guard confirmed, number.map({ (1...Int(UInt32.max)).contains($0) }) ?? true else {
+            throw EngineClientError.invalidRequest
+        }
+        let result: EngineGitHubPR = try await rpc(EngineRequest(operation: "github_pr", agentId: agentId,
+            confirmed: true, createdAtMs: createdAtMs, number: number), requestTimeout: max(timeout, 20))
+        guard result.number > 0, number.map({ $0 == result.number }) ?? true,
+              Self.isOID(result.headOid), Self.isOID(result.localHeadOid), Self.isDigest(result.diffVersion),
+              result.matchesLocalHead == (result.headOid == result.localHeadOid),
+              result.url == "https://github.com/\(result.repository)/pull/\(result.number)",
+              result.repository.split(separator: "/").count == 2, result.checks.count <= 100 else {
+            throw EngineClientError.invalidResponse
+        }
+        return result
+    }
+
+    private static func isDigest(_ value: String) -> Bool {
+        value.utf8.count == 64 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
+    }
+
+    private static func isOID(_ value: String) -> Bool {
+        [40, 64].contains(value.utf8.count) && value.utf8.allSatisfy {
+            (48...57).contains($0) || (97...102).contains($0)
+        }
+    }
+
+    private static func validateReview(version: String, notes: [EngineReviewNote]) throws {
+        guard isDigest(version), (1...32).contains(notes.count),
+              notes.allSatisfy({ note in
+                  note.line > 0 && !note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                  !note.body.unicodeScalars.contains { CharacterSet.controlCharacters.contains($0) && $0 != "\n" && $0 != "\t" }
+              }), notes.reduce(0, { $0 + $1.body.utf8.count }) <= 24_000 else { throw EngineClientError.invalidRequest }
+    }
+
     /// Caller must obtain explicit confirmation after showing the diff and target project.
-    public func merge(agentId: UInt32, message: String) async throws -> String {
+    public func merge(agentId: UInt32, message: String, createdAtMs: UInt64? = nil) async throws -> String {
         let result: Message = try await rpc(EngineRequest(operation: "merge", agentId: agentId,
-                                                          message: message, confirmed: true), longRunning: true)
+                                                          message: message, confirmed: true, createdAtMs: createdAtMs), longRunning: true)
         return result.message
     }
 
@@ -200,7 +268,8 @@ public struct OctoEngineClient: Sendable {
         let input = try JSONEncoder().encode(request)
         guard input.count <= 65_536 else { throw EngineClientError.requestTooLarge }
         let data = try await execute(arguments: ["--request", "--home", homeURL.path], input: input,
-                                     timeout: requestTimeout ?? (longRunning ? mutationTimeout : timeout), outputLimit: 4_194_304)
+                                     timeout: requestTimeout ?? (longRunning ? mutationTimeout : timeout), outputLimit: 4_194_304,
+                                     cancelRequestGroup: ["diff_snapshot", "review_preview", "send_review", "github_pr"].contains(request.operation))
         let envelope: Envelope<Result>
         do { envelope = try JSONDecoder().decode(Envelope<Result>.self, from: data) }
         catch { throw EngineClientError.invalidResponse }
@@ -214,9 +283,10 @@ public struct OctoEngineClient: Sendable {
     }
 
     private func execute(arguments: [String], input: Data?, timeout: TimeInterval,
-                         outputLimit: Int) async throws -> Data {
+                         outputLimit: Int, cancelRequestGroup: Bool = false) async throws -> Data {
         let operation = EngineProcessOperation(executableURL: executableURL, homeURL: homeURL,
-            arguments: arguments, input: input, timeout: timeout, outputLimit: outputLimit)
+            arguments: arguments, input: input, timeout: timeout, outputLimit: outputLimit,
+            cancelRequestGroup: cancelRequestGroup)
         let data = try await withTaskCancellationHandler {
             try Task.checkCancellation()
             return try await Task.detached { try operation.run() }.value
@@ -273,13 +343,15 @@ private final class EngineProcessOperation: @unchecked Sendable {
     private let outputLimit: Int
     private let arguments: [String]
     private let input: Data?
+    private let cancelRequestGroup: Bool
 
     init(executableURL: URL, homeURL: URL, arguments: [String], input: Data?, timeout: TimeInterval,
-         outputLimit: Int) {
+         outputLimit: Int, cancelRequestGroup: Bool) {
         self.executableURL = executableURL
         self.homeURL = homeURL
         self.arguments = arguments
         self.input = input
+        self.cancelRequestGroup = cancelRequestGroup
         self.timeout = timeout
         self.outputLimit = outputLimit
     }
@@ -371,6 +443,16 @@ private final class EngineProcessOperation: @unchecked Sendable {
             return stdout
         } catch {
             if process.isRunning {
+                // Only the new sidecar operations establish a private group. Prove its ownership
+                // before killing it; existing holder processes and the app group are never targets.
+                if cancelRequestGroup, Darwin.getpgid(process.processIdentifier) == process.processIdentifier {
+                    // SIGTERM lets the sidecar kill its isolated command group, including helpers.
+                    _ = Darwin.kill(-process.processIdentifier, SIGTERM)
+                    Thread.sleep(forTimeInterval: 0.03)
+                    if process.isRunning, Darwin.getpgid(process.processIdentifier) == process.processIdentifier {
+                        _ = Darwin.kill(-process.processIdentifier, SIGKILL)
+                    }
+                }
                 // Kill only the request process. A holder started by a mutation may persist; never retry automatically.
                 _ = Darwin.kill(process.processIdentifier, SIGKILL)
             }
