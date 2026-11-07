@@ -6,7 +6,7 @@
 - [x] Demonstração identificada, quadro/lista, busca e filtros.
 - [x] Testes de persistência e erros; primeira execução de CI macOS validada.
 - [ ] Revisão visual e acessibilidade.
-- [ ] Coordenação do cadastro entre múltiplas instâncias.
+- [x] Coordenação do cadastro entre múltiplas instâncias com lock e releitura antes de gravar.
 
 ## M2 — Motor Rust e sessões reais
 

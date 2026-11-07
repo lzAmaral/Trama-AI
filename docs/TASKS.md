@@ -33,3 +33,14 @@ Arquivos compartilhados só mudam após alinhamento. Não há execução automá
 4. Configurar assinatura/notarização quando houver identidade de distribuição e reunir os avisos transitivos.
 
 Acesso remoto, árvores completas de subagentes e atualizações automáticas exigem entregas próprias; não são recursos habilitados nesta versão.
+
+## Cadastro entre instâncias — 2026-11-07
+
+- Objetivo: impedir perda de projetos quando duas instâncias cadastram pastas a partir de listas desatualizadas.
+- Responsável: integrador; revisão independente por agente sem autoria do código.
+- Arquivos: `ProjectRepository.swift`, `TramaApp.swift`, `ProjectRepositoryTests.swift` e documentação desta entrega.
+- Contrato: `register(_:)` relê, deduplica e grava sob lock exclusivo não bloqueante; retorna projeto selecionado e snapshot atualizado. `save(_:)` continua sendo substituição explícita do snapshot.
+- Dependências: persistência atômica existente e validação canônica de pastas; sem mudanças no motor.
+- Aceite verificado: duas instâncias com listas antigas preservam os dois cadastros; duplicata mantém identidade; lock ocupado rejeita a operação sem alterar os dados; arquivo corrompido permanece intacto e o lock é liberado após erro.
+- Validação: `swift build`, `swift test` e `git diff --check` aprovados com Swift 6.1.2. Runner reportou 42 testes e dois testes de integração Rust ignorados por dependerem de configuração explícita. Revisão independente sem bloqueadores.
+- Limitações: não houve revisão visual com dois aplicativos abertos; contenção foi testada com descritores independentes no mesmo processo. Não há atualização visual automática entre instâncias nem proteção contra versões antigas que não usam o lock.

@@ -64,15 +64,9 @@ private final class WorkspaceModel: ObservableObject {
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let selectedURL = panel.url else { return }
         do {
-            let project = try ProjectRegistration.project(for: selectedURL, existing: projects)
-            if projects.contains(where: { $0.id == project.id }) {
-                selectedID = project.id
-                return
-            }
-            let updated = projects + [project]
-            try repository.save(updated)
-            projects = updated
-            selectedID = project.id
+            let registration = try repository.register(selectedURL)
+            projects = registration.projects
+            selectedID = registration.project.id
         } catch {
             errorMessage = "Não foi possível adicionar o projeto. A lista anterior foi mantida.\n\n\(error.localizedDescription)"
         }
