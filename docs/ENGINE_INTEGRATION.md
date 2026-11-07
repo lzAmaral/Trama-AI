@@ -32,12 +32,23 @@ O binário também despacha `__holder`, `__agents` e `__hook`, necessários porq
 | details | Registro e status, incluindo processo CLI aninhado quando detectado |
 | process_tree | Snapshot limitado de descendentes locais por PID/nome, sem argumentos ou ambiente; não é árvore lógica completa |
 | diff / merge | Alterações locais ou worktree; merge exige confirmação e holder encerrado |
+| diff_snapshot | Diff sem ANSI com versão SHA-256, HEAD e identidade de criação; recusa captura excessiva ou UTF-8 inválido |
+| review_preview / send_review | Prévia canônica e envio único de notas da mesma versão; identidade, token, confirmação e estado do provedor são revalidados |
+| github_pr | Consulta manual de PR/checks pelo GitHub CLI; origem e branch validadas, identidade e versão local registradas |
 | archive_worktree | Marca worktree encerrado como arquivado, preservando pasta, branch e alterações no lugar; não libera disco |
 | usage | Consulta manual do provedor escolhido; exige `confirmed: true` |
 
 Mutações persistentes usam lock de arquivo. Leituras de metadados e histórico também coordenam com esse lock para não observar renomeações parciais. Renomear sessão usa journal recuperável: a próxima operação coordenada conclui a gravação; journal inválido bloqueia a operação e permanece preservado. Renomear e mover exigem estado encerrado, pois o ambiente de um CLI já iniciado conserva o agrupamento anterior. `lost` não prova encerramento.
 
 A UI serializa entrada e redimensionamento por terminal; outras consultas podem ocorrer em paralelo. Ao fechar detalhes ou observar encerramento, descarta a entrada ainda pendente. Uma entrada com resultado incerto não é reenviada automaticamente. O terminal não aceita comandos produzidos pela saída como autorizações. Aprovações permanecem sob controle do CLI.
+
+As ações dos detalhes carregam o timestamp da identidade originalmente aberta. O motor recusa uma identidade substituída antes da mutação. Entrada e resize conectam uma vez ao holder autenticado, conferem a identidade novamente e usam essa mesma conexão, sem redirecioná-la a um ID reutilizado; não disputam o lock global com uma consulta lenta de GitHub. Chamadores legados que omitem o timestamp não têm a guarda inicial contra identidade obsoleta.
+
+Inbox e revisão usam `id` + `createdAtMs`, no namespace do diretório do motor. O núcleo persiste observações, comentários, vínculos e métricas em arquivo próprio, sem modificar o armazenamento upstream. Observação ausente, desconhecida ou consulta falha não conclui intervenções. Abrir um item, entregar entrada ao PTY e concluir revisão são eventos distintos. O polling pode perder transições entre consultas; não é histórico completo do provedor.
+
+Comentários ancoram linhas de conteúdo do snapshot exato, sem migração automática para outro diff. A prévia retorna o texto exato e um token ligado à versão e às notas. Envio exige confirmação explícita e uma IA viva do mesmo tipo, disponível ou concluída; shell, sessão interrompida, aprovação pendente e IA trabalhando são recusados. O reconhecimento confirma entrega ao PTY, sem comprovar execução ou sucesso do provedor. O fluxo detalhado e as medições locais ficam em [DELIVERY_WORKFLOW.md](DELIVERY_WORKFLOW.md) e [PILOT.md](PILOT.md).
+
+PR/CI não é consultado pelo polling. Cada consulta autorizada usa `gh pr view` com argumentos separados e `github.com` explícito, sem criar, enviar ou integrar código. O snapshot vinculado guarda HEAD remoto/local, estado limpo do Git e versão do diff; checks não validam edições que não pertencem ao HEAD remoto. Forks e origens fora de `github.com` são recusados nesta entrega.
 
 Arquivamento é um marcador próprio do Trama, sem `git add`, commit, remoção ou movimento da pasta. Inclui alterações staged, unstaged, untracked e ignored preservadas no lugar. O quadro permite mostrar os arquivados, e o sidecar bloqueia entrada, retomada e merge desses registros. Isso não torna o diretório imutável para ferramentas externas.
 
@@ -52,7 +63,7 @@ A exportação prepara uma prévia em memória. O usuário pode ocultar textos l
 - Replay recusa arquivos de log acima de 16 MiB por arquivo e retorna os últimos 64 KiB de texto. Isso limita leitura/exibição, não constitui política de retenção de todo o armazenamento upstream.
 - Ocultação literal na exportação aceita até 32 textos, 1024 bytes cada e 8192 bytes no total. Não identifica nem remove todos os segredos automaticamente.
 - A árvore de processos contém no máximo 256 nós e sempre declara visibilidade incompleta. Relações `parentId` vêm de registros upstream; nome de executável não comprova relação lógica de subagentes. Não há controle por PID.
-- Cliente Swift limita saída/tempo, descarta stderr e cancela apenas o processo da solicitação. Após timeout de uma mutação, atualize o quadro antes de tentar novamente: a ação pode ter ocorrido. Não há retry automático.
+- Cliente Swift limita saída/tempo e descarta stderr. Nas novas operações de snapshot/revisão/PR, o processo estabelece um grupo privado para seus filhos transitórios; o cliente só cancela o grupo após conferir sua identidade. As operações anteriores continuam cancelando apenas o processo da solicitação. Após timeout de uma mutação, atualize o quadro antes de tentar novamente: a ação pode ter ocorrido. Não há retry automático.
 - `nested` indica um processo CLI aninhado detectado no terminal, não uma árvore completa de subagentes.
 
 ## Reaproveitamento e validação

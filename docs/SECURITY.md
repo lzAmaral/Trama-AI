@@ -4,7 +4,7 @@ O Trama executa CLIs locais e reutiliza o motor Rust fixado do Octo. Um CLI pode
 
 ## Transporte e processos
 
-Swift chama o binário com argumentos separados; solicitações JSON seguem por stdin, respostas por stdout. O cliente impõe prazos e limites, descarta stderr e não repete automaticamente mutações. Cancelar uma solicitação mata seu processo, não os holders iniciados por ela. Após timeout, consulte as sessões antes de repetir.
+Swift chama o binário com argumentos separados; solicitações JSON seguem por stdin, respostas por stdout. O cliente impõe prazos e limites, descarta stderr e não repete automaticamente mutações. Cancelamento preserva os holders duráveis. Nas operações anteriores, mata apenas o processo da solicitação; nas novas operações de snapshot/revisão/PR, o sidecar e os comandos auxiliares usam grupos privados para encerrar também filhos transitórios, após conferir a identidade do grupo. Após timeout, consulte as sessões antes de repetir.
 
 O motor reutiliza controle local autenticado dos holders upstream. O Trama não inicializa Hub/Peer ou bridge PWA, nem habilita túneis ou acesso remoto. A dependência fixada não substitui auditoria do IPC upstream; testes de lifecycle não comprovam resistência a todos os cenários de ataque local.
 
@@ -29,6 +29,14 @@ A tela de consumo informa que a consulta pode ler credenciais locais e enviar um
 O cancelamento do RPC não garante encerrar processos transitórios iniciados por adaptadores upstream, como Git, Keychain ou o CLI de consumo. Essa limitação precisa de supervisão adicional antes de distribuição. Alguns adaptadores aceitam destinos HTTPS configuráveis (Kilo/Kimi); revise a configuração do provedor antes da consulta.
 
 O processo herda o ambiente do aplicativo para compatibilidade com CLIs. Isso pode incluir variáveis sensíveis; ainda não existe allowlist específica por provedor. Não execute código não confiável supondo isolamento entre provedores.
+
+## Revisão e piloto
+
+Inbox, comentários, vínculos de PR e medições ficam em `Engine/trama-delivery-workflow.json`, com gravação atômica e lock não bloqueante entre instâncias. Dados corrompidos ou incompatíveis bloqueiam alterações e são preservados. Notas e títulos de PR são dados funcionais e podem conter informações sensíveis; esse arquivo não tem criptografia própria. A exportação de métricas contém apenas contagens e durações. Medições vêm desativadas; desligá-las limpa a janela de telemetria local sem apagar inbox, comentários ou vínculos.
+
+Comentários pertencem a uma identidade de agente e a um hash do diff. O envio exige prévia exata, confirmação e conferência de versão no motor; shell, sessão interrompida, aprovação pendente e IA trabalhando são recusados. Entrega ao PTY não prova que o provedor aplicou a revisão. Não há retry automático após erro ou timeout. O usuário continua responsável pelas aprovações do CLI. Notificações locais dependem de opt-in separado e usam texto genérico, sem nomes, tarefas, caminhos ou comentários.
+
+A consulta de PR/CI é manual e pode ler a autenticação existente do GitHub CLI e acessar `github.com`. O motor valida origem, branch, identidade e metadados, usa argumentos separados e limita tempo e captura de saída. O vínculo descreve o HEAD e o diff observados nessa consulta; checks antigos não comprovam o estado atual de alterações locais. Não há push, criação, merge de PR ou coleta de CI em segundo plano. Os testes usam executáveis controlados, sem autenticação ou rede real.
 
 ## Git
 

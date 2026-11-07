@@ -23,6 +23,8 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+#[path = "rpc_delivery.rs"]
+mod delivery;
 #[path = "rpc_m3.rs"]
 mod m3;
 
@@ -50,6 +52,10 @@ pub const OPERATIONS: &[&str] = &[
     "log_retention",
     "apply_log_retention",
     "export_logs",
+    "diff_snapshot",
+    "review_preview",
+    "send_review",
+    "github_pr",
 ];
 const MAX_REQUEST: u64 = 65_536;
 const MAX_RESULT: usize = 900_000;
@@ -75,6 +81,11 @@ struct Request {
     max_file_bytes: Option<u64>,
     plan_token: Option<String>,
     redactions: Option<Vec<String>>,
+    created_at_ms: Option<u64>,
+    expected_version: Option<String>,
+    review_token: Option<String>,
+    notes: Option<Vec<delivery::ReviewNote>>,
+    number: Option<u32>,
 }
 
 fn invalid(message: &str) -> io::Error {
@@ -194,6 +205,14 @@ fn dispatch(home: PathBuf, request: Request) -> io::Result<Value> {
     if !OPERATIONS.contains(&request.operation.as_str()) || request.operation == "inspect" {
         return Err(invalid("unsupported operation"));
     }
+    // New read/review requests own only transient children, never durable holders.
+    // The Swift client checks this PGID before cancelling the whole request group.
+    if matches!(
+        request.operation.as_str(),
+        "diff_snapshot" | "review_preview" | "send_review" | "github_pr"
+    ) {
+        delivery::isolate_request()?;
+    }
     let store = Store::open(Home::at(home))?;
     let coordinated = matches!(
         request.operation.as_str(),
@@ -213,6 +232,10 @@ fn dispatch(home: PathBuf, request: Request) -> io::Result<Value> {
             | "process_tree"
             | "logs"
             | "export_logs"
+            | "diff_snapshot"
+            | "review_preview"
+            | "send_review"
+            | "github_pr"
     );
     let _lock = if coordinated {
         Some(MutationLock::acquire(store.home())?)
@@ -350,7 +373,7 @@ fn describe(store: &Store, record: &AgentRecord) -> Value {
     json!({"id":record.id,"name":record.name,"kind":kind.label(),"state":probe.state().label(),
            "session":record.session,"cwd":record.cwd,"project":record.project_dir(),"task":record.task,
            "activity":activity,"branch":record.worktree.as_ref().map(|w| &w.branch), "nested":nested,
-           "parentId":record.parent,"archived":m3::is_archived(store, record.id)})
+           "parentId":record.parent,"createdAtMs":record.created_at_ms,"archived":m3::is_archived(store, record.id)})
 }
 
 fn wait_for_holder(store: &Store, id: u32) -> io::Result<()> {
@@ -381,6 +404,14 @@ fn agent_action(store: Store, request: Request) -> io::Result<Value> {
         .agent_id
         .ok_or_else(|| invalid("agentId is required"))?;
     let mut record = store.load_agent(id)?;
+    if request
+        .created_at_ms
+        .is_some_and(|expected| expected != record.created_at_ms)
+    {
+        return Err(invalid(
+            "agent identity changed; refresh the current agent before acting",
+        ));
+    }
     if m3::is_archived(&store, id)
         && matches!(request.operation.as_str(), "resume" | "merge" | "input")
     {
@@ -389,6 +420,10 @@ fn agent_action(store: Store, request: Request) -> io::Result<Value> {
         ));
     }
     match request.operation.as_str() {
+        "diff_snapshot" => delivery::diff_snapshot(&record),
+        "review_preview" => delivery::review_preview(&store, &record, &request),
+        "send_review" => delivery::send_review(&store, &record, &request),
+        "github_pr" => delivery::github_pr(&record, &request),
         "move_agent" => m3::move_agent(&store, record, &request),
         "archive_worktree" => m3::archive_worktree(&store, &record, &request),
         "process_tree" => m3::process_tree(&store, &record),
@@ -413,14 +448,25 @@ fn agent_action(store: Store, request: Request) -> io::Result<Value> {
             let runtime = store
                 .read_runtime(id)?
                 .ok_or_else(|| invalid("agent is not running"))?;
-            if request.operation == "resize" {
-                let (connection, reader, _) = client::connect(&runtime)?;
-                connection.send(&ClientMsg::Attach(size(&request)?))?;
-                connection.send(&message)?;
-                connection.finish(reader)?;
-            } else {
-                client::deliver(&runtime, &message)?;
+            // Pin the authenticated holder connection before rechecking record identity.
+            // Later ID reuse cannot redirect this connection to a replacement holder.
+            // Input must not wait on a slow Git/GitHub read's global metadata lock.
+            let (connection, reader, welcome) = client::connect(&runtime)?;
+            if welcome.agent_id != id || welcome.holder_pid != runtime.holder_pid {
+                return Err(invalid("terminal holder identity changed"));
             }
+            let current = store.load_agent(id)?;
+            if current.created_at_ms != record.created_at_ms {
+                return Err(invalid("agent identity changed before terminal delivery"));
+            }
+            if m3::is_archived(&store, id) {
+                return Err(invalid("archived worktrees cannot receive terminal actions"));
+            }
+            if request.operation == "resize" {
+                connection.send(&ClientMsg::Attach(size(&request)?))?;
+            }
+            connection.send(&message)?;
+            connection.finish(reader)?;
             Ok(json!({}))
         }
         "details" => {

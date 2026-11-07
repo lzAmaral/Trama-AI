@@ -2,6 +2,25 @@
 
 O integrador define contratos, delega arquivos exclusivos e integra após revisão cruzada. Testes de CLI autenticado e verificação visual são critérios separados da compilação.
 
+## Supervisão e entrega — 2026-11-07
+
+Escopo autorizado pelo usuário: inbox de intervenções, comentários no diff, vínculo de PR/CI e preparação de piloto com métricas locais. Run Orca `run_34152863a708`, branch `feat/review-delivery-workflow`, sobre a entrega da PR #3. Contratos de comportamento em [DELIVERY_WORKFLOW.md](DELIVERY_WORKFLOW.md) e roteiro em [PILOT.md](PILOT.md).
+
+| Responsável / tarefa | Objetivo e ownership | Dependências / aceite |
+| --- | --- | --- |
+| Núcleo — `task_e3fe81f47c34` | Novos `DeliveryWorkflowModels.swift`, `DeliveryWorkflowRepository.swift` e testes correspondentes | Contratos aprovados antes de implementar; persistência atômica/lock, corrupção, transições, concorrência e métricas opt-in testadas |
+| Motor — `task_7900557cf79a` | RPC de snapshot/preview/envio e PR/CI; `rpc.rs`, novo `rpc_delivery.rs`, testes novos, manifest/lock se necessário, modelos/cliente Engine Swift e testes novos | Pin preservado; Git/CLI falsos controlados; versões/identidade/âncoras, confirmação, destinos, timeout e cancelamento testados |
+| Interface — `task_25419dc71e35` | `Sources/TramaApp/*.swift`, inbox, revisão, PR/CI, notificações opt-in e piloto | Consome contratos aprovados; visto/resposta distintos, prévia exata, ausência de requests automáticos, estados de erro/stale, teclado e build |
+| Integrador | Contratos compartilhados, docs, avisos gerados se lock mudar, CI, checks finais, bundle isolado e Git | Revisão independente por outro autor, validação Swift/Rust/ferramentas e registro de limites reais |
+
+Não há recrutamento ou pesquisa com participantes concluídos pela criação da instrumentação. Testes não chamam provedores pagos, contas reais de GitHub, consultas de consumo nem APIs de notificação do usuário. Abrir o quadro não consulta PR/CI automaticamente; envio de revisão depende de prévia, confirmação e estado adequado do provedor.
+
+Revisões independentes: `task_eff0a976d762` (autor do núcleo revisou App/docs, sem editar) e `task_37ad28541a8e` (autor da interface revisou núcleo/motor, sem editar). Achados reproduzidos levaram à correção de filtros Git clean/process durante leitura, troca de branch/origin durante consulta de PR, ACK posterior à resolução observada, confirmação aberta sobre ID reutilizado, opt-out de notificações entre janelas e inserção de nota seguida de falha no refresh. O integrador também corrigiu a primeira leitura de arquivo ausente (Cocoa 4/260), reduziu lotes pela UI e removeu a âncora de rascunho ao atualizar a versão. A contenção entre consulta PR e terminal foi corrigida usando a mesma conexão autenticada após revalidar a identidade; o revisor confirmou o teste com barreira e os dois revisores encerraram sem bloqueadores remanescentes.
+
+Validação final local: `./scripts/build-engine.sh` (Cargo build locked + Swift build), `TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test` com **101 testes passando**, Cargo test locked/offline com **28 testes passando** (3 unitários, 12 de entrega e 13 de lifecycle), ferramentas Python **16 testes passando**, avisos completos nos dois grafos macOS e `git diff --check` limpo. O bundle isolado `.build/validation/Trama.app` foi gerado e sua assinatura ad hoc verificada com `codesign --verify --deep --strict`. Sem provedores pagos, autenticação/rede de produto ou chamadas de notificação reais. A suíte do núcleo tem 26 testes; o número 25 citado durante implementação era uma estimativa, não resultado de execução.
+
+O usuário escolheu começar o piloto consigo mesmo. O roteiro e a instrumentação estão prontos; a sessão de uso e seus resultados ainda não foram realizados. Revisão visual/VoiceOver e notificações reais continuam pendentes, sem contornar a recusa anterior de acesso ao aplicativo pela ferramenta de controle do computador.
+
 ## Fechamento local — 2026-11-07
 
 Execução supervisionada pela skill Orca `orchestration`, Run `run_5a079d025dc2`, na branch `feat/remaining-local-capabilities`. A autorização abrange as capacidades planejadas; testes continuam restritos a processos controlados, sem tarefas pagas, leitura de credenciais ou publicação automática.

@@ -26,6 +26,9 @@ Implementação não implica paridade completa com Octo. `nested` identifica um 
 
 ## M3 — Evolução de produto
 
+- [x] Inbox de intervenções, comentários versionados no diff e vínculo manual com PR/CI — revisão cruzada e testes com processos controlados.
+- [x] Instrumentação local opt-in e [roteiro de piloto](PILOT.md), com exportação agregada sem conteúdo.
+- [ ] Executar o primeiro piloto com o usuário e registrar resultados; verificação visual, alertas macOS e integração autenticada continuam pendentes.
 - [x] Parentesco de registros e consulta limitada de descendentes locais, sem argumentos/ambiente de processos.
 - [ ] Árvore lógica completa de subagentes e controles de orquestração adicionais por provedor.
 - [x] Renomear sessões, mover registros encerrados e arquivar worktrees no lugar, preservando alterações e branch.

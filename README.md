@@ -10,6 +10,10 @@ O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, envi
 
 O histórico tem exportação com prévia, ocultação literal opcional e revisão manual antes de salvar, além de retenção manual com candidatos e confirmação. A consulta de processos mostra descendentes locais e parentesco registrado quando disponível, com visibilidade incompleta; não representa toda a árvore lógica de subagentes do provedor.
 
+A inbox reúne intervenções, sessões interrompidas, entregas disponíveis para revisão e falhas de checks observadas em consultas manuais. A revisão permite comentar linhas de um diff versionado e preparar um lote com prévia e confirmação para uma IA disponível. O vínculo com PR/CI usa o GitHub CLI somente por ação do usuário e distingue o HEAD consultado de alterações locais. Veja o [fluxo e seus limites](docs/DELIVERY_WORKFLOW.md).
+
+O [piloto](docs/PILOT.md) mede localmente tempo até a primeira entrega revisada, abertura de intervenções, entrega de entrada ao CLI e frequência de retorno. A coleta começa desativada, exige opt-in e exporta apenas contagens e durações. A instrumentação não representa um estudo com usuários já realizado.
+
 A interface usa superfícies grafite, tipografia monoespaçada e acentos verdes. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
 
 Esta é uma versão de desenvolvimento. O fluxo de terminal foi testado com shell real e Git em diretórios temporários. Execução autenticada de cada provedor, revisão visual e distribuição notarizada ainda precisam de validação. Detectar um CLI não confirma login ou compatibilidade de sua versão.
@@ -39,6 +43,8 @@ Cadastre uma pasta, escolha **Nova tarefa** e selecione um provedor instalado ou
 ## Dados e controles
 
 Projetos ficam em `~/Library/Application Support/Trama/projects.json`; sessões e logs do motor, em `~/Library/Application Support/Trama/Engine`. O cadastro de pastas não altera seu conteúdo. Um arquivo de projetos inválido bloqueia gravações para preservar os dados. O cadastro coordena instâncias desta versão com lock e releitura antes de gravar; contenção pede uma nova tentativa. Outra janela atualiza sua lista no próximo cadastro ou recarregamento. Versões antigas não seguem esse protocolo.
+
+Inbox, notas de revisão, vínculos de PR e medições opt-in ficam em `trama-delivery-workflow.json`, dentro do diretório do motor. Esse arquivo também usa lock, releitura e gravação atômica. Notas podem conter código e informações sensíveis; a exportação de métricas não inclui esse conteúdo. Desativar as métricas limpa sua janela de medição e preserva os dados funcionais.
 
 A ação **Motor** detecta provedores sem acessar credenciais ou rede. A consulta de consumo só ocorre ao escolher um provedor e clicar **Consultar agora**, usando o adaptador upstream. Ela pode ler credenciais locais e consultar o serviço correspondente; não roda em segundo plano. Não foi validada com contas reais nesta entrega.
 
