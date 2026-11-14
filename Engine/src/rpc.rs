@@ -1,0 +1,556 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD};
+use orkai::{
+    cli::{self, Probe},
+    client,
+    config::Config,
+    launch::{LaunchMode, Launcher},
+    model::{AgentKind, AgentRecord, NewAgent},
+    paths::Home,
+    protocol::{ClientMsg, TermSize},
+    skills,
+    store::Store,
+    usage, worktree,
+};
+use serde::Deserialize;
+use serde_json::{Value, json};
+use std::{
+    fs::{File, OpenOptions},
+    io::{self, Read},
+    os::fd::AsRawFd,
+    os::unix::fs::OpenOptionsExt,
+    path::PathBuf,
+    process::ExitCode,
+    thread,
+    time::{Duration, Instant},
+};
+#[path = "rpc_delivery.rs"]
+mod delivery;
+#[path = "rpc_m3.rs"]
+mod m3;
+#[path = "rpc_prompt.rs"]
+mod prompt;
+
+pub const OPERATIONS: &[&str] = &[
+    "inspect",
+    "list",
+    "start",
+    "input",
+    "snapshot",
+    "resize",
+    "stop",
+    "resume",
+    "create_session",
+    "skills",
+    "diff",
+    "merge",
+    "details",
+    "logs",
+    "usage",
+    "remove",
+    "rename_session",
+    "move_agent",
+    "archive_worktree",
+    "process_tree",
+    "log_retention",
+    "apply_log_retention",
+    "export_logs",
+    "diff_snapshot",
+    "review_preview",
+    "send_review",
+    "send_prompt",
+    "github_pr",
+];
+const MAX_REQUEST: u64 = 65_536;
+const MAX_RESULT: usize = 900_000;
+const MAX_AGENTS: usize = 64;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Request {
+    operation: String,
+    agent_id: Option<u32>,
+    kind: Option<String>,
+    cwd: Option<String>,
+    name: Option<String>,
+    task: Option<String>,
+    session: Option<String>,
+    isolate: Option<bool>,
+    input: Option<String>,
+    rows: Option<u16>,
+    cols: Option<u16>,
+    message: Option<String>,
+    confirmed: Option<bool>,
+    max_age_days: Option<u32>,
+    max_file_bytes: Option<u64>,
+    plan_token: Option<String>,
+    redactions: Option<Vec<String>>,
+    created_at_ms: Option<u64>,
+    expected_version: Option<String>,
+    review_token: Option<String>,
+    notes: Option<Vec<delivery::ReviewNote>>,
+    number: Option<u32>,
+}
+
+fn invalid(message: &str) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidInput, message)
+}
+
+pub fn serve(home: io::Result<PathBuf>) -> ExitCode {
+    let result = (|| {
+        let home = home?;
+        let mut bytes = Vec::new();
+        io::stdin().take(MAX_REQUEST + 1).read_to_end(&mut bytes)?;
+        if bytes.len() as u64 > MAX_REQUEST {
+            return Err(invalid("request exceeds 64 KiB"));
+        }
+        let request: Request =
+            serde_json::from_slice(&bytes).map_err(|_| invalid("invalid request JSON"))?;
+        dispatch(home, request)
+    })();
+    let reply = match result {
+        Ok(result) => json!({"protocol":1, "ok":true, "result":result}),
+        Err(error) => json!({"protocol":1, "ok":false, "error":public_error(&error)}),
+    };
+    match serde_json::to_vec(&reply) {
+        Ok(bytes) if bytes.len() <= MAX_RESULT => {
+            use std::io::Write;
+            if io::stdout().write_all(&bytes).is_ok() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        _ => {
+            let _ = serde_json::to_writer(
+                io::stdout(),
+                &json!({"protocol":1,"ok":false,"error":"response exceeds size limit"}),
+            );
+            ExitCode::SUCCESS
+        }
+    }
+}
+
+fn public_error(error: &io::Error) -> String {
+    // Only our validation strings and known categories leave the process. Git/CLI stderr may contain secrets.
+    if error.kind() == io::ErrorKind::InvalidInput {
+        return error.to_string();
+    }
+    match error.kind() {
+        io::ErrorKind::NotFound => "The requested resource or provider executable was not found.",
+        io::ErrorKind::AlreadyExists => "This name already exists.",
+        io::ErrorKind::WouldBlock => {
+            "Another operation is modifying the engine. Try again after it finishes."
+        }
+        io::ErrorKind::TimedOut => {
+            "The engine operation timed out; check the current state before retrying."
+        }
+        io::ErrorKind::PermissionDenied => "The operation was denied.",
+        _ => "The engine could not complete the operation. Check the project and agent state.",
+    }
+    .into()
+}
+
+struct MutationLock(File);
+impl MutationLock {
+    fn acquire(home: &Home) -> io::Result<Self> {
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .mode(0o600)
+            .open(home.root().join("trama-mutation.lock"))?;
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } == 0 {
+                return Ok(Self(file));
+            }
+            let error = io::Error::last_os_error();
+            if error.kind() != io::ErrorKind::WouldBlock || Instant::now() >= deadline {
+                return Err(error);
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+    }
+}
+impl Drop for MutationLock {
+    fn drop(&mut self) {
+        unsafe {
+            libc::flock(self.0.as_raw_fd(), libc::LOCK_UN);
+        }
+    }
+}
+
+fn directory(value: Option<&str>) -> io::Result<PathBuf> {
+    let path = PathBuf::from(value.ok_or_else(|| invalid("cwd is required"))?);
+    if !path.is_absolute() || !path.is_dir() {
+        return Err(invalid("cwd must be an existing absolute directory"));
+    }
+    path.canonicalize()
+}
+
+fn size(request: &Request) -> io::Result<TermSize> {
+    let (rows, cols) = (request.rows.unwrap_or(40), request.cols.unwrap_or(120));
+    if !(2..=100).contains(&rows) || !(10..=240).contains(&cols) {
+        return Err(invalid(
+            "terminal size must be 2..100 rows and 10..240 columns",
+        ));
+    }
+    Ok(TermSize::new(rows, cols))
+}
+
+fn provider(value: Option<&str>) -> io::Result<AgentKind> {
+    AgentKind::parse(value.ok_or_else(|| invalid("kind is required"))?)
+        .ok_or_else(|| invalid("unknown provider"))
+}
+
+fn dispatch(home: PathBuf, request: Request) -> io::Result<Value> {
+    if !OPERATIONS.contains(&request.operation.as_str()) || request.operation == "inspect" {
+        return Err(invalid("unsupported operation"));
+    }
+    // New read/review requests own only transient children, never durable holders.
+    // The Swift client checks this PGID before cancelling the whole request group.
+    if matches!(
+        request.operation.as_str(),
+        "diff_snapshot" | "review_preview" | "send_review" | "github_pr"
+    ) {
+        delivery::isolate_request()?;
+    }
+    let store = Store::open(Home::at(home))?;
+    let coordinated = matches!(
+        request.operation.as_str(),
+        "start"
+            | "stop"
+            | "resume"
+            | "create_session"
+            | "merge"
+            | "remove"
+            | "rename_session"
+            | "move_agent"
+            | "archive_worktree"
+            | "log_retention"
+            | "apply_log_retention"
+            | "list"
+            | "details"
+            | "process_tree"
+            | "logs"
+            | "export_logs"
+            | "diff_snapshot"
+            | "review_preview"
+            | "send_review"
+            | "github_pr"
+    );
+    let _lock = if coordinated {
+        Some(MutationLock::acquire(store.home())?)
+    } else {
+        None
+    };
+    if coordinated {
+        m3::recover_rename(&store)?;
+    }
+    match request.operation.as_str() {
+        "list" => list(&store),
+        "rename_session" => m3::rename_session(&store, &request),
+        "log_retention" => m3::retention_plan(&store, &request),
+        "apply_log_retention" => m3::apply_retention(&store, &request),
+        "usage" => {
+            if request.confirmed != Some(true) {
+                return Err(invalid("explicit usage confirmation is required"));
+            }
+            let kind = provider(request.kind.as_deref())?;
+            if !usage::PROVIDERS.contains(&kind) {
+                return Err(invalid("usage is unsupported for this provider"));
+            }
+            let (limits, problem) = match usage::fetch(kind, &Config::default()) {
+                Ok(limits) => (
+                    Some(
+                        json!({"session":window(limits.session),"weekly":window(limits.weekly),
+                    "monthly":window(limits.monthly),"credits":limits.credits}),
+                    ),
+                    None,
+                ),
+                Err(problem) => (None, Some(problem.label())),
+            };
+            Ok(
+                json!({"kind":kind.label(),"limits":limits,"problem":problem,"updatedAtMs":orkai::util::now_ms()}),
+            )
+        }
+        "start" => {
+            if store.list_agents()?.len() >= MAX_AGENTS {
+                return Err(invalid("this version supports at most 64 stored agents"));
+            }
+            let name = request
+                .name
+                .as_deref()
+                .ok_or_else(|| invalid("name is required"))?;
+            let draft = NewAgent {
+                name: name.into(),
+                kind: provider(request.kind.as_deref())?,
+                cwd: directory(request.cwd.as_deref())?,
+                task: request.task.clone().unwrap_or_default(),
+                session: request.session.clone().unwrap_or_else(|| "default".into()),
+            };
+            let existing = store.list_agents()?;
+            let sessions = store.peek_sessions_with(&existing)?.0;
+            if !sessions.iter().any(|s| s.name == draft.session) {
+                return Err(invalid("session does not exist; create it first"));
+            }
+            if existing
+                .iter()
+                .any(|r| r.session == draft.session && r.name == draft.name)
+            {
+                return Err(invalid("agent name already exists in this session"));
+            }
+            let launcher = Launcher::new(store, Config::default(), &std::env::current_exe()?)?;
+            let record = launcher.create(
+                draft,
+                size(&request)?,
+                request.isolate.unwrap_or(false),
+                false,
+                false,
+            )?;
+            wait_for_holder(launcher.store(), record.id)?;
+            Ok(json!({"agentId":record.id,"createdAtMs":record.created_at_ms}))
+        }
+        "create_session" => {
+            let name = request
+                .session
+                .as_deref()
+                .ok_or_else(|| invalid("session is required"))?;
+            let session = store.create_session(name)?;
+            Ok(json!({"session":session.name}))
+        }
+        "skills" => {
+            let cwd = directory(request.cwd.as_deref())?;
+            let kind = provider(request.kind.as_deref())?;
+            let entries: Vec<Value> = skills::discover(kind, &cwd)
+                .iter()
+                .map(|skill| {
+                    json!({
+                        "name":skill.name, "description":format!("{} skill", skill.owner.label()),
+                        "invocation":skills::invocation(kind, skill, "")
+                    })
+                })
+                .collect();
+            Ok(json!({"skills":entries}))
+        }
+        _ => agent_action(store, request),
+    }
+}
+
+fn list(store: &Store) -> io::Result<Value> {
+    let records = m3::records(store)?;
+    if records.len() > MAX_AGENTS {
+        return Err(invalid("this version supports at most 64 stored agents"));
+    }
+    let sessions = store
+        .peek_sessions_with(&records)?
+        .0
+        .into_iter()
+        .map(|s| s.name)
+        .collect::<Vec<_>>();
+    // Each connect/probe has upstream deadlines; parallelism is bounded by MAX_AGENTS.
+    let agents: Vec<Value> = thread::scope(|scope| {
+        let jobs = records
+            .iter()
+            .map(|record| scope.spawn(|| describe(store, record)))
+            .collect::<Vec<_>>();
+        jobs.into_iter()
+            .map(|job| job.join().map_err(|_| io::Error::other("probe failed")))
+            .collect::<io::Result<Vec<_>>>()
+    })?;
+    Ok(json!({"agents":agents,"sessions":sessions}))
+}
+
+fn describe(store: &Store, record: &AgentRecord) -> Value {
+    let probe = cli::probe(store, record.id);
+    let (kind, activity, nested) = match &probe {
+        Probe::Live(status) => (
+            status.running_kind(record.kind),
+            status.activity.clone(),
+            serde_json::to_value(&status.nested).unwrap_or(Value::Null),
+        ),
+        Probe::Exited(exit) => (record.kind, exit.describe(), Value::Null),
+        Probe::Lost => (record.kind, "Session interrupted".into(), Value::Null),
+    };
+    json!({"id":record.id,"name":record.name,"kind":kind.label(),"state":probe.state().label(),
+           "session":record.session,"cwd":record.cwd,"project":record.project_dir(),"task":record.task,
+           "activity":activity,"branch":record.worktree.as_ref().map(|w| &w.branch), "nested":nested,
+           "parentId":record.parent,"createdAtMs":record.created_at_ms,"archived":m3::is_archived(store, record.id)})
+}
+
+fn wait_for_holder(store: &Store, id: u32) -> io::Result<()> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        // An immediately exited command is also a completed launch, retained for diagnostics.
+        if store.read_runtime(id)?.is_some() || store.read_exit(id)?.is_some() {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "holder startup timed out",
+            ));
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn window(value: Option<usage::Window>) -> Value {
+    value
+        .map(|w| json!({"usedPercent":w.used_percent,"resetsAtMs":w.resets_at_ms}))
+        .unwrap_or(Value::Null)
+}
+
+fn agent_action(store: Store, request: Request) -> io::Result<Value> {
+    let id = request
+        .agent_id
+        .ok_or_else(|| invalid("agentId is required"))?;
+    let mut record = store.load_agent(id)?;
+    if request
+        .created_at_ms
+        .is_some_and(|expected| expected != record.created_at_ms)
+    {
+        return Err(invalid(
+            "agent identity changed; refresh the current agent before acting",
+        ));
+    }
+    if m3::is_archived(&store, id)
+        && matches!(request.operation.as_str(), "resume" | "merge" | "input")
+    {
+        return Err(invalid(
+            "archived worktrees cannot be resumed, modified or merged",
+        ));
+    }
+    match request.operation.as_str() {
+        "diff_snapshot" => delivery::diff_snapshot(&record),
+        "review_preview" => delivery::review_preview(&store, &record, &request),
+        "send_review" => delivery::send_review(&store, &record, &request),
+        "send_prompt" => prompt::send_prompt(&store, &record, &request),
+        "github_pr" => delivery::github_pr(&record, &request),
+        "move_agent" => m3::move_agent(&store, record, &request),
+        "archive_worktree" => m3::archive_worktree(&store, &record, &request),
+        "process_tree" => m3::process_tree(&store, &record),
+        "export_logs" => m3::export_logs(&store, id, &request),
+        "input" | "resize" => {
+            let message = if request.operation == "input" {
+                let input = STANDARD
+                    .decode(
+                        request
+                            .input
+                            .as_deref()
+                            .ok_or_else(|| invalid("input is required"))?,
+                    )
+                    .map_err(|_| invalid("input must be base64"))?;
+                if input.len() > 32_768 {
+                    return Err(invalid("input exceeds 32 KiB"));
+                }
+                ClientMsg::Input(input)
+            } else {
+                ClientMsg::Resize(size(&request)?)
+            };
+            let runtime = store
+                .read_runtime(id)?
+                .ok_or_else(|| invalid("agent is not running"))?;
+            // Pin the authenticated holder connection before rechecking record identity.
+            // Later ID reuse cannot redirect this connection to a replacement holder.
+            // Input must not wait on a slow Git/GitHub read's global metadata lock.
+            let (connection, reader, welcome) = client::connect(&runtime)?;
+            if welcome.agent_id != id || welcome.holder_pid != runtime.holder_pid {
+                return Err(invalid("terminal holder identity changed"));
+            }
+            let current = store.load_agent(id)?;
+            if current.created_at_ms != record.created_at_ms {
+                return Err(invalid("agent identity changed before terminal delivery"));
+            }
+            if m3::is_archived(&store, id) {
+                return Err(invalid("archived worktrees cannot receive terminal actions"));
+            }
+            if request.operation == "resize" {
+                connection.send(&ClientMsg::Attach(size(&request)?))?;
+            }
+            connection.send(&message)?;
+            connection.finish(reader)?;
+            Ok(json!({}))
+        }
+        "details" => {
+            let status = match cli::probe(&store, id) {
+                Probe::Live(status) => serde_json::to_value(status)?,
+                _ => Value::Null,
+            };
+            Ok(json!({"agent":describe(&store, &record),"status":status}))
+        }
+        "logs" => m3::logs(&store, id),
+        "snapshot" => {
+            let runtime = store
+                .read_runtime(id)?
+                .ok_or_else(|| invalid("agent is not running"))?;
+            let snapshot = client::peek(&runtime)?;
+            if snapshot.data.len() > 512_000 {
+                return Err(invalid("snapshot exceeds size limit"));
+            }
+            Ok(
+                json!({"data":STANDARD.encode(snapshot.data),"rows":snapshot.size.rows,"cols":snapshot.size.cols}),
+            )
+        }
+        "stop" => {
+            cli::stop(&store, id)?;
+            Ok(json!({}))
+        }
+        "resume" => {
+            if !matches!(cli::probe(&store, id), Probe::Lost) {
+                return Err(invalid("only interrupted sessions can be resumed"));
+            }
+            let launcher = Launcher::new(store, Config::default(), &std::env::current_exe()?)?;
+            launcher.start(&mut record, LaunchMode::Resume, size(&request)?)?;
+            wait_for_holder(launcher.store(), id)?;
+            Ok(json!({"agentId":id}))
+        }
+        "diff" => {
+            let data = match &record.worktree {
+                Some(worktree) => worktree::diff(worktree)?,
+                None => worktree::pending_diff(&worktree::folder(&record.cwd)?)?,
+            };
+            if data.len() > 512_000 {
+                return Err(invalid("diff exceeds size limit"));
+            }
+            Ok(json!({"text":String::from_utf8_lossy(&data)}))
+        }
+        "remove" => {
+            if request.confirmed != Some(true) {
+                return Err(invalid("explicit removal confirmation is required"));
+            }
+            if !matches!(cli::probe(&store, id), Probe::Exited(_)) {
+                return Err(invalid("only exited agents can be removed"));
+            }
+            if record.worktree.is_some() {
+                return Err(invalid(
+                    "agents with isolated worktrees cannot be removed in this version",
+                ));
+            }
+            store.remove_agent(id)?;
+            Ok(json!({}))
+        }
+        "merge" => {
+            if request.confirmed != Some(true) {
+                return Err(invalid("explicit merge confirmation is required"));
+            }
+            // A holder can resume writing even after an idle/done snapshot. Require it fully stopped.
+            if !matches!(cli::probe(&store, id), Probe::Exited(_)) {
+                return Err(invalid("stop the agent before merging its worktree"));
+            }
+            let worktree = record
+                .worktree
+                .as_ref()
+                .ok_or_else(|| invalid("agent has no isolated worktree"))?;
+            let message = request
+                .message
+                .as_deref()
+                .filter(|s| !s.trim().is_empty())
+                .ok_or_else(|| invalid("merge message is required"))?;
+            let merged = worktree::merge(worktree, message)?;
+            Ok(json!({"message":format!("Merged into {}",merged.target)}))
+        }
+        _ => Err(invalid("unsupported operation")),
+    }
+}

@@ -1,0 +1,53 @@
+name: Swift and Rust checks
+
+on:
+  push:
+    branches: [main, feat/native-foundation]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Toolchain
+        run: swift --version
+      - name: Rust toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal
+      - name: Build app and engine
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/build-engine.sh
+      - name: Test engine
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
+      - name: Test Swift and real engine contract
+        env:
+          TRAMA_TEST_ENGINE_PATH: ${{ github.workspace }}/Engine/target/debug/trama-engine
+        run: swift test
+      - name: Test local packaging and failure recovery
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Fetch locked sources for notice verification
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/cargo-local.sh fetch --locked --manifest-path Engine/Cargo.toml
+      - name: Verify notices for both macOS targets
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: |
+          python3 scripts/generate-notices.py --check --target aarch64-apple-darwin
+          python3 scripts/generate-notices.py --check --target x86_64-apple-darwin
+      - name: Build and verify isolated development bundle
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+        run: ./scripts/package-app.sh --output .build/validation/Trama.app
+      - name: Check patch whitespace
+        run: git diff --check HEAD^ HEAD

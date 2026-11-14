@@ -2,36 +2,76 @@
 
 **Seus projetos e agentes, em um só lugar.**
 
-Um app nativo para macOS, desenvolvido em Swift.
+App nativo para macOS em SwiftUI, com terminal e motor Rust para executar CLIs de agentes em projetos locais.
 
-## Proposta
+## Estado atual
 
-Trama é um projeto de portfólio para organizar projetos de software e acompanhar agentes de IA em uma interface nativa para Mac.
+A barra lateral agrupa agentes por sessão; o cabeçalho filtra o projeto e o compositor fixo do rodapé mostra a pasta de destino. Escreva a tarefa, escolha o provedor e clique **Iniciar agente**; a criação abre uma aba com o terminal no painel principal. O agente aberto tem um campo próprio para enviar a próxima instrução. Fechar a aba mantém o processo em execução. Projeto, abas e visualização são restaurados localmente. Veja [o fluxo da área de trabalho](docs/WORKSPACE_FLOW.md).
 
-O foco inicial é dar visibilidade ao trabalho dos agentes: o que está em execução, o que foi concluído e o que precisa da sua intervenção.
+O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. Sessões podem ser renomeadas e registros encerrados movidos entre elas. Worktrees podem ser arquivados no lugar, preservando arquivos e branch; o quadro permite mostrar os arquivados. O modo **Demonstração** continua separado e identificado.
 
-## Estado do projeto
+O histórico tem exportação com prévia, ocultação literal opcional e revisão manual antes de salvar, além de retenção manual com candidatos e confirmação. A consulta de processos mostra descendentes locais e parentesco registrado quando disponível, com visibilidade incompleta; não representa toda a árvore lógica de subagentes do provedor.
 
-Planejamento inicial. Este repositório contém a apresentação e o escopo proposto; o aplicativo ainda não foi implementado.
+A inbox reúne intervenções, sessões interrompidas, entregas disponíveis para revisão e falhas de checks observadas em consultas manuais. A revisão permite comentar linhas de um diff versionado e preparar um lote com prévia e confirmação para uma IA disponível. O vínculo com PR/CI usa o GitHub CLI somente por ação do usuário e distingue o HEAD consultado de alterações locais. Veja o [fluxo e seus limites](docs/DELIVERY_WORKFLOW.md).
 
-## Primeiro ciclo de desenvolvimento
+O [piloto](docs/PILOT.md) mede localmente tempo até a primeira entrega revisada, abertura de intervenções, entrega de entrada ao CLI e frequência de retorno. A coleta começa desativada, exige opt-in e exporta apenas contagens e durações. A instrumentação não representa um estudo com usuários já realizado.
 
-- [ ] Criar a estrutura do aplicativo macOS com Swift e SwiftUI.
-- [ ] Construir a navegação entre Projetos, Agentes e Atividade.
-- [ ] Permitir cadastrar uma pasta local como projeto.
-- [ ] Prototipar os estados de agentes com dados de demonstração.
-- [ ] Integrar um primeiro agente de programação via CLI.
-- [ ] Exibir uma linha do tempo com atividade e solicitações de intervenção.
-- [ ] Persistir projetos e preferências localmente.
+A interface usa superfícies pretas, tipografia do sistema, metadados monoespaçados e acentos turquesa. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
 
-A integração com múltiplos provedores será considerada após validar o fluxo completo com o primeiro agente.
+Esta é uma versão de desenvolvimento. O fluxo de terminal foi testado com shell real e Git em diretórios temporários. Execução autenticada de cada provedor, revisão visual e distribuição notarizada ainda precisam de validação. Detectar um CLI não confirma login ou compatibilidade de sua versão.
 
-## Direção técnica
+## Executar
 
-- **Plataforma:** macOS.
-- **Linguagem:** Swift.
-- **Interface:** SwiftUI, com AppKit quando necessário.
-- **Arquitetura:** separar interface, modelos e integração com processos de agentes.
+Requisitos: macOS 14+, Swift 6 e Rust compatível com o lockfile (validado com Swift 6.1.2 e Rust 1.99.1). O primeiro build baixa dependências.
 
-A versão mínima do macOS e os detalhes de execução, persistência e distribuição serão definidos na implementação inicial.
+```sh
+git clone https://github.com/lzAmaral/Trama-AI.git
+cd Trama-AI
+./scripts/build-engine.sh
+swift run Trama
+```
 
+O repositório privado requer acesso. Para gerar um aplicativo local:
+
+```sh
+./scripts/package-app.sh
+open .build/Trama.app
+```
+
+O bundle tem assinatura ad hoc para desenvolvimento, sem Developer ID ou notarização. Detalhes em [PACKAGING.md](docs/PACKAGING.md). O script também aceita `--release`.
+
+Cadastre uma pasta e selecione o destino no compositor. No compositor do rodapé, escreva a tarefa, escolha um provedor instalado e clique **Iniciar agente** (⌘Return). **Novo agente** (⌘N) volta ao compositor; a criação abre o terminal automaticamente quando o registro aparece. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela ou a aba **não encerra** os agentes; use **Encerrar** no menu do agente.
+
+## Dados e controles
+
+Projetos ficam em `~/Library/Application Support/Trama/projects.json`; sessões e logs do motor, em `~/Library/Application Support/Trama/Engine`. O cadastro de pastas não altera seu conteúdo. Um arquivo de projetos inválido bloqueia gravações para preservar os dados. O cadastro coordena instâncias desta versão com lock e releitura antes de gravar; contenção pede uma nova tentativa. Outra janela atualiza sua lista no próximo cadastro ou recarregamento. Versões antigas não seguem esse protocolo.
+
+Inbox, notas de revisão, vínculos de PR e medições opt-in ficam em `trama-delivery-workflow.json`, dentro do diretório do motor. Esse arquivo também usa lock, releitura e gravação atômica. Notas podem conter código e informações sensíveis; a exportação de métricas não inclui esse conteúdo. Desativar as métricas limpa sua janela de medição e preserva os dados funcionais.
+
+A ação **Motor** detecta provedores sem acessar credenciais ou rede. A consulta de consumo só ocorre ao escolher um provedor e clicar **Consultar agora**, usando o adaptador upstream. Ela pode ler credenciais locais e consultar o serviço correspondente; não roda em segundo plano. Não foi validada com contas reais nesta entrega.
+
+As aprovações do CLI permanecem no terminal. Merge exige worktree isolada, agente encerrado, revisão das alterações e confirmação. O aplicativo não ativa bypass de permissões, acesso remoto ou atualizações automáticas.
+
+## Validar
+
+```sh
+./scripts/build-engine.sh
+./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
+TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
+./scripts/generate-notices.py --check --target aarch64-apple-darwin
+./scripts/generate-notices.py --check --target x86_64-apple-darwin
+git diff --check
+```
+
+Os testes cobrem persistência, erros e limites do transporte, cancelamento, fila do terminal, lifecycle real de shell, operações Git isoladas, reorganização de sessões, revisão de logs e falhas de empacotamento. Os checks de avisos usam fontes locais; se faltar cache, execute `./scripts/cargo-local.sh fetch --locked --manifest-path Engine/Cargo.toml`. Não executam tarefas de IA pagas ou consultas autenticadas. A compilação e os testes não substituem a revisão visual. Evidências de transporte e ferramentas ficam em [scripts/VALIDATION.md](scripts/VALIDATION.md); critérios externos em [RELEASE_VALIDATION.md](docs/RELEASE_VALIDATION.md).
+
+## Desenvolvimento
+
+- `Sources/TramaApp`: SwiftUI, estado de apresentação e terminal.
+- `Sources/TramaCore`: persistência, modelos e cliente JSON do motor.
+- `Engine`: adaptador Rust, dependência fixada e testes de lifecycle.
+- `Tests/TramaCoreTests`: contratos Swift e integração com o binário real.
+- `scripts`: build e empacotamento local.
+
+O integrador define contratos, distribui arquivos entre agentes e controla Git; outro agente revisa o comportamento antes da integração. Consulte [AGENTS.md](AGENTS.md), [engenharia](docs/ENGINEERING.md), [tarefas](docs/TASKS.md), [roadmap](docs/ROADMAP.md) e [segurança](docs/SECURITY.md).

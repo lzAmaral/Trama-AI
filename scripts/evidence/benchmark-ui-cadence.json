@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "timestampUTC": "2026-11-07T17:10:47Z",
+  "host": {
+    "system": "Darwin",
+    "release": "25.6.0",
+    "machine": "arm64"
+  },
+  "engineSHA256": "2a601d45f50355eb883cb11cfb8c764413e09bb9be1388fcce5ba4e5e02956c4",
+  "workload": {
+    "batches": 40,
+    "linesPerBatch": 1000,
+    "bytesPerLine": 91,
+    "generatedBytes": 3640000,
+    "pausePerBatchSeconds": 0.1,
+    "pollPauseSeconds": 0.8,
+    "rows": 100,
+    "cols": 240,
+    "completionObserved": true
+  },
+  "elapsedSeconds": 6.02646970800015,
+  "baselineList": {
+    "count": 10,
+    "medianMs": 3.9399170000251615,
+    "p95Ms": 297.8872499998033,
+    "maxMs": 297.8872499998033
+  },
+  "baselineSnapshot": {
+    "count": 10,
+    "medianMs": 4.625042000043322,
+    "p95Ms": 6.0747919997083955,
+    "maxMs": 6.0747919997083955
+  },
+  "loadedList": {
+    "count": 8,
+    "medianMs": 4.406333000588347,
+    "p95Ms": 6.90808399940579,
+    "maxMs": 6.90808399940579
+  },
+  "loadedSnapshot": {
+    "count": 8,
+    "medianMs": 47.27620899939211,
+    "p95Ms": 66.21841600008338,
+    "maxMs": 66.21841600008338
+  },
+  "snapshotDecodedBytes": {
+    "min": 161,
+    "max": 108372
+  },
+  "rpcMs": {
+    "start": [
+      450.8341249993464
+    ],
+    "resize": [
+      6.783249999898544
+    ],
+    "input": [
+      3.056167000067944
+    ],
+    "snapshot": [
+      3.866791000291414,
+      44.40066700044554,
+      54.91491600059817,
+      47.27620899939211,
+      41.55137499947159,
+      41.60104200036585,
+      54.45079099990835,
+      66.21841600008338
+    ],
+    "list": [
+      3.6152080001556897,
+      3.6623340001824545,
+      4.892625000138651,
+      3.8659589999952004,
+      3.5179160004190635,
+      6.90808399940579,
+      4.610457999660866,
+      4.406333000588347,
+      3.2583749998593703,
+      2.5892499998008134
+    ],
+    "stop": [
+      166.1567080000168
+    ],
+    "logs": [
+      576.6262919996734
+    ]
+  },
+  "rpcEnvelopeBytes": {
+    "list": [
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      584,
+      587,
+      587,
+      587,
+      587,
+      587,
+      587,
+      587,
+      483,
+      483
+    ],
+    "start": [
+      47
+    ],
+    "resize": [
+      36
+    ],
+    "snapshot": [
+      119,
+      119,
+      119,
+      119,
+      119,
+      119,
+      119,
+      119,
+      119,
+      119,
+      283,
+      144515,
+      144515,
+      144563,
+      144515,
+      144515,
+      144515,
+      144439
+    ],
+    "input": [
+      36
+    ],
+    "stop": [
+      36
+    ],
+    "logs": [
+      66319
+    ]
+  },
+  "limits": [
+    "Includes process spawn, JSON/base64 and holder probe; no Swift client or rendering.",
+    "Sequential list/snapshot pressure; pause adds to request duration; not fixed-rate sampling.",
+    "Viewport snapshots and bounded replay do not prove lossless full-history transport.",
+    "No authenticated providers, usage queries, network requests or visual UX validation."
+  ],
+  "cleanupConfirmed": true
+}
