@@ -85,6 +85,7 @@ import TramaCore
                     .padding(6).background(.black)
             }
         if responsive {
+            try await verifyComposerDestination(view, workspace: workspace, model: model, projects: projects)
             let layouts: [(CGFloat, CGFloat)] = [(820, 560), (1024, 640), (1280, 800), (1440, 900), (1920, 1080)]
             for (width, height) in layouts {
                 let size = "\(Int(width))x\(Int(height))"
@@ -189,6 +190,39 @@ import TramaCore
     }
 
     @MainActor static var auditReports: [[String: Any]] = []
+
+    /// Exercise the actual SwiftUI onChange and editor binding, without starting an agent.
+    @MainActor static func verifyComposerDestination<V: View>(_ view: V, workspace: WorkspaceModel,
+                                                              model: LiveWorkspaceModel, projects: [Project]) async throws {
+        let destination = projects[0].id
+        let filter = projects[1].id
+        let original = model.projectTaskDrafts[destination] ?? ""
+        let otherDraft = model.projectTaskDrafts[filter]
+        let hosting = NSHostingView(rootView: view)
+        hosting.frame = NSRect(x: 0, y: 0, width: 1024, height: 640)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = hosting
+        defer { window.contentView = nil }
+        hosting.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(600))
+        model.selectProject(filter)
+        workspace.selectedID = filter
+        try await Task.sleep(for: .milliseconds(600))
+        hosting.layoutSubtreeIfNeeded()
+        guard let editor = descendants(hosting).compactMap({ $0 as? NSTextView })
+            .first(where: { $0.accessibilityIdentifier() == "task-composer-editor" }), editor.string == original else {
+            throw NSError(domain: "ResponsivePreview", code: 14, userInfo: [NSLocalizedDescriptionKey: "Filtro trocou o rascunho de destino"])
+        }
+        editor.insertText("\nDestino preservado", replacementRange: NSRange(location: (original as NSString).length, length: 0))
+        guard model.projectTaskDrafts[destination] == original + "\nDestino preservado",
+              model.projectTaskDrafts[filter] == otherDraft else {
+            throw NSError(domain: "ResponsivePreview", code: 15, userInfo: [NSLocalizedDescriptionKey: "Filtro redirecionou a edição para outro projeto"])
+        }
+        model.projectTaskDrafts[destination] = original
+        model.selectProject(destination)
+        workspace.selectedID = destination
+        print("Filtro de projeto preserva destino e rascunho do compositor")
+    }
 
     @MainActor static func render<V: View>(_ view: V, width: CGFloat, height: CGFloat, to url: URL,
                                           expectedEditor: String? = nil) async throws {

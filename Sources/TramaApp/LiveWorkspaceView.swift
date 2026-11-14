@@ -95,7 +95,6 @@ struct LiveWorkspaceView: View {
         .onChange(of: selectedProjectID) { _, id in
             if model.navigation.selectedProjectID != id { model.selectProject(id) }
             search = ""; inboxOnly = false
-            if let id { taskProjectID = id }
         }
         .onChange(of: model.navigation.selectedProjectID) { _, id in
             if selectedProjectID != id { selectedProjectID = id }

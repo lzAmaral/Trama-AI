@@ -30,6 +30,8 @@ Resultado: 28 PNGs em `.build/octo-native-previews/responsive-*.png`. As 26 capt
 
 O integrador inspecionou as capturas; um agente sem autoria revisou código e os casos estreitos. Os achados sobre seletor de pasta, envio parcialmente cortado, paleta sobre o editor e formato da fixture foram corrigidos e reverificados. Iniciar e Enviar aparecem inteiros nas capturas de 820×560 com a sidebar larga.
 
+Na integração para `main`, a revisão identificou que filtrar outro projeto ainda trocava a pasta da próxima tarefa. O acoplamento foi removido. O harness também muda o filtro com a view montada e edita pelo `NSTextView`, verificando que o destino original recebe a edição e o rascunho do projeto filtrado permanece intacto. Essa verificação e a matriz passaram novamente no worktree isolado, assim como build e suíte Swift (141 testes reportados, 12,128 s). A suíte Cargo foi repetida antes da integração: 35 testes aprovados com processos controlados.
+
 ## Checks e limites
 
 - `swift build`: passou pela execução do harness e pelo empacotamento.
