@@ -1,17 +1,19 @@
 # Direção visual
 
-Trama usa a linguagem visual de um terminal para acompanhar projetos e agentes em uma interface nativa macOS.
+A partir de 2026-11-14, o usuário escolheu Octo como referência direta para o Trama. A prioridade é reproduzir sua composição e densidade com componentes nativos macOS, conforme [mapeamento de paridade](OCTO_NATIVE_PARITY.md).
 
-- Caráter técnico, compacto e legível; tipografia monoespaçada do sistema.
-- Superfícies grafite, texto claro e verde pontual para seleção e identidade.
-- Estados usam texto e símbolos além de cor; atenção recebe âmbar.
-- Projeto ativo destacado pelo nome e caminho, com seleção na barra lateral e contagem de agentes ativos. Visão geral em quatro colunas de status, com modo lista alternativo; compositor de tarefa fixo no rodapé, junto ao provedor e destino.
-- Agentes abertos em abas no painel principal, com terminal e compositor de próxima instrução. A abertura normal não usa modal. Fechar a aba e encerrar o processo têm controles distintos. Em janelas estreitas, o quadro rola horizontalmente; controles inferiores do detalhe podem rolar sem capturar a rolagem do terminal.
-- A hierarquia de uso segue as capturas do Octo fornecidas pelo usuário, sem mascote. Origem MIT e comportamento detalhados em [WORKSPACE_FLOW.md](WORKSPACE_FLOW.md). Sem horários inventados, animações de execução ou prompt que aparente aceitar comandos sem funcionar.
-- Assinatura `trama >`; divisórias discretas e poucos painéis, com cantos pequenos.
-- Cadastro de pastas, seleção por teclado, alertas e atalho ⌘O continuam nativos.
-- A demonstração deve ser indicada junto aos dados. Nenhum indicador demonstrativo pode sugerir que há processos reais em execução.
+- Superfícies pretas, níveis `#0a0b0c` e `#141718`, acento `#35fddc`; atenção em amarelo, conclusão em verde e interrupção em vermelho.
+- Tipografia proporcional do sistema para títulos e conteúdo; monoespaçada para nomes de agentes, caminhos, números e terminal.
+- Barra lateral de 248 pt, redimensionável: marca própria `Trama >`, sessões expansíveis e agentes, consumo consultado manualmente e utilidades na base.
+- Abas globais no topo; abrir ou fechar aba não inicia nem encerra processos.
+- Cabeçalho da sessão com resumo, filtro de projeto e modos Quadro, Lista e Grade. Busca em popover com ⌘F; controles administrativos no menu.
+- Quatro colunas com rolagem vertical independente, atenção primeiro. Cartões compactos com nome, símbolo, idade real do registro, projeto, provedor, atividade e branch disponível.
+- Compositor fixo no rodapé: texto, provedor, pasta explícita e opções de nome/sessão/worktree. Skills reais aparecem ao digitar `/`; o envio continua explícito.
+- Terminal SwiftTerm/AppKit; painel lateral de contexto em janelas largas e controles roláveis em janelas compactas. A grade usa snapshots somente leitura, até seis por página.
+- Estados trazem símbolos/texto além de cor. Demonstração é identificada e separada de dados reais. Não há tempos de estado, limites de plano ou testes inventados.
 
-A apresentação escura é aplicada somente ao Trama, sem alterar as preferências do macOS. A revisão inclui estado vazio, erro de leitura, projeto selecionado, demonstração desligada e janela na largura mínima.
+A interface usa SwiftUI e AppKit, sem WebView. Fontes, símbolos e controles são nativos; os tokens e a composição foram adaptados da fonte MIT do Octo, com origem e avisos preservados. A marca e o mascote do Octo não foram copiados.
 
-O processo de revisão visual foi orientado pela skill [unslop](https://heydamir.design/unslop), de Damir Sokolovsky, CC BY 4.0. Não foram incorporadas imagens ou telas de referência.
+A direção anterior, de 2026-11-08, foi orientada pela skill [unslop](https://heydamir.design/unslop), de Damir Sokolovsky, CC BY 4.0. Suas evidências permanecem no histórico; esta entrega segue a referência Octo escolhida pelo usuário.
+
+Resultados atuais em [OCTO_NATIVE_VALIDATION.md](OCTO_NATIVE_VALIDATION.md). Renderização isolada não substitui interação real, VoiceOver ou desempenho do terminal.

@@ -188,9 +188,60 @@ struct WorkspaceNavigationTests {
             let json = try JSONSerialization.jsonObject(with: Data(contentsOf: repository.fileURL)) as? [String: Any]
             #expect(Set(try #require(json).keys) == ["version", "state"])
             let fields = try #require(json?["state"] as? [String: Any])
-            #expect(Set(fields.keys) == ["selectedProjectID", "selectedAgent", "openAgents", "mode"])
+            #expect(Set(fields.keys) == ["selectedProjectID", "selectedSession", "selectedAgent", "openAgents", "mode"])
             let text = try String(contentsOf: repository.fileURL, encoding: .utf8)
             #expect(!text.contains(record.task) && !text.contains(record.activity) && !text.contains(a.path))
+        }
+    }
+
+    @Test func sessionSelectionRetainsOtherTabsAndOpeningAnAgentSelectsItsSession() throws {
+        let first = agent(1, project: a)
+        let second = EngineAgent(id: 2, name: "Review", kind: "codex", state: "paused", session: "review",
+                                 cwd: b.path, project: b.path, task: "Review", activity: "", createdAtMs: 200)
+        var state = WorkspaceNavigationState()
+        try state.open(try ref(first), projects: [a, b], agents: [first, second])
+        try state.open(try ref(second), projects: [a, b], agents: [first, second])
+        try state.selectSession("default", projects: [a, b], agents: [first, second])
+        #expect(state.selectedProjectID == nil)
+        #expect(state.selectedAgent == nil)
+        #expect(state.openAgents == [try ref(first), try ref(second)])
+        #expect(state.visibleOpenAgents(projects: [a, b], agents: [first, second]) == [first])
+        try state.open(try ref(second), projects: [a, b], agents: [first, second])
+        #expect(state.selectedSession == "review")
+        #expect(state.selectedAgent == (try ref(second)))
+        #expect(state.visibleOpenAgents(projects: [a, b], agents: [first, second]) == [second])
+    }
+
+    @Test func emptySessionsCanBeSelectedAndRemovedWithoutDiscardingOtherTabs() throws {
+        let first = agent(1, project: a)
+        var state = WorkspaceNavigationState()
+        try state.open(try ref(first), projects: [a], agents: [first])
+        try state.selectSession("empty", projects: [a], agents: [first])
+        #expect(state.visibleOpenAgents(projects: [a], agents: [first]).isEmpty)
+        #expect(state.openAgents == [try ref(first)])
+        state.reconcile(projects: [a], agents: [first], sessions: ["default"])
+        #expect(state.selectedSession == nil)
+        #expect(state.visibleOpenAgents(projects: [a], agents: [first]) == [first])
+        let before = state
+        #expect(throws: WorkspaceNavigationState.NavigationError.invalidState) {
+            try state.selectSession("", projects: [a], agents: [first])
+        }
+        #expect(state == before)
+    }
+
+    @Test func sessionAndGridRestoreWhileOlderNavigationRemainsReadable() throws {
+        try withStore { repository in
+            try repository.update { state in
+                try state.selectSession("Planning", projects: [a], agents: [])
+                state.setMode(.grid)
+            }
+            let restored = try repository.load()
+            #expect(restored.selectedSession == "Planning")
+            #expect(restored.mode == .grid)
+            let legacy = Data(#"{"openAgents":[],"mode":"list"}"#.utf8)
+            let decoded = try JSONDecoder().decode(WorkspaceNavigationState.self, from: legacy)
+            #expect(decoded.selectedSession == nil)
+            #expect(decoded.mode == .list)
         }
     }
 

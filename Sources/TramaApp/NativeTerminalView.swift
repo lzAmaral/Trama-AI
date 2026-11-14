@@ -20,8 +20,8 @@ struct NativeTerminalView: NSViewRepresentable {
         let view = TerminalView(frame: .zero,
                                 font: .monospacedSystemFont(ofSize: 13, weight: .regular),
                                 options: TerminalOptions(scrollback: 0))
-        view.nativeBackgroundColor = NSColor(red: 17 / 255, green: 18 / 255, blue: 20 / 255, alpha: 1)
-        view.nativeForegroundColor = NSColor(red: 229 / 255, green: 231 / 255, blue: 235 / 255, alpha: 1)
+        view.nativeBackgroundColor = NSColor(red: 0, green: 0, blue: 0, alpha: 1)
+        view.nativeForegroundColor = NSColor(red: 236 / 255, green: 236 / 255, blue: 242 / 255, alpha: 1)
         view.terminalDelegate = context.coordinator
         view.setAccessibilityLabel("Terminal de \(name)")
         view.setAccessibilityHelp("Entrada de comandos e saída do agente. As aprovações do provedor são respondidas neste terminal.")

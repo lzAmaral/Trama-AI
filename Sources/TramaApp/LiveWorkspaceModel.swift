@@ -57,8 +57,23 @@ final class LiveWorkspaceModel: ObservableObject {
                 guard id == nil || projects.contains(where: { $0.id == id }) else {
                     throw WorkspaceNavigationState.NavigationError.projectUnavailable
                 }
-                state = try WorkspaceNavigationState(selectedProjectID: id, openAgents: state.openAgents,
+                state = try WorkspaceNavigationState(selectedProjectID: id, selectedSession: state.selectedSession, openAgents: state.openAgents,
                     selectedAgent: state.selectedProjectID == id ? state.selectedAgent : nil, mode: state.mode)
+            }
+        }
+    }
+
+    func selectSession(_ name: String?) {
+        cancelPendingOpen()
+        changeNavigation { state in
+            if hasSuccessfulPoll {
+                try state.selectSession(name, projects: projects, agents: agents)
+            } else {
+                // An empty in-memory list is not evidence that restored tabs disappeared.
+                state = try WorkspaceNavigationState(selectedProjectID: nil, selectedSession: name,
+                    openAgents: state.openAgents,
+                    selectedAgent: state.selectedSession == name ? state.selectedAgent : nil,
+                    mode: state.mode == .workspace ? .board : state.mode)
             }
         }
     }
@@ -147,7 +162,7 @@ final class LiveWorkspaceModel: ObservableObject {
             agents = result.agents
             sessions = result.sessions
             hasSuccessfulPoll = true
-            navigation.reconcile(projects: projects, agents: agents)
+            navigation.reconcile(projects: projects, agents: agents, sessions: sessions)
             focusPendingAgent()
             workflow.observe(result.agents)
             connectionError = nil

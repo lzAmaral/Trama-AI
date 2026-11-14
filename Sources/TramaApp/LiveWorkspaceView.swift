@@ -7,7 +7,11 @@ struct LiveWorkspaceView: View {
     @Binding var selectedProjectID: UUID?
     @ObservedObject var model: LiveWorkspaceModel
     @State private var search = ""
-    @State private var session = ""
+    let onAddProject: () -> Void
+    @State private var taskProjectID: UUID?
+    @State private var showsSearch = false
+
+    private var session: String { model.navigation.selectedSession ?? "" }
     @State private var showsComposer = false
     @State private var showsNewSession = false
     @State private var newSession = ""
@@ -33,9 +37,12 @@ struct LiveWorkspaceView: View {
     private var warnings: [String] {
         [model.error, model.connectionError, model.navigationError, model.workflow.error].compactMap { $0 }
     }
+    private var sessionAgents: [EngineAgent] {
+        model.agents.filter { session.isEmpty || $0.session == session }
+    }
     private var projectAgents: [EngineAgent] {
-        guard let project else { return model.agents }
-        return model.agents.filter { WorkspaceNavigationState.matches(agent: $0, project: project) }
+        guard let project else { return sessionAgents }
+        return sessionAgents.filter { WorkspaceNavigationState.matches(agent: $0, project: project) }
     }
     private var filtered: [EngineAgent] {
         projectAgents.filter { agent in
@@ -45,7 +52,11 @@ struct LiveWorkspaceView: View {
             (search.isEmpty || [agent.name, agent.task, agent.kind, agent.project].contains { $0.localizedStandardContains(search) })
         }
     }
-    private var tabs: [EngineAgent] { model.navigation.visibleOpenAgents(projects: projects, agents: model.agents) }
+    private var tabs: [EngineAgent] {
+        model.navigation.openAgents.compactMap { reference in
+            model.agents.first { $0.deliveryReference == reference }
+        }
+    }
     private var currentAgent: EngineAgent? {
         guard model.navigation.mode == .workspace else { return nil }
         return projectAgents.first { $0.deliveryReference != nil && $0.deliveryReference == model.navigation.selectedAgent }
@@ -56,7 +67,6 @@ struct LiveWorkspaceView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            projectHeader
             tabStrip
             errorBars
             if let reference = model.pendingReference {
@@ -73,22 +83,25 @@ struct LiveWorkspaceView: View {
                                 isEmbedded: true, onClose: { model.close(reference) }, panelRequestID: panelRequestID)
                     .id(reference).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                projectHeader
                 overview
-                ProjectTaskComposer(model: model, project: project, preferredSession: session, onStarted: didStart)
-                    .id(composerID).padding(16).disabled(model.pendingReference != nil)
+                ProjectTaskComposer(model: model, projects: projects, selectedProjectID: $taskProjectID,
+                                    preferredSession: session, onAddProject: onAddProject, onStarted: didStart)
+                    .id(composerID).padding(.horizontal, 24).padding(.bottom, 20).padding(.top, 16)
+                    .disabled(model.pendingReference != nil)
             }
         }
-        .font(TerminalTheme.mono(12)).foregroundStyle(TerminalTheme.primary).background(TerminalTheme.background)
+        .font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.primary).background(TerminalTheme.background)
         .onChange(of: selectedProjectID) { _, id in
             if model.navigation.selectedProjectID != id { model.selectProject(id) }
-            search = ""; session = ""; inboxOnly = false
+            search = ""; inboxOnly = false
+            if let id { taskProjectID = id }
         }
         .onChange(of: model.navigation.selectedProjectID) { _, id in
             if selectedProjectID != id { selectedProjectID = id }
         }
-        .onChange(of: model.sessions) { _, names in
-            if !session.isEmpty && !names.contains(session) { session = "" }
-        }
+        .onChange(of: model.navigation.selectedSession) { _, _ in search = ""; inboxOnly = false }
+        .onAppear { taskProjectID = selectedProjectID }
         .task {
             model.workflow.update { try model.workflow.repository.recordVisit() }
             await model.loadProviders()
@@ -96,9 +109,9 @@ struct LiveWorkspaceView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.workflow.update { try model.workflow.repository.recordVisit() }
         }
-        .background { Button("Buscar agentes") { searchFocused = true }.keyboardShortcut("f").hidden() }
+        .background { Button("Buscar agentes") { showsSearch = true }.keyboardShortcut("f").hidden() }
         .sheet(isPresented: $showsComposer) {
-            NewAgentView(model: model, projects: projects, initialProjectID: selectedProjectID,
+            NewAgentView(model: model, projects: projects, initialProjectID: taskProjectID,
                          initialSession: session, onStarted: didStart)
         }
         .sheet(isPresented: $showsRetention) { LogRetentionView(client: model.client) }
@@ -116,7 +129,7 @@ struct LiveWorkspaceView: View {
             Button("Criar") {
                 let name = newSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
-                Task { await model.perform { try await model.client.createSession(name: name); session = name } }
+                Task { await model.perform { try await model.client.createSession(name: name); model.selectSession(name) } }
             }.disabled(newSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.busy)
         } message: { Text("Sessões agrupam agentes. O projeto e a pasta de destino continuam explícitos no compositor.") }
         .alert("Renomear sessão", isPresented: $showsRenameSession) {
@@ -126,7 +139,7 @@ struct LiveWorkspaceView: View {
                 let from = sessionToRename
                 let to = renamedSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard canRenameSession, !to.isEmpty else { return }
-                Task { await model.perform { try await model.client.renameSession(from: from, to: to); session = to } }
+                Task { await model.perform { try await model.client.renameSession(from: from, to: to); model.selectSession(to) } }
             }.disabled(renamedSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || renamedSession == sessionToRename || model.busy)
         } message: { Text("Os agentes encerrados de \(sessionToRename) passarão a usar o novo nome.") }
         .alert("Redefinir preferências de navegação?", isPresented: $confirmReset) {
@@ -136,75 +149,177 @@ struct LiveWorkspaceView: View {
     }
 
     private var projectHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(project == nil ? "Todos os projetos" : "Projeto ativo")
-                        .font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary)
-                    Text(project?.name ?? "Seus agentes").font(.system(size: 28, weight: .semibold)).lineLimit(1)
-                        .accessibilityAddTraits(.isHeader)
-                    if let project {
-                        Text(project.path).font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary)
-                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled).help(project.path)
-                    }
-                }
-                Spacer(minLength: 8)
-                Button("Novo agente", systemImage: "plus") { newAgent() }.keyboardShortcut("n").disabled(model.busy)
-                Menu {
-                    Button("Atualizar agentes") { Task { await model.refresh() } }
-                    Button("Nova tarefa com opções…") { showsComposer = true }.disabled(project == nil || model.busy)
-                    Divider()
-                    Button("Nova sessão…") { newSession = ""; showsNewSession = true }.disabled(model.busy)
-                    Button("Renomear sessão…") {
-                        sessionToRename = session; renamedSession = session; showsRenameSession = true
-                    }.disabled(!canRenameSession)
-                    Button("Retenção de logs…") { showsRetention = true }
-                    Button("Piloto e alertas…") { showsPilot = true }
-                    Divider()
-                    Button("Reler navegação salva") { model.reloadNavigation() }
-                    Button("Redefinir navegação…") { confirmReset = true }
-                } label: { Image(systemName: "ellipsis") }
-                .menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Opções da área de trabalho")
-            }
-            HStack(spacing: 12) {
-                Text("\(projectAgents.filter(\.isAlive).count) ativos · \(projectAgents.filter { $0.state == "paused" || $0.state == "lost" }.count) precisam de você · \(projectAgents.filter { $0.state == "exited" }.count) encerrados")
-                    .foregroundStyle(TerminalTheme.secondary)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .bottom, spacing: 24) {
+                headline(compact: false)
                 Spacer(minLength: 0)
-                Button("Inbox · \(model.workflow.pending.count)") { showsInbox = true }.keyboardShortcut("i", modifiers: [.command, .shift])
-                Button { openNextIntervention() } label: { Image(systemName: "arrow.right.to.line") }
-                    .keyboardShortcut("n", modifiers: [.command, .shift]).disabled(model.workflow.pending.isEmpty)
-                    .help("Próximo item da inbox (⌘⇧N)").accessibilityLabel("Abrir próximo item da inbox")
-            }.font(TerminalTheme.mono(11))
-        }.padding(20)
+                headActions
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                headline(compact: true)
+                HStack { headActions; Spacer(minLength: 0) }
+            }
+        }.padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 24)
+    }
+
+    private func headline(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(session.isEmpty ? "Todas as sessões" : session)
+                .font(TerminalTheme.ui(compact ? 24 : 30, weight: .bold)).lineLimit(compact ? 1 : 2)
+                .truncationMode(.middle).fixedSize(horizontal: false, vertical: true)
+                .help(session.isEmpty ? "Todas as sessões" : session)
+                .accessibilityAddTraits(.isHeader)
+            let count = projectAgents.count
+            let projectCount = Set(projectAgents.map(\.project)).count
+            let waiting = projectAgents.filter { $0.state == "paused" || $0.state == "lost" }.count
+            (Text("\(count) \(count == 1 ? "agente" : "agentes") em \(projectCount) \(projectCount == 1 ? "projeto" : "projetos")")
+                .foregroundColor(TerminalTheme.secondary) +
+             Text(waiting == 0 ? "" : waiting == 1 ? " · 1 precisa de você" : " · \(waiting) precisam de você")
+                .foregroundColor(TerminalTheme.warning))
+                .font(TerminalTheme.ui(12)).fixedSize(horizontal: false, vertical: true)
+        }.frame(minWidth: 160, alignment: .leading)
+    }
+
+    private var headActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                projectFilter
+                displayModes
+                searchButton
+                workspaceOptions
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                projectFilter
+                HStack(spacing: 8) {
+                    displayModes
+                    Spacer(minLength: 0)
+                    searchButton
+                    workspaceOptions
+                }
+            }
+        }.font(TerminalTheme.ui(12))
+    }
+
+    private var projectFilter: some View {
+        Menu {
+            Button("Todos os projetos") { selectedProjectID = nil }
+            ForEach(projects) { project in
+                Button(project.name) { selectedProjectID = project.id }
+            }
+        } label: {
+            Label(project?.name ?? "Todos os projetos", systemImage: "folder")
+                .lineLimit(1).truncationMode(.middle)
+        }.menuStyle(.borderlessButton).tint(TerminalTheme.secondary)
+            .padding(.horizontal, 10).frame(width: 200, height: 32)
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(TerminalTheme.border))
+            .help(project.map { "\($0.name)\n\($0.path)" } ?? "Todos os projetos")
+            .accessibilityLabel("Filtrar por projeto: \(project?.name ?? "Todos os projetos")")
+    }
+
+    private var displayModes: some View {
+        HStack(spacing: 2) {
+            displayMode("Quadro", mode: .board)
+            displayMode("Lista", mode: .list)
+            displayMode("Grade", mode: .grid)
+        }.padding(3).background(TerminalTheme.surface, in: RoundedRectangle(cornerRadius: 8))
+            .fixedSize()
+    }
+
+    private var searchButton: some View {
+        Button { showsSearch.toggle() } label: {
+            Image(systemName: "magnifyingglass").frame(width: 28, height: 30)
+        }.buttonStyle(.plain).foregroundStyle(search.isEmpty ? TerminalTheme.secondary : TerminalTheme.accent)
+            .accessibilityLabel("Buscar agentes").help("Buscar agentes (⌘F)")
+            .popover(isPresented: $showsSearch) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Buscar agentes").font(.headline)
+                    TextField("Nome, tarefa, projeto ou provedor", text: $search)
+                        .textFieldStyle(.roundedBorder).focused($searchFocused)
+                        .accessibilityLabel("Buscar agentes")
+                    HStack {
+                        Toggle("Somente inbox", isOn: $inboxOnly)
+                        Toggle("Arquivados", isOn: $showsArchived)
+                    }
+                    if !search.isEmpty || inboxOnly {
+                        Button("Limpar filtros") { search = ""; inboxOnly = false }
+                    }
+                }.font(TerminalTheme.ui(12)).padding(20).frame(width: 340)
+                    .onAppear { searchFocused = true }
+            }
+    }
+
+    private func displayMode(_ title: String, mode: WorkspaceNavigationMode) -> some View {
+        let selected = model.navigation.mode == mode || model.navigation.mode == .workspace && mode == .board
+        return Button { model.showOverview(mode) } label: {
+            Text(title).font(TerminalTheme.ui(12, weight: .semibold))
+                .foregroundStyle(selected ? TerminalTheme.primary : TerminalTheme.secondary)
+                .padding(.horizontal, 10).frame(height: 28)
+                .background(selected ? TerminalTheme.raised : .clear,
+                            in: RoundedRectangle(cornerRadius: 6))
+        }.buttonStyle(.plain).accessibilityLabel("Visualização em \(title.lowercased())")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var workspaceOptions: some View {
+        Menu {
+            Button("Nova tarefa") { newAgent() }.keyboardShortcut("n")
+            Button("Atualizar agentes") { Task { await model.refresh() } }
+            Button("Nova tarefa com opções…") { showsComposer = true }.disabled(model.busy)
+            Divider()
+            Button("Inbox · \(model.workflow.pending.count)") { showsInbox = true }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+            Button("Próxima intervenção") { openNextIntervention() }
+                .keyboardShortcut("n", modifiers: [.command, .shift]).disabled(model.workflow.pending.isEmpty)
+            Divider()
+            Button("Nova sessão…") { newSession = ""; showsNewSession = true }.disabled(model.busy)
+            Button("Renomear sessão…") {
+                sessionToRename = session; renamedSession = session; showsRenameSession = true
+            }.disabled(!canRenameSession)
+            Button("Retenção de logs…") { showsRetention = true }
+            Button("Piloto e alertas…") { showsPilot = true }
+            Divider()
+            Button("Reler navegação salva") { model.reloadNavigation() }
+            Button("Redefinir navegação…") { confirmReset = true }
+        } label: { Image(systemName: "ellipsis").frame(width: 24, height: 28) }
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).tint(TerminalTheme.secondary)
+        .fixedSize().accessibilityLabel("Opções da área de trabalho")
     }
 
     private var tabStrip: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 4) {
-                Button { model.showOverview() } label: {
-                    Label("Agentes do projeto", systemImage: "square.grid.2x2").padding(.horizontal, 12).padding(.vertical, 10)
-                        .background(currentAgent == nil ? TerminalTheme.surface : .clear, in: RoundedRectangle(cornerRadius: 6))
-                }.buttonStyle(.plain)
-                ForEach(tabs) { agent in
-                    if let reference = agent.deliveryReference {
-                        HStack(spacing: 8) {
-                            Button { open(agent) } label: {
-                                HStack(spacing: 8) {
-                                    Circle().fill(liveStateColor(agent.state)).frame(width: 6, height: 6)
-                                    Text(agent.name).lineLimit(1)
-                                    Text(agent.kind).foregroundStyle(TerminalTheme.secondary)
-                                }
-                            }.buttonStyle(.plain)
-                            Button { model.close(reference) } label: { Image(systemName: "xmark").font(.system(size: 10)) }
-                                .buttonStyle(.plain).help("Fechar aba sem encerrar \(agent.name)")
-                                .accessibilityLabel("Fechar aba de \(agent.name), mantendo o processo")
-                        }.padding(.horizontal, 12).padding(.vertical, 10)
-                            .background(currentAgent?.deliveryReference == reference ? TerminalTheme.surface : .clear,
-                                        in: RoundedRectangle(cornerRadius: 6))
+        HStack(spacing: 8) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 4) {
+                    Button { model.showOverview() } label: {
+                        Label("Visão geral", systemImage: "rectangle.split.3x1")
+                            .font(TerminalTheme.ui(12, weight: .semibold))
+                            .padding(.horizontal, 12).frame(height: 30)
+                            .background(currentAgent == nil ? TerminalTheme.raised : .clear,
+                                        in: RoundedRectangle(cornerRadius: 8))
+                    }.buttonStyle(.plain)
+                    ForEach(tabs) { agent in
+                        if let reference = agent.deliveryReference {
+                            HStack(spacing: 8) {
+                                Button { open(agent) } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: liveStateSymbol(agent.state)).foregroundStyle(liveStateColor(agent.state))
+                                        Text(agent.name).lineLimit(1).truncationMode(.middle).frame(maxWidth: 180)
+                                        Text("#\(agent.id)").foregroundStyle(TerminalTheme.muted)
+                                    }
+                                }.buttonStyle(.plain).help("\(agent.name)\n\(agent.task)")
+                                Button { model.close(reference) } label: {
+                                    Image(systemName: "xmark").font(TerminalTheme.ui(9)).frame(width: 16, height: 20)
+                                }.buttonStyle(.plain).foregroundStyle(TerminalTheme.muted)
+                                    .help("Fechar aba sem encerrar \(agent.name)")
+                                    .accessibilityLabel("Fechar aba de \(agent.name), mantendo o processo")
+                            }.font(TerminalTheme.mono(11)).padding(.horizontal, 12).frame(height: 30)
+                                .background(currentAgent?.deliveryReference == reference ? TerminalTheme.raised : .clear,
+                                            in: RoundedRectangle(cornerRadius: 8))
+                        }
                     }
-                }
-            }.padding(.horizontal, 16).padding(.bottom, 8)
-        }.scrollIndicators(.hidden).frame(height: 44).overlay(alignment: .bottom) { TerminalRule() }
+                }.padding(.horizontal, 16)
+            }.scrollIndicators(.hidden)
+            if currentAgent != nil { workspaceOptions.padding(.trailing, 16) }
+        }.frame(height: 40).overlay(alignment: .bottom) { TerminalRule() }
     }
 
     @ViewBuilder private var errorBars: some View {
@@ -234,134 +349,198 @@ struct LiveWorkspaceView: View {
 
     private var overview: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) { overviewFilters }
-                .padding(.horizontal, 20).padding(.vertical, 12)
+            if !search.isEmpty || inboxOnly || showsArchived {
+                HStack(spacing: 8) {
+                    Image(systemName: "line.3.horizontal.decrease")
+                    Text(search.isEmpty ? "Filtros ativos" : "Busca: \(search)").lineLimit(1)
+                    Spacer()
+                    Button("Limpar") { search = ""; inboxOnly = false; showsArchived = false }
+                }.font(TerminalTheme.ui(12)).foregroundStyle(TerminalTheme.secondary)
+                    .padding(.horizontal, 24).padding(.bottom, 12)
+            }
             if !model.hasLoaded {
                 ProgressView("Carregando agentes…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filtered.isEmpty {
                 emptyState
             } else if model.navigation.mode == .list {
-                ScrollView { LazyVStack(spacing: 8) { ForEach(filtered) { agentRow($0) } }.padding(20) }
+                agentList
+            } else if model.navigation.mode == .grid {
+                WorkspaceTerminalGrid(agents: filtered, client: model.client, onOpen: { open($0) })
+                    .padding(.horizontal, 24)
             } else { board }
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    @ViewBuilder private var overviewFilters: some View {
-        Picker("Sessão", selection: $session) {
-            Text("Todas as sessões").tag("")
-            ForEach(model.sessions, id: \.self) { Text($0).tag($0) }
-        }.labelsHidden().frame(width: 160).accessibilityLabel("Filtrar por sessão")
-        TextField("Buscar agentes", text: $search).textFieldStyle(.roundedBorder).focused($searchFocused)
-            .frame(minWidth: 100, maxWidth: 200)
-        Menu {
-            Toggle("Somente inbox", isOn: $inboxOnly)
-            Toggle("Mostrar arquivados", isOn: $showsArchived)
-        } label: { Image(systemName: "line.3.horizontal.decrease") }
-            .menuStyle(.borderlessButton).frame(width: 24).accessibilityLabel("Filtrar agentes")
-        Spacer(minLength: 0)
-        Picker("Visualização", selection: Binding(
-            get: { model.navigation.mode == .list ? WorkspaceNavigationMode.list : .board },
-            set: { model.showOverview($0) }
-        )) {
-            Text("Quadro").tag(WorkspaceNavigationMode.board)
-            Text("Lista").tag(WorkspaceNavigationMode.list)
-        }.pickerStyle(.segmented).frame(width: 140)
     }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: model.connectionError == nil ? "terminal" : "exclamationmark.triangle")
-                .font(.system(size: 28, weight: .light)).foregroundStyle(TerminalTheme.secondary)
+                .font(.system(size: 24, weight: .light)).foregroundStyle(TerminalTheme.muted)
             Text(model.connectionError != nil ? "Não foi possível atualizar os agentes" :
-                 (projectAgents.isEmpty ? "Nenhum agente em \(project?.name ?? "seus projetos")" : "Nenhum agente neste filtro"))
-                .font(.system(size: 20, weight: .medium))
-            Text(project == nil ? "Selecione um projeto na barra lateral para escolher onde a tarefa será executada." :
-                 (projectAgents.isEmpty ? "Escreva uma tarefa abaixo, escolha o provedor e inicie o agente." : "Limpe a busca ou ajuste os filtros para ver seus agentes."))
-                .foregroundStyle(TerminalTheme.secondary).multilineTextAlignment(.center).frame(maxWidth: 480)
-            if !search.isEmpty || !session.isEmpty || inboxOnly {
-                Button("Limpar busca e filtros") { search = ""; session = ""; inboxOnly = false }
+                 (projectAgents.isEmpty ? "Nenhum agente nesta sessão" : "Nenhum agente neste filtro"))
+                .font(TerminalTheme.ui(20, weight: .medium))
+            Text(model.connectionError != nil ? "Confira o aviso acima e tente atualizar novamente." :
+                 (project == nil ? "Escolha a pasta de destino no compositor e escreva a primeira tarefa." :
+                 (projectAgents.isEmpty ? "Descreva a tarefa abaixo. Acompanhe a execução e revise o resultado aqui." : "Limpe a busca ou ajuste os filtros para ver seus agentes.")))
+                .font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.secondary)
+                .multilineTextAlignment(.center).frame(maxWidth: 360).fixedSize(horizontal: false, vertical: true)
+            if !search.isEmpty || inboxOnly {
+                Button("Limpar busca e filtros") { search = ""; inboxOnly = false }
             }
         }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var board: some View {
         GeometryReader { geometry in
-            ScrollView([.horizontal, .vertical]) {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack(alignment: .top, spacing: 16) {
-                        stateColumn("Precisa de você", states: ["paused", "lost"], width: geometry.size.width)
-                        stateColumn("Trabalhando", states: ["working"], width: geometry.size.width)
-                        stateColumn("Pronto para revisar", states: ["done"], width: geometry.size.width)
-                        stateColumn("Disponíveis", states: ["idle"], width: geometry.size.width)
-                    }
-                    let others = filtered.filter { !["paused", "lost", "working", "done", "idle"].contains($0.state) }
-                    if !others.isEmpty {
-                        DisclosureGroup("Encerrados e outros estados · \(others.count)") {
-                            LazyVStack(spacing: 8) { ForEach(others) { agentRow($0) } }.padding(.top, 12)
-                        }
-                    }
-                }.padding(20)
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: 16) {
+                    stateColumn("Precisa de você", bucket: 0, width: geometry.size.width)
+                    stateColumn("Trabalhando", bucket: 1, width: geometry.size.width)
+                    stateColumn("Concluídos", bucket: 2, width: geometry.size.width)
+                    stateColumn("Em espera", bucket: 3, width: geometry.size.width)
+                }.padding(.horizontal, 24)
+                    .frame(height: geometry.size.height, alignment: .topLeading)
             }
         }
     }
 
-    private func stateColumn(_ title: String, states: [String], width: CGFloat) -> some View {
-        let items = filtered.filter { states.contains($0.state) }
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Circle().fill(liveStateColor(states[0])).frame(width: 6, height: 6)
-                Text(title).font(.system(size: 13, weight: .semibold))
-                Spacer()
-                Text("\(items.count)").foregroundStyle(TerminalTheme.secondary)
-            }
-            if items.isEmpty { Text("Nenhum agente").foregroundStyle(TerminalTheme.secondary).padding(.top, 12) }
-            ForEach(items) { card($0) }
-        }.frame(width: max(180, (width - 88) / 4), alignment: .topLeading)
+    private func stateColumn(_ title: String, bucket: Int, width: CGFloat) -> some View {
+        let items = filtered.filter { workspaceBucket($0.state) == bucket }
+        let states = ["paused", "working", "done", "idle"]
+        let empty = ["Nenhum agente aguardando", "Nenhum agente trabalhando", "Os resultados aparecem aqui", "Nenhum agente em espera"]
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: liveStateSymbol(states[bucket])).foregroundStyle(liveStateColor(states[bucket]))
+                    .font(TerminalTheme.ui(12))
+                Text(title).font(TerminalTheme.ui(12, weight: .semibold)).lineLimit(1)
+                Spacer(minLength: 0)
+                Text("\(items.count)").font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary)
+            }.frame(height: 24).padding(.horizontal, 4)
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    if items.isEmpty {
+                        Text(empty[bucket]).font(TerminalTheme.ui(12)).foregroundStyle(TerminalTheme.muted)
+                            .padding(.vertical, 14).padding(.horizontal, 4)
+                    }
+                    ForEach(items) { card($0) }
+                }.padding(.bottom, 4)
+            }.frame(maxHeight: .infinity)
+        }.frame(width: max(240, (width - 112) / 4), alignment: .topLeading)
     }
 
     private func card(_ agent: EngineAgent) -> some View {
         Button { open(agent) } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(agent.name).font(.system(size: 14, weight: .semibold)).lineLimit(2)
-                    Spacer(minLength: 0)
-                    Text("#\(agent.id)").foregroundStyle(TerminalTheme.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: liveStateSymbol(agent.state)).foregroundStyle(liveStateColor(agent.state))
+                        .frame(width: 14).padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(agent.name).font(TerminalTheme.mono(13, weight: .semibold))
+                            .lineLimit(2).truncationMode(.middle).fixedSize(horizontal: false, vertical: true)
+                            .foregroundStyle(TerminalTheme.primary)
+                        HStack(spacing: 8) {
+                            Text("#\(agent.id)")
+                            Spacer(minLength: 0)
+                            Text(workspaceLifetime(agent)).help("Tempo desde a criação do registro")
+                        }.font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
+                    }
                 }
-                Text("\(URL(fileURLWithPath: agent.project).lastPathComponent) · \(agent.kind)")
-                    .foregroundStyle(TerminalTheme.accent).lineLimit(1)
-                Text(agent.activity.isEmpty ? agent.task : agent.activity).lineLimit(4).foregroundStyle(TerminalTheme.secondary)
-                HStack {
-                    Text(agent.archived == true ? "Arquivado" : liveStateTitle(agent.state)).lineLimit(1)
-                    Spacer(minLength: 0)
-                    Image(systemName: "arrow.up.right")
-                }.foregroundStyle(liveStateColor(agent.state)).font(TerminalTheme.mono(10))
-            }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(TerminalTheme.surface, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(TerminalTheme.border)).contentShape(Rectangle())
-        }.buttonStyle(.plain).help("Abrir \(agent.name) na área de trabalho")
-            .accessibilityLabel("Abrir \(agent.name), \(agent.kind), \(liveStateTitle(agent.state))")
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 6) {
+                        RoundedRectangle(cornerRadius: 2).fill(TerminalTheme.projectColor(agent.project)).frame(width: 6, height: 6)
+                        Text(URL(fileURLWithPath: agent.project).lastPathComponent).lineLimit(2)
+                            .truncationMode(.middle).fixedSize(horizontal: false, vertical: true)
+                            .foregroundStyle(TerminalTheme.secondary).help(agent.project)
+                        Text("·").foregroundStyle(TerminalTheme.muted)
+                        Text(agent.kind).foregroundStyle(TerminalTheme.providerColor(agent.kind)).fixedSize()
+                    }.font(TerminalTheme.mono(10))
+                    if agent.state == "paused" {
+                        Text("Aguardando sua resposta").font(TerminalTheme.ui(13, weight: .semibold))
+                            .foregroundStyle(TerminalTheme.warning)
+                    }
+                    Text(agent.activity.isEmpty ? agent.task : agent.activity)
+                        .font(agent.kind == "terminal" ? TerminalTheme.mono(12) : TerminalTheme.ui(13))
+                        .foregroundStyle(TerminalTheme.secondary).lineLimit(3).multilineTextAlignment(.leading)
+                    if let nested = agent.nested {
+                        Text("↳ \(nested.kind) · processo local").font(TerminalTheme.mono(10))
+                            .foregroundStyle(TerminalTheme.muted).lineLimit(1)
+                    }
+                    if agent.state == "paused" || agent.state == "lost" {
+                        HStack {
+                            Text(agent.state == "lost" ? "Abrir sessão interrompida" : "Abrir agente")
+                                .font(TerminalTheme.ui(11, weight: .semibold))
+                                .foregroundStyle(agent.state == "lost" ? TerminalTheme.danger : TerminalTheme.rgb(0x1a1608))
+                                .padding(.horizontal, 10).frame(height: 28)
+                                .background(agent.state == "paused" ? TerminalTheme.warning : .clear,
+                                            in: RoundedRectangle(cornerRadius: 7))
+                            Spacer(minLength: 0)
+                            Image(systemName: "arrow.up.right").font(TerminalTheme.ui(10))
+                        }
+                    }
+                    if let branch = agent.branch {
+                        TerminalRule()
+                        Label(branch, systemImage: "point.3.connected.trianglepath.dotted")
+                            .font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.secondary).lineLimit(2)
+                            .truncationMode(.middle).fixedSize(horizontal: false, vertical: true).help(branch)
+                    }
+                    if agent.archived == true || agent.state == "exited" || workspaceBucket(agent.state) == 3 && agent.state != "idle" {
+                        Text(agent.archived == true ? "Arquivado" : liveStateTitle(agent.state))
+                            .font(TerminalTheme.ui(11)).foregroundStyle(TerminalTheme.muted)
+                    }
+                }.padding(.leading, 22)
+            }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        }.buttonStyle(WorkspaceCardStyle(state: agent.state))
+            .help("#\(agent.id) · \(agent.name) · \(liveStateTitle(agent.state))\n\(agent.task)")
+            .accessibilityLabel("Abrir \(agent.name), agente \(agent.id), \(agent.kind), \(liveStateTitle(agent.state))")
     }
 
-    private func agentRow(_ agent: EngineAgent) -> some View {
-        Button { open(agent) } label: {
-            HStack(spacing: 12) {
-                Circle().fill(liveStateColor(agent.state)).frame(width: 6, height: 6)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(agent.name).font(.system(size: 14, weight: .medium))
-                    Text(agent.task).lineLimit(1).foregroundStyle(TerminalTheme.secondary)
+    private var agentList: some View {
+        GeometryReader { geometry in
+        ScrollView([.horizontal, .vertical]) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 12) {
+                    Text("#").frame(width: 28, alignment: .leading)
+                    Text("Agente").frame(width: 180, alignment: .leading)
+                    Text("Tipo").frame(width: 72, alignment: .leading)
+                    Text("Estado").frame(width: 128, alignment: .leading)
+                    Text("Atividade").frame(minWidth: 200, maxWidth: .infinity, alignment: .leading)
+                }.font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted).padding(12)
+                TerminalRule()
+                ForEach(Array(Set(filtered.map(\.project))).sorted(), id: \.self) { path in
+                    HStack(spacing: 8) {
+                        RoundedRectangle(cornerRadius: 2).fill(TerminalTheme.projectColor(path)).frame(width: 6, height: 6)
+                        Text(URL(fileURLWithPath: path).lastPathComponent).font(TerminalTheme.mono(12, weight: .semibold))
+                            .foregroundStyle(TerminalTheme.projectColor(path))
+                        Text("\(filtered.filter { $0.project == path }.count)").font(TerminalTheme.mono(10))
+                            .foregroundStyle(TerminalTheme.muted)
+                    }.padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 6)
+                    ForEach(filtered.filter { $0.project == path }) { agent in
+                        Button { open(agent) } label: {
+                            HStack(spacing: 12) {
+                                Text("\(agent.id)").foregroundStyle(TerminalTheme.muted).frame(width: 28, alignment: .leading)
+                                HStack(spacing: 8) {
+                                    Image(systemName: liveStateSymbol(agent.state)).foregroundStyle(liveStateColor(agent.state))
+                                    Text(agent.name).lineLimit(1)
+                                }.frame(width: 180, alignment: .leading)
+                                Text(agent.kind).foregroundStyle(TerminalTheme.providerColor(agent.kind)).frame(width: 72, alignment: .leading)
+                                Text(agent.state == "done" ? "Concluído" : liveStateTitle(agent.state))
+                                    .foregroundStyle(liveStateColor(agent.state)).lineLimit(1)
+                                    .frame(width: 128, alignment: .leading).help(liveStateTitle(agent.state))
+                                Text(agent.activity.isEmpty ? agent.task : agent.activity).lineLimit(1)
+                                    .foregroundStyle(TerminalTheme.secondary)
+                                    .frame(minWidth: 200, maxWidth: .infinity, alignment: .leading)
+                            }.font(TerminalTheme.mono(11)).padding(12).contentShape(Rectangle())
+                        }.buttonStyle(.plain).help(agent.task)
+                    }
                 }
-                Spacer()
-                Text(agent.kind).foregroundStyle(TerminalTheme.accent)
-                Text(liveStateTitle(agent.state)).foregroundStyle(TerminalTheme.secondary)
-                Image(systemName: "chevron.right")
-            }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                .background(TerminalTheme.surface, in: RoundedRectangle(cornerRadius: 6)).contentShape(Rectangle())
-        }.buttonStyle(.plain)
+            }.frame(minWidth: max(720, geometry.size.width - 48), minHeight: geometry.size.height, alignment: .topLeading)
+                .padding(.horizontal, 24)
+        }
+        }
     }
 
     private func newAgent() { model.showOverview(); composerID = UUID() }
     private func didStart(_ reference: DeliveryAgentReference, _ projectID: UUID) {
-        selectedPanel = "terminal"; panelRequestID = UUID(); selectedProjectID = projectID
+        selectedPanel = "terminal"; panelRequestID = UUID(); selectedProjectID = projectID; taskProjectID = projectID
         model.didStart(reference, projectID: projectID)
     }
     private func open(_ agent: EngineAgent, panel: String = "terminal") {
@@ -398,8 +577,39 @@ func liveStateTitle(_ state: String) -> String {
 }
 func liveStateColor(_ state: String) -> Color {
     switch state {
-    case "paused", "lost": TerminalTheme.warning
-    case "done", "working": TerminalTheme.accent
+    case "paused": TerminalTheme.warning
+    case "lost": TerminalTheme.danger
+    case "working": TerminalTheme.accent
+    case "done": TerminalTheme.positive
     default: TerminalTheme.secondary
     }
+}
+
+func liveStateSymbol(_ state: String) -> String {
+    switch state {
+    case "paused": "exclamationmark.circle"
+    case "lost": "bolt.slash.circle"
+    case "working": "circle.lefthalf.filled"
+    case "done": "checkmark.circle"
+    case "idle": "circle.dotted"
+    case "exited": "stop.circle"
+    default: "questionmark.circle"
+    }
+}
+
+private func workspaceBucket(_ state: String) -> Int {
+    switch state {
+    case "paused", "lost": 0
+    case "working": 1
+    case "done": 2
+    default: 3
+    }
+}
+
+private func workspaceLifetime(_ agent: EngineAgent) -> String {
+    guard let created = agent.createdAtMs, created > 0 else { return "#\(agent.id)" }
+    let seconds = max(0, Int(Date().timeIntervalSince1970 - Double(created) / 1000))
+    if seconds >= 3600 { return "\(seconds / 3600)h\((seconds % 3600) / 60)m" }
+    if seconds >= 60 { return "\(seconds / 60)m\(seconds % 60)s" }
+    return "\(seconds)s"
 }

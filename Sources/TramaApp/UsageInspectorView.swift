@@ -3,6 +3,7 @@ import TramaCore
 
 struct UsageInspectorView: View {
     let provider: EngineProvider
+    var onUpdated: ((EngineUsage) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var usage: EngineUsage?
     @State private var error: String?
@@ -71,6 +72,7 @@ struct UsageInspectorView: View {
             let result = try await client.usage(kind: provider.id, confirmed: true)
             try Task.checkCancellation()
             usage = result
+            onUpdated?(result)
         } catch is CancellationError { } catch { self.error = error.localizedDescription }
     }
 }

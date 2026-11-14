@@ -53,3 +53,9 @@ Arquivamento não libera disco e não tem desarquivamento nesta entrega. Retenç
 Os itens ainda abertos não devem ser anunciados como concluídos. Os critérios gerais ficam em [ENGINEERING.md](ENGINEERING.md) e [SECURITY.md](SECURITY.md).
 
 Em 2026-11-07, a ferramenta de controle do computador recusou acesso ao Trama. A revisão visual, VoiceOver e gravação continuam pendentes. Smoke de provedores e consumo dependem das contas escolhidas pelo usuário; Developer ID/notarização dependem da configuração de distribuição. Veja [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md).
+
+Em 2026-11-08, o bundle redesenhado pôde ser inspecionado: quadro carregado, busca sem resultados, lista, abas, demonstração e janela compacta. A revisão independente e os checks passaram; VoiceOver, estados de erro e desempenho continuam abertos. Evidências e limites em [UI_REFRESH_VALIDATION.md](UI_REFRESH_VALIDATION.md).
+
+Em 2026-11-14, a interface passou a seguir diretamente o Octo em SwiftUI/AppKit: sessões na lateral, abas globais, quadro/lista, grade de snapshots e compositor com pasta explícita e skills locais. A referência visual não atualiza o pin do motor. O controle do computador estava indisponível; renderização isolada não fecha a revisão interativa, VoiceOver ou desempenho. [Paridade](OCTO_NATIVE_PARITY.md) e [validação](OCTO_NATIVE_VALIDATION.md).
+
+A revisão de responsividade do mesmo dia corrigiu cabeçalhos, nomes longos, editores e ações em janelas menores, com 28 capturas em cinco tamanhos e quatro testes AppKit adicionais. [Evidências e limites](RESPONSIVE_UI_VALIDATION.md); revisão interativa continua pendente.

@@ -1,7 +1,7 @@
 import Foundation
 
 public enum WorkspaceNavigationMode: String, Codable, CaseIterable, Sendable {
-    case workspace, board, list
+    case workspace, board, list, grid
 }
 
 /// UI preferences only. Agent identity always includes its creation timestamp.
@@ -11,24 +11,37 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
 
     /// nil means all registered projects, with no automatic project selection.
     public private(set) var selectedProjectID: UUID?
+    public private(set) var selectedSession: String?
     public private(set) var openAgents: [DeliveryAgentReference]
     public private(set) var selectedAgent: DeliveryAgentReference?
     public private(set) var mode: WorkspaceNavigationMode
 
     public init() {
         selectedProjectID = nil
+        selectedSession = nil
         openAgents = []
         selectedAgent = nil
         mode = .board
     }
 
-    public init(selectedProjectID: UUID?, openAgents: [DeliveryAgentReference] = [],
+    public init(selectedProjectID: UUID?, selectedSession: String? = nil, openAgents: [DeliveryAgentReference] = [],
                 selectedAgent: DeliveryAgentReference? = nil, mode: WorkspaceNavigationMode = .board) throws {
         self.selectedProjectID = selectedProjectID
+        self.selectedSession = selectedSession
         self.openAgents = openAgents
         self.selectedAgent = selectedAgent
         self.mode = mode
         try validate()
+    }
+
+    /// A session is a UI scope, never a process-control operation.
+    /// Tabs and drafts from other sessions are retained; the project filter resets.
+    public mutating func selectSession(_ name: String?, projects: [Project], agents: [EngineAgent]) throws {
+        guard name == nil || name?.isEmpty == false else { throw NavigationError.invalidState }
+        selectedSession = name
+        selectedProjectID = nil
+        if mode == .workspace { mode = .board }
+        reconcile(projects: projects, agents: agents)
     }
 
     public mutating func selectProject(_ id: UUID?, projects: [Project], agents: [EngineAgent]) throws {
@@ -55,6 +68,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
             updated.openAgents.append(reference)
         }
         updated.selectedProjectID = project.id
+        updated.selectedSession = agent.session
         updated.selectedAgent = reference
         updated.mode = .workspace
         self = updated
@@ -69,7 +83,10 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
 
     /// Absence removes a tab, never substitutes a new record with the same numeric ID.
     /// Completion/liveness states are intentionally irrelevant to navigation.
-    public mutating func reconcile(projects: [Project], agents: [EngineAgent]) {
+    public mutating func reconcile(projects: [Project], agents: [EngineAgent], sessions: [String]? = nil) {
+        if let sessions, let selectedSession, !sessions.contains(selectedSession) {
+            self.selectedSession = nil
+        }
         if let selectedProjectID, !projects.contains(where: { $0.id == selectedProjectID }) {
             self.selectedProjectID = nil
             selectedAgent = nil
@@ -93,6 +110,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
         let scope = projects.filter { selectedProjectID == nil || $0.id == selectedProjectID }
         return openAgents.compactMap { reference in
             guard let agent = Self.exactAgent(reference, agents: agents),
+                  selectedSession == nil || agent.session == selectedSession,
                   scope.contains(where: { Self.matches(agent: agent, project: $0) }) else { return nil }
             return agent
         }
@@ -117,6 +135,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
     }
 
     func validate() throws {
+        guard selectedSession == nil || selectedSession?.isEmpty == false else { throw NavigationError.invalidState }
         guard openAgents.count <= Self.maximumOpenAgents else { throw NavigationError.limitExceeded }
         guard Set(openAgents).count == openAgents.count,
               selectedAgent.map({ openAgents.contains($0) }) ?? true else { throw NavigationError.invalidState }
@@ -125,6 +144,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
     public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(selectedProjectID: values.decodeIfPresent(UUID.self, forKey: .selectedProjectID),
+                      selectedSession: values.decodeIfPresent(String.self, forKey: .selectedSession),
                       openAgents: values.decode([DeliveryAgentReference].self, forKey: .openAgents),
                       selectedAgent: values.decodeIfPresent(DeliveryAgentReference.self, forKey: .selectedAgent),
                       mode: values.decode(WorkspaceNavigationMode.self, forKey: .mode))

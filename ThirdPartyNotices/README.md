@@ -6,6 +6,10 @@ O Trama preserva os avisos diretos de Octo/orkai em [Octo-MIT.txt](Octo-MIT.txt)
 
 A coleta atual contém **184 pacotes externos e 150 textos distintos**. Faltam textos nos arquivos publicados de `winapi-i686-pc-windows-gnu@0.4.0` e `winapi-x86_64-pc-windows-gnu@0.4.0`. São pacotes do upstream winapi, declarando `MIT/Apache-2.0`, mas não se atribui automaticamente a eles o aviso de outro pacote. Essas ausências permanecem explícitas no inventário. Os grafos Cargo filtrados para `aarch64-apple-darwin` e `x86_64-apple-darwin` excluem ambos; em cada grafo macOS há 151 dependências externas Cargo, todas com textos coletados, além dos dois pins Swift. Esse conjunto é conservador e inclui build/dev: não é uma lista extraída do linker, nem afirma que todo pacote inventariado esteja no executável.
 
+## Referência da interface nativa
+
+A composição e os tokens SwiftUI também foram adaptados da interface MIT do Octo em `1dc08a44bc7698dbabfca37730de7df572d6091f`, copyright 2026 Lucas Marujo. A licença foi revisada e é o mesmo texto integral preservado em `Octo-MIT.txt`. Essa revisão é referência visual, não uma atualização da dependência executável. Não foram incorporados JavaScript, fontes, imagens ou marca. Origem e limites em `docs/OCTO_NATIVE_PARITY.md`.
+
 ## Reprodução local
 
 É necessário Python 3.9+, Git, o toolchain Cargo já utilizado pelo projeto e fontes previamente resolvidas em cache. Execute os builds normais antes se faltarem fontes. A coleta não consulta rede, não atualiza dependências e não lê credenciais:

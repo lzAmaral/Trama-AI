@@ -9,6 +9,7 @@ struct AgentPromptComposer: View {
     let identityAvailable: Bool
     @State private var sending = false
     @State private var notice: String?
+    @State private var editorFocused = false
 
     private var draft: Binding<String> {
         Binding(get: {
@@ -49,48 +50,74 @@ struct AgentPromptComposer: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Para \(agent.name) · \(agent.kind)").fontWeight(.medium).lineLimit(1)
-                Spacer()
-                Text(agent.project).foregroundStyle(TerminalTheme.secondary).lineLimit(1)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Próxima instrução").fontWeight(.medium).fixedSize()
+                Text(agent.kind.capitalized).foregroundStyle(TerminalTheme.providerColor(agent.kind))
+                    .lineLimit(1).truncationMode(.middle).help(agent.kind)
+                Spacer(minLength: 0)
             }
-            Text(agent.cwd).foregroundStyle(TerminalTheme.secondary).lineLimit(1)
+            Text(agent.cwd).font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.secondary).lineLimit(1)
                 .truncationMode(.middle).textSelection(.enabled).help(agent.cwd)
+                .accessibilityLabel("Pasta do agente: \(agent.cwd)")
             ZStack(alignment: .topLeading) {
-                TextEditor(text: draft)
-                    .scrollContentBackground(.hidden)
-                    .padding(4)
-                    .accessibilityLabel("Instrução para \(agent.name)")
-                    .disabled(sending || model.busy || !identityAvailable || agent.kind == "terminal" || agent.archived == true || agent.state == "exited")
+                ComposerTextEditor(text: draft, isFocused: $editorFocused,
+                                   isEditable: !sending && !model.busy && identityAvailable &&
+                                    agent.kind != "terminal" && agent.archived != true && agent.state != "exited",
+                                   fontSize: 13, accessibilityLabel: "Instrução para \(agent.name)",
+                                   accessibilityIdentifier: "agent-prompt-editor")
+                    .id(agent.deliveryReference).padding(.horizontal, 8)
                 if draft.wrappedValue.isEmpty {
-                    Text("Escreva a próxima instrução para \(agent.name)…")
-                        .foregroundStyle(TerminalTheme.secondary).padding(8).allowsHitTesting(false)
+                    Text("Como o agente deve continuar?")
+                        .foregroundStyle(TerminalTheme.secondary)
+                        .padding(.horizontal, 8).padding(.top, 6).allowsHitTesting(false)
                 }
             }
             .frame(height: 52).background(TerminalTheme.surface)
-            .overlay(RoundedRectangle(cornerRadius: 5).stroke(TerminalTheme.border))
-            HStack(alignment: .center, spacing: 8) {
-                if sending { ProgressView().controlSize(.small) }
-                Text(availability ?? "⌘Return para enviar")
-                    .foregroundStyle(TerminalTheme.secondary).lineLimit(2)
-                Spacer(minLength: 4)
-                Button("Enviar a \(agent.name)", action: send)
-                    .buttonStyle(.borderedProminent).lineLimit(1)
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .disabled(!valid)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(editorFocused ? TerminalTheme.strongBorder : TerminalTheme.border))
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 12) {
+                    availabilityLabel.frame(minWidth: 220, maxWidth: .infinity, alignment: .leading)
+                    sendAction
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    availabilityLabel
+                    HStack { Spacer(minLength: 0); sendAction }
+                }
             }
             if draft.wrappedValue.utf8.count > 23_987 {
                 Text("A instrução excede o limite de 23.987 bytes. Divida o texto antes de enviar.")
-                    .foregroundStyle(TerminalTheme.warning)
+                    .foregroundStyle(TerminalTheme.warning).fixedSize(horizontal: false, vertical: true)
             }
             if hasTerminalControls {
                 Text("O texto contém caracteres de controle. Remova-os para enviar; seu rascunho foi preservado.")
-                    .foregroundStyle(TerminalTheme.warning)
+                    .foregroundStyle(TerminalTheme.warning).fixedSize(horizontal: false, vertical: true)
             }
-            if let notice { Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(2) }
+            if let notice {
+                Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(3).help(notice)
+            }
         }
-        .font(TerminalTheme.mono(11))
+        .font(TerminalTheme.ui(12))
+    }
+
+    private var availabilityLabel: some View {
+        Text(availability ?? "⌘Return para enviar")
+            .foregroundStyle(TerminalTheme.secondary).lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .help(availability ?? "⌘Return para enviar")
+    }
+
+    private var sendAction: some View {
+        HStack(spacing: 8) {
+            if sending { ProgressView().controlSize(.small) }
+            Button("Enviar instrução", systemImage: "arrow.up", action: send)
+                .accessibilityLabel("Enviar instrução a \(agent.name)")
+                .accessibilityIdentifier("agent-prompt-send")
+                .buttonStyle(NativeActionButtonStyle(primary: true)).lineLimit(1)
+                .keyboardShortcut(.return, modifiers: .command)
+                .disabled(!valid)
+        }.fixedSize()
     }
 
     private func send() {

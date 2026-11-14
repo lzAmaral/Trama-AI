@@ -173,6 +173,42 @@ struct WorkspaceFlowTests {
         }
     }
 
+    @Test func switchingSessionPreservesDraftsAndNeverControlsAProcess() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        model.open(f.agents[0])
+        let reference = try #require(f.agents[0].deliveryReference)
+        model.promptDrafts[reference] = "Unsent follow-up"
+        model.projectTaskDrafts[f.projects[0].id] = "Unsent new task"
+        let requestBefore = try Data(contentsOf: f.request)
+        model.selectSession("default")
+        #expect(model.navigation.selectedSession == "default")
+        #expect(model.navigation.selectedProjectID == nil)
+        #expect(model.navigation.openAgents == [reference])
+        #expect(model.promptDrafts[reference] == "Unsent follow-up")
+        #expect(model.projectTaskDrafts[f.projects[0].id] == "Unsent new task")
+        #expect(try Data(contentsOf: f.request) == requestBefore)
+        let restored = f.model()
+        #expect(restored.navigation.selectedSession == "default")
+    }
+
+    @Test func selectingSessionsBeforeFirstSuccessfulPollNeverPrunesRestoredTabs() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        try f.seedTabs()
+        let original = try f.repository.load().openAgents
+        let model = f.model()
+        model.selectSession(nil)
+        #expect(model.navigation.openAgents == original)
+        #expect(try f.repository.load().openAgents == original)
+        try Data("invalid response".utf8).write(to: f.response)
+        await model.refresh()
+        #expect(model.connectionError != nil)
+        model.selectSession("default")
+        #expect(model.navigation.openAgents == original)
+        #expect(try f.repository.load().openAgents == original)
+    }
+
     @Test func composerAcceptsJoinedUnicodeTextAndRejectsTerminalControlSequences() {
         #expect(!AgentPromptComposer.hasTerminalControls("👨‍👩‍👧‍👦\nسلام\u{200c}دنیا\ttexto"))
         for text in ["\u{1b}[201~", "a\rcomando", "\u{3}", "\u{0085}"] {

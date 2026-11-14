@@ -138,11 +138,11 @@ struct LiveAgentDetail: View {
 
     var body: some View {
         detailLayout
-        .padding(isEmbedded ? 8 : 20)
+        .padding(isEmbedded ? 16 : 20)
         .frame(minWidth: isEmbedded ? nil : 760, idealWidth: isEmbedded ? nil : 960,
                maxWidth: .infinity, minHeight: isEmbedded ? nil : 600,
                idealHeight: isEmbedded ? nil : 700, maxHeight: .infinity)
-        .font(TerminalTheme.mono(12))
+        .font(TerminalTheme.ui(12))
         .foregroundStyle(TerminalTheme.primary).background(TerminalTheme.background)
         .preferredColorScheme(.dark)
         .onAppear {
@@ -233,7 +233,7 @@ struct LiveAgentDetail: View {
         if isEmbedded {
             GeometryReader { geometry in
                 if tab == "terminal" {
-                    embeddedTerminalContent(height: geometry.size.height)
+                    embeddedTerminalContent(height: geometry.size.height, width: geometry.size.width)
                 } else {
                     detailContent
                 }
@@ -293,7 +293,7 @@ struct LiveAgentDetail: View {
                 }
                 ScrollView([.horizontal, .vertical]) {
                     Text(logText.isEmpty ? (loadingLogs ? "" : (logError == nil ? "Nenhum histórico disponível." : "")) : logText)
-                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                        .font(TerminalTheme.mono(12)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                 }.frame(minHeight: isEmbedded ? 80 : 360, maxHeight: .infinity)
             } else if tab == "processes" {
                 processPanel
@@ -316,40 +316,143 @@ struct LiveAgentDetail: View {
     // Keep the native terminal outside the scroll region at every window size.
     // Bound only the composer/messages area, so additional errors cannot push
     // its controls below the viewport and resizing does not replace the terminal.
-    private func embeddedTerminalContent(height: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private func embeddedTerminalContent(height: CGFloat, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
             detailHeader
+            agentMetadata
             panelPicker
-            terminalView.frame(minHeight: 48, maxHeight: .infinity)
-            ScrollView(.vertical) {
+            HStack(alignment: .top, spacing: 20) {
+                // Keep this first child and the terminal's identity stable as the
+                // inspector appears or the header changes height at narrow widths.
                 VStack(alignment: .leading, spacing: 8) {
-                    promptComposer
-                    terminalMessages
-                    detailNotices
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.trailing, 2)
-            }.frame(height: min(180, max(0, height - 116)))
-                .accessibilityLabel("Instrução e mensagens de \(agent.name)")
+                    terminalView.frame(minHeight: 64, maxHeight: .infinity)
+                    ScrollView(.vertical) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            promptComposer
+                            terminalMessages
+                            detailNotices
+                        }.frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 2)
+                    }.frame(height: min(208, max(120, (height - 120) * 0.6)))
+                        .accessibilityLabel("Instrução e mensagens de \(agent.name)")
+                }.frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
+                if width >= 900 {
+                    agentInspector.frame(width: 248)
+                }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    private var detailHeader: some View {
-        HStack {
-            Text("\(agent.name) #\(agent.id)").font(TerminalTheme.mono(isEmbedded ? 15 : 18, weight: .medium))
-                .lineLimit(1).truncationMode(.middle)
-                .accessibilityAddTraits(.isHeader)
-            Text(liveStateTitle(agent.state)).foregroundStyle(liveStateColor(agent.state))
-            Spacer()
-            if isEmbedded {
-                agentOptions
-                resumeAction
+    private var agentMetadata: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(agent.kind).foregroundStyle(TerminalTheme.providerColor(agent.kind))
+                    .lineLimit(1).help(agent.kind).layoutPriority(1)
+                Text(agent.session).foregroundStyle(TerminalTheme.secondary)
+                    .lineLimit(1).truncationMode(.middle).help("Sessão: \(agent.session)")
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                if let branch = agent.branch {
+                    Label(branch, systemImage: "arrow.triangle.branch")
+                        .foregroundStyle(TerminalTheme.secondary)
+                        .lineLimit(1).truncationMode(.middle).help(branch)
+                        .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+                }
             }
-            Button("Fechar", action: close).keyboardShortcut("w")
-                .help("Fechar detalhes (⌘W). Escape permanece disponível para o terminal.")
+            Text(agent.cwd).foregroundStyle(TerminalTheme.muted)
+                .lineLimit(1).truncationMode(.middle).textSelection(.enabled).help(agent.cwd)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }.font(TerminalTheme.mono(10))
+    }
+
+    private var agentInspector: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                inspectorSection("Sessão") {
+                    Text(agent.session).font(TerminalTheme.mono(12))
+                        .fixedSize(horizontal: false, vertical: true).help(agent.session)
+                    Text(liveStateTitle(agent.state)).foregroundStyle(liveStateColor(agent.state))
+                }
+                if let nested = agent.nested {
+                    inspectorSection("Processo local") {
+                        Text("↳ \(nested.kind)").font(TerminalTheme.mono(12))
+                        Text("PID \(nested.pid)").foregroundStyle(TerminalTheme.secondary)
+                        Button("Ver processos") { tab = "processes" }.buttonStyle(NativeActionButtonStyle())
+                    }
+                }
+                if let branch = agent.branch {
+                    inspectorSection("Worktree") {
+                        Label(branch, systemImage: "arrow.triangle.branch").font(TerminalTheme.mono(11))
+                            .fixedSize(horizontal: false, vertical: true).help(branch)
+                        Text(agent.cwd).font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.secondary)
+                            .textSelection(.enabled).fixedSize(horizontal: false, vertical: true).help(agent.cwd)
+                        Button("Abrir alterações") { tab = "diff" }.buttonStyle(NativeActionButtonStyle())
+                        Text("Revise o diff antes de integrar. O merge exige encerramento e confirmação.")
+                            .font(TerminalTheme.ui(11)).foregroundStyle(TerminalTheme.muted)
+                    }
+                }
+                inspectorSection("Tarefa") {
+                    Text(agent.task.isEmpty ? "Terminal interativo" : agent.task)
+                        .font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.secondary)
+                        .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                }
+                if !agent.activity.isEmpty {
+                    inspectorSection("Atividade") {
+                        Text(agent.activity).font(TerminalTheme.ui(12)).foregroundStyle(TerminalTheme.secondary)
+                            .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                inspectorSection("Revisão") {
+                    Button("Alterações") { tab = "diff" }.buttonStyle(NativeActionButtonStyle())
+                    Button("Pull request e CI") { tab = "pr" }.buttonStyle(NativeActionButtonStyle())
+                    Button("Histórico") { tab = "logs" }.buttonStyle(NativeActionButtonStyle())
+                }
+            }.padding(.leading, 16).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
+        }.overlay(alignment: .leading) { Rectangle().fill(TerminalTheme.border).frame(width: 1) }
+    }
+
+    private func inspectorSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
+            content()
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var detailHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Text(agent.name).font(TerminalTheme.ui(isEmbedded ? 22 : 20, weight: .bold))
+                    .help("\(agent.name) #\(agent.id)")
+                    .lineLimit(1).truncationMode(.middle)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                    .accessibilityAddTraits(.isHeader)
+                Text("#\(agent.id)").font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.muted)
+                    .fixedSize()
+                Button("Fechar", action: close).keyboardShortcut("w").fixedSize()
+                    .help("Fechar detalhes (⌘W). Escape permanece disponível para o terminal.")
+            }
+            HStack(spacing: 8) {
+                Label(liveStateTitle(agent.state), systemImage: liveStateSymbol(agent.state))
+                    .font(TerminalTheme.ui(11)).foregroundStyle(liveStateColor(agent.state))
+                    .lineLimit(1).truncationMode(.tail).help(liveStateTitle(agent.state))
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                if isEmbedded {
+                    agentOptions
+                    resumeAction
+                }
+            }
         }
     }
 
     private var panelPicker: some View {
+        ViewThatFits(in: .horizontal) {
+            panelChoices.pickerStyle(.segmented).fixedSize(horizontal: true, vertical: false)
+            HStack(spacing: 8) {
+                Text("Painel").foregroundStyle(TerminalTheme.secondary)
+                panelChoices.pickerStyle(.menu).frame(minWidth: 0, maxWidth: .infinity)
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var panelChoices: some View {
         Picker("Painel", selection: $tab) {
             Text("Terminal").tag("terminal")
             Text("Alterações").tag("diff")
@@ -357,7 +460,7 @@ struct LiveAgentDetail: View {
             Text("Histórico").tag("logs")
             Text("Tarefa").tag("task")
             Text("Processos").tag("processes")
-        }.pickerStyle(.segmented)
+        }.labelsHidden().accessibilityLabel("Painel do agente")
     }
 
     private var terminalView: some View {
@@ -365,7 +468,8 @@ struct LiveAgentDetail: View {
                            onInput: { if isAlive && !model.busy { terminal.input($0) } },
                            onResize: { rows, cols in terminal.resize(rows: rows, cols: cols, active: isAlive) })
             .id(initial.deliveryReference)
-            .overlay(Rectangle().stroke(TerminalTheme.border))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(TerminalTheme.strongBorder))
     }
 
     @ViewBuilder private var terminalMessages: some View {
@@ -379,7 +483,7 @@ struct LiveAgentDetail: View {
                 .foregroundStyle(TerminalTheme.secondary)
         }
         if let error = terminal.actionError ?? terminal.error, isAlive {
-            Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(2)
+            Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(2).help(error)
         }
     }
 
@@ -395,8 +499,8 @@ struct LiveAgentDetail: View {
             Text("Este registro não está disponível no quadro atual. Reabra os detalhes após atualizar; entrada desativada.")
                 .foregroundStyle(TerminalTheme.warning)
         }
-        if let notice { Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(3) }
-        if let error = model.error { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3) }
+        if let notice { Text(notice).foregroundStyle(TerminalTheme.accent).lineLimit(3).help(notice) }
+        if let error = model.error { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(3).help(error) }
     }
 
     private var agentOptions: some View {
