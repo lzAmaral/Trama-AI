@@ -6,7 +6,7 @@ App nativo para macOS em SwiftUI, com terminal e motor Rust para executar CLIs d
 
 ## Estado atual
 
-O projeto ativo tem nome e caminho visíveis no cabeçalho e no compositor fixo do rodapé. Escreva a tarefa, escolha o provedor e clique **Iniciar agente**; a criação abre uma aba com o terminal no painel principal. O agente aberto tem um campo próprio para enviar a próxima instrução. Fechar a aba mantém o processo em execução. Projeto, abas e visualização são restaurados localmente. Veja [o fluxo da área de trabalho](docs/WORKSPACE_FLOW.md).
+A barra lateral agrupa agentes por sessão; o cabeçalho filtra o projeto e o compositor fixo do rodapé mostra a pasta de destino. Escreva a tarefa, escolha o provedor e clique **Iniciar agente**; a criação abre uma aba com o terminal no painel principal. O agente aberto tem um campo próprio para enviar a próxima instrução. Fechar a aba mantém o processo em execução. Projeto, abas e visualização são restaurados localmente. Veja [o fluxo da área de trabalho](docs/WORKSPACE_FLOW.md).
 
 O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. Sessões podem ser renomeadas e registros encerrados movidos entre elas. Worktrees podem ser arquivados no lugar, preservando arquivos e branch; o quadro permite mostrar os arquivados. O modo **Demonstração** continua separado e identificado.
 
@@ -16,7 +16,7 @@ A inbox reúne intervenções, sessões interrompidas, entregas disponíveis par
 
 O [piloto](docs/PILOT.md) mede localmente tempo até a primeira entrega revisada, abertura de intervenções, entrega de entrada ao CLI e frequência de retorno. A coleta começa desativada, exige opt-in e exporta apenas contagens e durações. A instrumentação não representa um estudo com usuários já realizado.
 
-A interface usa superfícies grafite, tipografia monoespaçada e acentos verdes. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
+A interface usa superfícies pretas, tipografia do sistema, metadados monoespaçados e acentos turquesa. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
 
 Esta é uma versão de desenvolvimento. O fluxo de terminal foi testado com shell real e Git em diretórios temporários. Execução autenticada de cada provedor, revisão visual e distribuição notarizada ainda precisam de validação. Detectar um CLI não confirma login ou compatibilidade de sua versão.
 
@@ -40,7 +40,7 @@ open .build/Trama.app
 
 O bundle tem assinatura ad hoc para desenvolvimento, sem Developer ID ou notarização. Detalhes em [PACKAGING.md](docs/PACKAGING.md). O script também aceita `--release`.
 
-Cadastre e selecione uma pasta na barra lateral. No compositor do rodapé, escreva a tarefa, escolha um provedor instalado e clique **Iniciar agente** (⌘Return). **Novo agente** (⌘N) volta ao compositor; a criação abre o terminal automaticamente quando o registro aparece. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela ou a aba **não encerra** os agentes; use **Encerrar** no menu do agente.
+Cadastre uma pasta e selecione o destino no compositor. No compositor do rodapé, escreva a tarefa, escolha um provedor instalado e clique **Iniciar agente** (⌘Return). **Novo agente** (⌘N) volta ao compositor; a criação abre o terminal automaticamente quando o registro aparece. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela ou a aba **não encerra** os agentes; use **Encerrar** no menu do agente.
 
 ## Dados e controles
 
@@ -75,7 +75,3 @@ Os testes cobrem persistência, erros e limites do transporte, cancelamento, fil
 - `scripts`: build e empacotamento local.
 
 O integrador define contratos, distribui arquivos entre agentes e controla Git; outro agente revisa o comportamento antes da integração. Consulte [AGENTS.md](AGENTS.md), [engenharia](docs/ENGINEERING.md), [tarefas](docs/TASKS.md), [roadmap](docs/ROADMAP.md) e [segurança](docs/SECURITY.md).
-
-## Referências e dependências
-
-[Octo](https://github.com/lucasmarujo/octo) fornece o motor Rust reutilizado; [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) fornece o terminal nativo. Revisões e versões ficam nos manifests e lockfiles; avisos em [ThirdPartyNotices](ThirdPartyNotices/README.md). [Maestrum](https://github.com/gabrielgreco1/maestrum) é uma referência de produto, sem código incorporado.
