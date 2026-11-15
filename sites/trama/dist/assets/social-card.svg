@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0a0b0c"/>
+  <g fill="none" stroke="#35fddc" stroke-width="2" opacity=".55">
+    <path d="M850 0v130c0 140 245 120 245 260v240"/>
+    <path d="M890 0v130c0 140 165 120 165 260v240"/>
+    <path d="M930 0v130c0 140 85 120 85 260v240"/>
+    <path d="M970 0v630"/>
+    <path d="M1010 0v130c0 140-85 120-85 260v240"/>
+  </g>
+  <text x="76" y="100" fill="#35fddc" font-family="Arial,sans-serif" font-size="35" font-weight="700">Trama &gt;</text>
+  <text x="76" y="267" fill="#f1f4f1" font-family="Arial,sans-serif" font-size="76" font-weight="600">Vários agentes.</text>
+  <text x="76" y="356" fill="#35fddc" font-family="Arial,sans-serif" font-size="76" font-weight="600">Um fio de trabalho.</text>
+  <text x="80" y="480" fill="#abb5b1" font-family="Arial,sans-serif" font-size="25">Agentes de código, terminais e revisão no macOS.</text>
+  <path d="M76 535h1048" stroke="#283330"/>
+  <text x="80" y="580" fill="#abb5b1" font-family="monospace" font-size="16">EM DESENVOLVIMENTO · OPEN SOURCE / MIT PLANEJADA</text>
+</svg>
