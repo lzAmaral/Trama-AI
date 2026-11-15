@@ -156,15 +156,15 @@ struct LiveAgentDetail: View {
         VStack(alignment: .leading, spacing: isEmbedded ? 6 : 12) {
             detailHeader
             if !isEmbedded {
-                Text("\(agent.kind) · \(agent.session)")
+                Text("\(agent.kind) · \(sessionTitle)")
                     .foregroundStyle(TerminalTheme.secondary).lineLimit(2).textSelection(.enabled)
             }
             panelPicker
             if !isEmbedded {
                 HStack {
                     agentOptions
-                    Text(agent.session).foregroundStyle(TerminalTheme.secondary).lineLimit(1)
-                        .help("Sessão: \(agent.session)")
+                    Text(sessionTitle).foregroundStyle(TerminalTheme.secondary).lineLimit(1)
+                        .help("Sessão: \(sessionTitle)")
                     if agent.archived == true { Text("Worktree arquivado").foregroundStyle(TerminalTheme.secondary) }
                     Spacer()
                     resumeAction
@@ -256,8 +256,8 @@ struct LiveAgentDetail: View {
             HStack(spacing: 8) {
                 Text(agent.kind).foregroundStyle(TerminalTheme.providerColor(agent.kind))
                     .lineLimit(1).help(agent.kind).layoutPriority(1)
-                Text(agent.session).foregroundStyle(TerminalTheme.secondary)
-                    .lineLimit(1).truncationMode(.middle).help("Sessão: \(agent.session)")
+                Text(sessionTitle).foregroundStyle(TerminalTheme.secondary)
+                    .lineLimit(1).truncationMode(.middle).help("Sessão: \(sessionTitle)")
                     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                 if let branch = agent.branch {
                     Label(branch, systemImage: "arrow.triangle.branch")
@@ -273,8 +273,8 @@ struct LiveAgentDetail: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 inspectorSection("Sessão") {
-                    Text(agent.session).font(TerminalTheme.mono(12))
-                        .fixedSize(horizontal: false, vertical: true).help(agent.session)
+                    Text(sessionTitle).font(TerminalTheme.mono(12))
+                        .fixedSize(horizontal: false, vertical: true).help(sessionTitle)
                     Text(liveStateTitle(agent.state)).foregroundStyle(liveStateColor(agent.state))
                 }
                 if let nested = agent.nested {
@@ -409,7 +409,7 @@ struct LiveAgentDetail: View {
 
     private var agentOptions: some View {
         Menu("Opções") {
-            Text("Sessão: \(agent.session)")
+            Text("Sessão: \(sessionTitle)")
             Button("Mover para sessão…") { destinationSession = agent.session; showsMove = true }
                 .disabled(model.busy || agent.state != "exited")
             if agent.branch != nil && agent.archived != true {
@@ -444,11 +444,17 @@ struct LiveAgentDetail: View {
         if isEmbedded { onClose?() } else { dismiss() }
     }
 
+    private var sessionTitle: String { model.sessionName(agent.session, projectID: model.projectID(for: agent)) }
+
+    private var moveSessions: [String] {
+        model.sessionSelection(projectID: model.projectID(for: agent), preferred: agent.session).options
+    }
+
     private var movePanel: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Mover \(agent.name) para sessão").font(TerminalTheme.mono(18, weight: .medium)).accessibilityAddTraits(.isHeader)
             Picker("Sessão de destino", selection: $destinationSession) {
-                ForEach(Array(Set(model.sessions + [destinationSession])).sorted(), id: \.self) { Text($0).tag($0) }
+                ForEach(moveSessions, id: \.self) { Text(model.sessionName($0, projectID: model.projectID(for: agent))).tag($0) }
             }.disabled(model.busy)
             Text("Os arquivos permanecem no mesmo lugar. Apenas o agrupamento da sessão muda; o agente precisa estar encerrado.")
                 .foregroundStyle(TerminalTheme.secondary)
@@ -463,11 +469,13 @@ struct LiveAgentDetail: View {
                     Task {
                         await model.perform {
                             guard identityAvailable else { return }
+                            guard let projectID = model.projectID(for: agent) else { throw WorkspaceNavigationState.NavigationError.projectUnavailable }
+                            try await model.prepareSession(destination, projectID: projectID)
                             try await model.client.moveAgent(agentId: agentID, to: destination, createdAtMs: initial.createdAtMs)
                             showsMove = false
                         }
                     }
-                }.disabled(model.busy || agent.state != "exited" || destinationSession.isEmpty || destinationSession == agent.session)
+                }.disabled(model.busy || agent.state != "exited" || destinationSession.isEmpty || destinationSession == agent.session || !moveSessions.contains(destinationSession) || model.sessionCatalogError != nil)
                     .keyboardShortcut(.defaultAction)
             }
         }.padding(24).frame(width: 520)

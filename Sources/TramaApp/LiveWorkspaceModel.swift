@@ -7,6 +7,7 @@ final class LiveWorkspaceModel: ObservableObject {
     let client: OctoEngineClient
     let workflow: DeliveryWorkflowViewModel
     private let navigationRepository: WorkspaceNavigationRepository
+    private let sessionRepository: ProjectSessionRepository
     private var workflowUpdates: AnyCancellable?
     private var projects: [Project] = []
     private var hasSuccessfulPoll = false
@@ -23,6 +24,8 @@ final class LiveWorkspaceModel: ObservableObject {
     @Published private(set) var pendingReference: DeliveryAgentReference?
     @Published var agents: [EngineAgent] = []
     @Published var sessions: [String] = []
+    @Published private(set) var projectSessions: [ProjectSession] = []
+    @Published private(set) var sessionCatalogError: String?
     @Published var providers: [EngineProvider] = []
     @Published var error: String?
     @Published var connectionError: String?
@@ -37,7 +40,10 @@ final class LiveWorkspaceModel: ObservableObject {
          navigationRepository: WorkspaceNavigationRepository = WorkspaceNavigationRepository()) {
         self.client = client
         self.navigationRepository = navigationRepository
+        sessionRepository = ProjectSessionRepository(fileURL: client.homeURL.appendingPathComponent("trama-project-sessions.json"))
         workflow = DeliveryWorkflowViewModel(engineHome: client.homeURL)
+        do { projectSessions = try sessionRepository.load() }
+        catch { sessionCatalogError = error.localizedDescription }
         do { navigation = try navigationRepository.load() }
         catch {
             navigationError = "Não foi possível restaurar a navegação. As preferências foram preservadas: \(error.localizedDescription)"
@@ -60,7 +66,8 @@ final class LiveWorkspaceModel: ObservableObject {
                 guard id == nil || projects.contains(where: { $0.id == id }) else {
                     throw WorkspaceNavigationState.NavigationError.projectUnavailable
                 }
-                state = try WorkspaceNavigationState(selectedProjectID: id, selectedSession: state.selectedSession, openAgents: state.openAgents,
+                state = try WorkspaceNavigationState(selectedProjectID: id,
+                    selectedSession: state.selectedProjectID == id ? state.selectedSession : nil, openAgents: state.openAgents,
                     selectedAgent: state.selectedProjectID == id ? state.selectedAgent : nil, mode: state.mode)
             }
         }
@@ -171,6 +178,86 @@ final class LiveWorkspaceModel: ObservableObject {
         } catch { navigationError = error.localizedDescription }
     }
 
+    func sessionName(_ id: String, projectID: UUID?) -> String {
+        let projectID = projectID ?? projects.first { ProjectSession.generalID(for: $0.id) == id }?.id
+        return ProjectSession.name(for: id, projectID: projectID, catalog: projectSessions)
+    }
+
+    var availableProjectSessions: [ProjectSession] {
+        projectSessions.filter { $0.managed || !hasSuccessfulPoll || sessions.contains($0.engineID) }
+    }
+
+    func projectID(for agent: EngineAgent) -> UUID? {
+        projects.first { WorkspaceNavigationState.matches(agent: agent, project: $0) }?.id
+    }
+
+    func sessionSelection(projectID: UUID?, preferred: String?) -> EngineSessionSelection {
+        guard let project = projects.first(where: { $0.id == projectID }) else {
+            return EngineSessionSelection(sessions: [], preferredSession: nil)
+        }
+        let catalog = availableProjectSessions
+        let options = ProjectSession.sessions(for: project, agents: agents, catalog: catalog)
+        let preferred = preferred.flatMap { options.contains($0) ? $0 : nil }
+            ?? ProjectSession.initialID(for: project.id, catalog: catalog)
+        return EngineSessionSelection(sessions: options, preferredSession: preferred)
+    }
+
+    func createProjectSession(name: String, projectID: UUID?) throws {
+        guard let projectID, projects.contains(where: { $0.id == projectID }) else {
+            throw WorkspaceNavigationState.NavigationError.projectUnavailable
+        }
+        let id = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        try saveSessionName(name, id: id, projectID: projectID, managed: true)
+        selectScope(projectID: projectID, session: id)
+    }
+
+    func renameProjectSession(_ id: String, name: String, projectID: UUID) throws {
+        guard sessionSelection(projectID: projectID, preferred: id).options.contains(id) else {
+            throw WorkspaceNavigationState.NavigationError.invalidState
+        }
+        try saveSessionName(name, id: id, projectID: projectID)
+    }
+
+    private func saveSessionName(_ name: String, id: String, projectID: UUID, managed: Bool = false) throws {
+        let latest = try sessionRepository.load()
+        guard let project = projects.first(where: { $0.id == projectID }) else {
+            throw WorkspaceNavigationState.NavigationError.projectUnavailable
+        }
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !ProjectSession.sessions(for: project, agents: agents, catalog: latest).contains(where: {
+            let implicitEmptyGeneral = $0 == ProjectSession.generalID(for: projectID)
+                && !latest.contains(where: { $0.projectID == projectID && $0.engineID == ProjectSession.generalID(for: projectID) })
+                && !agents.contains(where: { $0.session == ProjectSession.generalID(for: projectID) })
+            return $0 != id && !implicitEmptyGeneral && ProjectSession.name(for: $0, projectID: projectID, catalog: latest) == name
+        }) else { throw ProjectSessionRepository.RepositoryError.duplicateName }
+        let managed = latest.first { $0.projectID == projectID && $0.engineID == id }?.managed
+            ?? (managed || id == ProjectSession.generalID(for: projectID))
+        projectSessions = try sessionRepository.save(ProjectSession(projectID: projectID, engineID: id, name: name, managed: managed))
+        sessionCatalogError = nil
+    }
+
+    /// Called only for an explicit start/move. Merely browsing a project never creates a holder or engine session.
+    func prepareSession(_ id: String, projectID: UUID) async throws {
+        let latest = try sessionRepository.load()
+        guard let project = projects.first(where: { $0.id == projectID }) else {
+            throw WorkspaceNavigationState.NavigationError.invalidState
+        }
+        let current = try await client.listSessions()
+        let available = latest.filter { $0.managed || current.sessions.contains($0.engineID) }
+        guard ProjectSession.sessions(for: project, agents: current.agents, catalog: available).contains(id) else {
+            throw WorkspaceNavigationState.NavigationError.invalidState
+        }
+        if current.sessions.contains(id) { return }
+        guard id == ProjectSession.generalID(for: projectID) || latest.contains(where: {
+            $0.projectID == projectID && $0.engineID == id && $0.managed
+        }) else { throw WorkspaceNavigationState.NavigationError.invalidState }
+        do { try await client.createSession(name: id) }
+        catch {
+            // Another instance may have created the same grouping. Never retry a start operation.
+            guard let observed = try? await client.listSessions(), observed.sessions.contains(id) else { throw error }
+        }
+    }
+
     func refresh(showProgress: Bool = true) async {
         guard !refreshInFlight else { return }
         refreshInFlight = true
@@ -185,9 +272,19 @@ final class LiveWorkspaceModel: ObservableObject {
             try Task.checkCancellation()
             if agents != result.agents { agents = result.agents }
             if sessions != result.sessions { sessions = result.sessions }
+            do {
+                let latest = try sessionRepository.load()
+                if projectSessions != latest { projectSessions = latest }
+                if sessionCatalogError != nil { sessionCatalogError = nil }
+            } catch {
+                if sessionCatalogError != error.localizedDescription { sessionCatalogError = error.localizedDescription }
+            }
             hasSuccessfulPoll = true
             var nextNavigation = navigation
-            nextNavigation.reconcile(projects: projects, agents: agents, sessions: sessions)
+            let available: [String]? = nextNavigation.selectedProjectID != nil && sessionCatalogError != nil ? nil : nextNavigation.selectedProjectID.map {
+                sessionSelection(projectID: $0, preferred: nil).options
+            } ?? sessions
+            nextNavigation.reconcile(projects: projects, agents: agents, sessions: available)
             if navigation != nextNavigation { navigation = nextNavigation }
             focusPendingAgent()
             await workflow.observe(result.agents)

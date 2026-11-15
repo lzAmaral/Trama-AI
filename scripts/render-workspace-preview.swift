@@ -10,6 +10,7 @@ import TramaCore
     @MainActor static func main() async throws {
         NSApplication.shared.setActivationPolicy(.prohibited)
         let responsive = CommandLine.arguments.contains("--responsive")
+        let sessionPreview = CommandLine.arguments.contains("--project-sessions")
         let output = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let sessionName = responsive ? "Criação de Mídia — pesquisa de mercado e lançamento do produto" : "default"
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -27,7 +28,7 @@ import TramaCore
         let states = ["paused", "working", "working", "done", "done", "done", "idle", "idle"]
         let activities = ["Aguardando revisão da navegação", "Integrando alterações no motor", "Preparando o ambiente de desenvolvimento", "Atualização dos ícones de pasta", "Revisão do fluxo de cadastro", "Compilando os aplicativos locais", "Verificando a saída do servidor", "Shell controlado de demonstração"]
         let agents = names.indices.map { index in
-            let project = projects[responsive ? 0 : index % projects.count]
+            let project = projects[responsive || sessionPreview ? 0 : index % projects.count]
             return EngineAgent(id: UInt32(index + 1), name: names[index], kind: index == 7 ? "terminal" : index % 3 == 0 ? "codex" : "claude",
                 state: states[index], session: sessionName, cwd: project.path, project: project.path,
                 task: activities[index], activity: activities[index], branch: index == 1 ? (responsive ? "trama/refatoracao-da-integracao-nativa-e-correcao-dos-caminhos-de-erro" : "trama/physics-merge") : nil,
@@ -73,6 +74,12 @@ import TramaCore
         }
         model.selectSession(sessionName)
         let workspace = WorkspaceModel(repository: repository)
+        if sessionPreview {
+            try model.renameProjectSession(sessionName, name: "Geral", projectID: projects[0].id)
+            try model.createProjectSession(name: "Landing page", projectID: projects[0].id)
+            model.selectScope(projectID: projects[0].id, session: sessionName)
+            workspace.selectedID = projects[0].id
+        }
         if responsive {
             model.selectProject(projects[0].id)
             workspace.selectedID = projects[0].id
@@ -85,6 +92,13 @@ import TramaCore
                 Text("Prévia · dados fictícios").font(.system(size: 10)).foregroundStyle(.yellow)
                     .padding(6).background(.black)
             }
+        if sessionPreview {
+            try await render(view, width: 1024, height: 640, to: output.appendingPathComponent("sessions-populated.png"))
+            model.selectScope(projectID: projects[1].id, session: ProjectSession.generalID(for: projects[1].id))
+            workspace.selectedID = projects[1].id
+            try await render(view, width: 820, height: 560, to: output.appendingPathComponent("sessions-empty.png"))
+            return
+        }
         if responsive {
             try await verifyComposerDestination(view, workspace: workspace, model: model, projects: projects)
             let layouts: [(CGFloat, CGFloat)] = [(820, 560), (1024, 640), (1280, 800), (1440, 900), (1920, 1080)]

@@ -48,6 +48,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
         guard id == nil || projects.contains(where: { $0.id == id }) else {
             throw NavigationError.projectUnavailable
         }
+        if selectedProjectID != id { selectedSession = nil }
         selectedProjectID = id
         reconcile(projects: projects, agents: agents)
     }

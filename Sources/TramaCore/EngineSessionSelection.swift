@@ -1,4 +1,5 @@
-/// A new task can only target a grouping present in the latest engine snapshot.
+/// Resolves a choice among destinations supplied by the caller. Project-local destinations
+/// are revalidated and, when needed, materialized in the engine before an explicit start.
 public struct EngineSessionSelection: Equatable, Sendable {
     public let options: [String]
     public let selectedSession: String?

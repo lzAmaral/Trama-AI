@@ -1,13 +1,27 @@
 # Navegação por projeto
 
-A lateral real apresenta projeto → sessão → agentes. Projetos cadastrados aparecem mesmo sem agentes. Uma sessão compartilhada aparece em cada projeto envolvido, mostrando somente os registros daquele projeto; worktrees usam o projeto original para agrupamento. Arquivados permanecem disponíveis pela opção do quadro, sem ocupar a árvore padrão.
+A lateral apresenta projeto → sessão → agentes. Cada projeto possui uma sessão inicial **Geral**, disponível mesmo vazio. Criar sessões e renomeá-las mantém o vínculo com o projeto, inclusive antes da primeira tarefa e depois de reabrir o aplicativo. Nomes como “Landing page” podem ser usados em projetos diferentes sem compartilhar o agrupamento de novas tarefas.
 
-Selecionar projeto limpa o filtro de sessão e abre seu quadro. Selecionar sessão dentro dele atualiza ambos os filtros atomicamente, preserva abas e rascunhos e não inicia, encerra ou move processos. O cabeçalho mostra o nome do projeto e, quando selecionada, a sessão. O seletor redundante de projeto no cabeçalho foi removido. O caminho da pasta aparece no compositor (abreviado com `~` no novo agente, completo no tooltip); detalhes do agente mantêm a pasta junto à próxima instrução, sem repeti-la no cabeçalho e no inspector.
+Selecionar outro projeto limpa o filtro da sessão anterior. A lateral não acrescenta uma sessão apenas porque ela estava selecionada; o compositor, o formulário de novo agente e o destino de movimentação oferecem somente as sessões daquele projeto. Selecionar a pasta de destino de outro projeto usa sua sessão inicial. Abas e rascunhos são preservados, sem iniciar, encerrar ou mover processos pela navegação.
 
-O armazenamento upstream mantém sessões globais. Sessões vazias ou com agentes fora dos projetos cadastrados continuam acessíveis em “Outras sessões”. Criar uma sessão dentro de um projeto mantém o projeto selecionado e apresenta a sessão vazia ali; após a primeira tarefa, a associação vem do projeto dos agentes. Sem agentes, ao sair desse escopo a sessão continua em “Outras sessões”. Renomear ainda afeta a sessão global, não apenas um projeto.
+O catálogo `trama-project-sessions.json`, dentro do diretório isolado do motor, guarda projeto, identidade do agrupamento, nome de exibição e indicação de gerenciamento pelo Trama. Usa versão, limite de 256 KiB, lock estável, releitura antes de modificar e gravação atômica. Corrupção ou versão desconhecida preservam os bytes e bloqueiam novas tarefas dependentes do catálogo; uma leitura malsucedida não apaga a seleção de uma sessão vazia. Redefinir preferências de navegação não apaga o catálogo.
 
-Validação: testes de agrupamento e seleção cobrem sessão compartilhada, projetos vazios, arquivados, worktrees/symlinks, persistência, projeto inválido e navegação antes do primeiro polling/falha. Capturas offscreen usam dados fictícios; não substituem teste de foco, teclado e VoiceOver reais. Nenhum provedor pago é iniciado.
+Novas sessões usam identidades de 32 caracteres compatíveis com o Store upstream. O nome exibido fica no catálogo e pode mudar enquanto agentes trabalham. “Nova sessão” cria o vínculo local; o agrupamento correspondente no motor é materializado somente ao iniciar uma tarefa ou mover um registro por ação explícita. Essa preparação consulta o snapshot atual, revalida o projeto e aceita criação concorrente já confirmada pelo motor; não repete a operação de iniciar agente.
 
-Build Swift e 160 testes passaram, incluindo integração com o motor compilado. Nove capturas isoladas foram geradas; a hierarquia foi inspecionada na janela compacta de 820 × 560. A região SwiftTerm permanece vazia na captura offscreen, como na validação anterior; o desenho do terminal não foi validado por essas imagens. `git diff --check` passou.
+Sessões legadas continuam acessíveis nos projetos que contêm seus agentes; worktrees usam o projeto original. Um nome local também pode ser atribuído a uma sessão legada sem alterar sua identidade, tarefas ou processos. Renomear na interface afeta somente aquele projeto. Aliases legados ausentes do motor não são recriados automaticamente. Sessões legadas compartilhadas continuam compartilhadas internamente: os agentes não são migrados por esta entrega. O RPC `rename_session` mantém seu comportamento global para clientes que o chamem diretamente.
 
-A revisão independente não encontrou bloqueadores. A confirmação de renomear explica o alcance em todos os projetos. O agrupamento ainda normaliza caminhos durante a consulta de apresentação; o custo com muitos projetos não foi medido nesta entrega.
+Sessões legadas vazias sem vínculo local ou com agentes fora dos projetos cadastrados permanecem em “Outras sessões”. Arquivados continuam disponíveis pela opção do quadro. O caminho da pasta de destino permanece explícito no compositor.
+
+## Entrega de 2026-11-15 — Geral e vínculo persistente
+
+Objetivo: substituir o destino global implícito por uma sessão inicial do projeto e preservar sessões vazias e nomes locais. O integrador ficou responsável pelos modelos/repositório de sessões, navegação, views, testes e roteiro de prévia. O contrato RPC e o pin do motor não mudaram. Um segundo agente revisou comportamento, falhas e testes sem editar os arquivos da implementação.
+
+Validação com Swift 6.1.2:
+
+- `swift build` passou.
+- `TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test`: 172 testes passaram, incluindo motor compilado com armazenamento temporário. A nova integração verifica criação de agrupamentos próprios, repetição idempotente da preparação, recusa de destino de outro projeto e ausência de agentes iniciados.
+- Regressões cobrem projeto vazio, seleção obsoleta, nomes iguais em projetos distintos, persistência entre instâncias, renomeação local de sessão ativa, corrupção, falha de gravação, catálogo indisponível e sessão legada removida.
+- `scripts/render-workspace-preview.sh --project-sessions` gerou duas capturas offscreen com dados fictícios: projeto com agentes e sessão vazia nomeada (1024 × 640), e outro projeto vazio com seu próprio Geral (820 × 560). As capturas foram inspecionadas em `.build/octo-native-previews/sessions-populated.png` e `sessions-empty.png`.
+- Revisão independente e `git diff --check` passaram.
+
+Os testes não iniciam IA paga. As capturas não substituem a revisão interativa, VoiceOver nem desempenho prolongado. O catálogo é necessário para restaurar os nomes de novas sessões; backups devem incluir o diretório completo do motor. A versão anterior do aplicativo não interpreta esses nomes locais.

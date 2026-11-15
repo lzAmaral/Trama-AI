@@ -43,7 +43,11 @@ struct ProjectTaskComposer: View {
     private var providers: [EngineProvider] { model.providers.filter(\.installed) }
     private var isBusy: Bool { creating || model.busy }
     private var sessionSelection: EngineSessionSelection {
-        EngineSessionSelection(sessions: model.sessions, preferredSession: preferredSession)
+        model.sessionSelection(projectID: selectedProjectID,
+                               preferred: model.navigation.selectedProjectID == selectedProjectID ? preferredSession : nil)
+    }
+    private var sessionTitle: String {
+        sessionSelection.selectedSession.map { model.sessionName($0, projectID: selectedProjectID) } ?? "Sem sessão"
     }
     private var draft: Binding<String> {
         Binding(get: { project.flatMap { model.projectTaskDrafts[$0.id] } ?? "" },
@@ -52,7 +56,7 @@ struct ProjectTaskComposer: View {
                 })
     }
     private var valid: Bool {
-        project != nil && sessionSelection.selectedSession != nil &&
+        project != nil && sessionSelection.selectedSession != nil && model.sessionCatalogError == nil &&
         providers.contains { $0.id == kind } &&
         !draft.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isBusy
     }
@@ -132,11 +136,11 @@ struct ProjectTaskComposer: View {
                 }
             }
             HStack(spacing: 8) {
-                Label(sessionSelection.selectedSession ?? "Sem sessão", systemImage: "rectangle.stack")
+                Label(sessionTitle, systemImage: "rectangle.stack")
                     .font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.secondary)
                     .lineLimit(1).truncationMode(.middle)
-                    .accessibilityLabel("Sessão de destino: \(sessionSelection.selectedSession ?? "nenhuma")")
-                    .help("Sessão de destino: \(sessionSelection.selectedSession ?? "nenhuma")")
+                    .accessibilityLabel("Sessão de destino: \(sessionTitle)")
+                    .help("Sessão de destino: \(sessionTitle)")
                 Spacer(minLength: 0)
                 if kind != "terminal" {
                     Text("/ skills").font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
@@ -287,7 +291,7 @@ struct ProjectTaskComposer: View {
                 get: { sessionSelection.selectedSession }, set: { model.selectScope(projectID: selectedProjectID, session: $0) }
             )) {
                 if sessionSelection.options.isEmpty { Text("Nenhuma sessão disponível").tag(nil as String?) }
-                ForEach(sessionSelection.options, id: \.self) { Text($0).tag(Optional($0)) }
+                ForEach(sessionSelection.options, id: \.self) { Text(model.sessionName($0, projectID: selectedProjectID)).tag(Optional($0)) }
             }
             Toggle("Isolar em um worktree Git", isOn: $isolate)
             Text(kind == "terminal" ? "O shell executa a tarefa como comando na pasta indicada."
@@ -377,6 +381,7 @@ struct ProjectTaskComposer: View {
         Task { @MainActor in
             defer { creating = false }
             await model.perform {
+                try await model.prepareSession(requestedSession, projectID: project.id)
                 let id = try await model.client.startIdentified(kind: requestedKind, cwd: project.path, name: requestedName,
                                                       task: requestedText, session: requestedSession, isolate: requestedIsolation)
                 // A successful creation must remain successful even if the following refresh fails.
