@@ -84,7 +84,7 @@ Os testes usam shells e Git temporários, sem IA paga ou consultas autenticadas.
 
 ## Créditos
 
-O motor deriva da biblioteca Rust do [Octo](https://github.com/lucasmarujo/octo), fixada em `f66aa854313026870aaf57f65d26d9cbfbf32269`. A composição visual e os tokens foram adaptados da interface MIT do Octo, de Lucas Marujo. O terminal usa [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm). Revisões, origens e licenças estão em [ThirdPartyNotices](ThirdPartyNotices/README.md).
+O motor deriva da biblioteca Rust do [Octo](https://github.com/lucasmarujo/octo, fixada em `f66aa854313026870aaf57f65d26d9cbfbf32269`. O terminal usa [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm). Revisões, origens e licenças estão em [ThirdPartyNotices](ThirdPartyNotices/README.md).
 
 ## Licença
 
