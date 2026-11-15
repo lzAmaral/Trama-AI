@@ -29,10 +29,10 @@ O modo **Demonstração** mantém dados fictícios identificados separados das s
 | Interface nativa | Swift 6, SwiftUI e AppKit |
 | Terminal | SwiftTerm, com revisão fixada |
 | Estado e persistência | Núcleo Swift independente das views, arquivos locais, locks e gravação atômica |
-| Motor de sessões | Adaptador Rust sobre a biblioteca `orkai` do Octo, com revisão fixada |
+| Motor de sessões | Rust com revisão fixada |
 | Comunicação | RPC JSON entre o aplicativo e o processo `trama-engine` |
 
-O Trama desenvolve a interface e a integração nativa, reutilizando o motor do Octo para CLIs, PTY e logs. Não há paridade completa com o Octo. [Arquitetura e contratos](docs/ENGINE_INTEGRATION.md).
+O Trama desenvolve a interface e a integração nativa, reutilizando o motor para CLIs, PTY e logs. Não há paridade completa . [Arquitetura e contratos](docs/ENGINE_INTEGRATION.md).
 
 No [estudo de memória](docs/MEMORY_VALIDATION.md), duas prévias usaram **16,5% menos memória após carga** que seis, no processo que hospeda a interface de teste. A extração do histórico reduziu o pico do RPC em **8,6%**. Medições controladas em uma máquina, sem incluir a memória dos provedores.
 
