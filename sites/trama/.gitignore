@@ -1,0 +1,7 @@
+.DS_Store
+.sites-runtime/
+.sites-checkout/
+node_modules/
+*.tar.gz
+qa/
+/.openai/hosting.json
