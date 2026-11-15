@@ -136,6 +136,9 @@ class Tools(unittest.TestCase):
 
     def prepare_package(self):
         (self.root / '.build/fake bin/SwiftTerm_SwiftTerm.bundle').mkdir(parents=True)
+        mascot = self.root / '.build/fake bin/Trama_TramaApp.bundle'
+        mascot.mkdir()
+        (mascot / 'trama-weaver.png').write_bytes(b'fixture mascot')
         (self.root / '.build/fake bin/Trama').write_text('main')
         (self.root / 'Engine/target/debug').mkdir(parents=True)
         (self.root / 'Engine/target/debug/trama-engine').write_text('engine')
@@ -162,8 +165,17 @@ class Tools(unittest.TestCase):
         result = self.run_script('package-app.sh')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((bundle / 'Contents/Resources/SwiftTerm_SwiftTerm.bundle').is_dir())
+        self.assertEqual((bundle / 'Contents/Resources/Trama_TramaApp.bundle/trama-weaver.png').read_bytes(), b'fixture mascot')
         self.assertEqual((bundle / 'Contents/Resources/ThirdPartyNotices/license').read_text(), 'notice')
         self.assertFalse((bundle / 'sentinel').exists())
+
+    def test_missing_mascot_preserves_previous_bundle(self):
+        previous = self.prepare_package()
+        (self.root / '.build/fake bin/Trama_TramaApp.bundle/trama-weaver.png').unlink()
+        result = self.run_script('package-app.sh')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b'Mascote Trama ausente', result.stderr)
+        self.assertEqual((previous / 'sentinel').read_text(), 'original')
 
     def test_package_custom_output_preserves_default_bundle(self):
         previous = self.prepare_package()

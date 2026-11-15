@@ -157,6 +157,10 @@ import TramaCore
         try await render(view, width: 820, height: 560, to: output.appendingPathComponent("project-sidebar-compact.png"))
         model.selectScope(projectID: nil, session: nil)
         workspace.selectedID = nil
+        model.showOverview(.list)
+        try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("weaver-overview.png"))
+        try await render(view, width: 820, height: 560, to: output.appendingPathComponent("weaver-overview-compact.png"))
+        model.showOverview(.board)
         try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("octo-native-board.png"))
         try await render(view, width: 820, height: 560, to: output.appendingPathComponent("octo-native-compact.png"))
         model.showOverview(.list)
@@ -249,6 +253,10 @@ import TramaCore
         hosting.layoutSubtreeIfNeeded()
         try await Task.sleep(for: settleDelay)
         hosting.layoutSubtreeIfNeeded()
+        guard abs(hosting.bounds.width - width) <= 1, abs(hosting.bounds.height - height) <= 1 else {
+            throw NSError(domain: "ResponsivePreview", code: 16,
+                          userInfo: [NSLocalizedDescriptionKey: "Janela excedeu o tamanho solicitado: " + url.lastPathComponent + " " + NSStringFromRect(hosting.bounds)])
+        }
         if let expectedEditor {
             let editors = descendants(hosting).compactMap { $0 as? NSTextView }
             guard let editor = editors.first(where: { $0.accessibilityIdentifier() == expectedEditor }),

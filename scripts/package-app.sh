@@ -62,6 +62,10 @@ if [ ! -d "$TRAMA_APP/Contents/Resources/SwiftTerm_SwiftTerm.bundle" ]; then
     echo 'Recursos SwiftTerm ausentes; bundle não foi publicado.' >&2
     exit 1
 fi
+if [ ! -f "$TRAMA_APP/Contents/Resources/Trama_TramaApp.bundle/trama-weaver.png" ]; then
+    echo 'Mascote Trama ausente; bundle não foi publicado.' >&2
+    exit 1
+fi
 cp -R ThirdPartyNotices "$TRAMA_APP/Contents/Resources/ThirdPartyNotices"
 if command -v codesign >/dev/null 2>&1; then
     codesign --force --sign - "$TRAMA_APP/Contents/MacOS/trama-engine"

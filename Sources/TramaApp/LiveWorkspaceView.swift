@@ -6,6 +6,9 @@ struct LiveWorkspaceView: View {
     let projects: [Project]
     @Binding var selectedProjectID: UUID?
     @ObservedObject var model: LiveWorkspaceModel
+    var usageSnapshots: [String: EngineUsage] = [:]
+    var onConsultUsage: (EngineProvider) -> Void = { _ in }
+    var onInspectEngine: () -> Void = {}
     @State private var search = ""
     let onAddProject: () -> Void
     @State private var taskProjectID: UUID?
@@ -84,10 +87,14 @@ struct LiveWorkspaceView: View {
                     .id(reference).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 projectHeader
+                WorkspaceOverviewHeader(metrics: overviewMetrics) {
+                    WorkspaceUsageSummary(snapshots: usageSnapshots, providers: model.providers,
+                                          onConsult: onConsultUsage, onInspect: onInspectEngine)
+                }
                 overview
                 ProjectTaskComposer(model: model, projects: projects, selectedProjectID: $taskProjectID,
                                     preferredSession: session, onAddProject: onAddProject, onStarted: didStart)
-                    .id(composerID).padding(.horizontal, 24).padding(.bottom, 20).padding(.top, 16)
+                    .id(composerID).padding(.horizontal, 24).padding(.bottom, 8).padding(.top, 8)
                     .disabled(model.pendingReference != nil)
             }
         }
@@ -150,38 +157,34 @@ struct LiveWorkspaceView: View {
     }
 
     private var projectHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .bottom, spacing: 24) {
-                headline(compact: false)
-                Spacer(minLength: 0)
-                headActions
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                headline(compact: true)
-                HStack { headActions; Spacer(minLength: 0) }
-            }
-        }.padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 24)
+        HStack(spacing: 16) {
+            headline.frame(maxWidth: .infinity, alignment: .leading)
+            headActions.fixedSize()
+        }.padding(.horizontal, 24).padding(.vertical, 8)
     }
 
-    private func headline(compact: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private var overviewMetrics: [OverviewMetric] {
+        var metrics = [
+            OverviewMetric(title: "agentes", count: filtered.count, color: TerminalTheme.primary),
+            OverviewMetric(title: "trabalhando", count: filtered.filter { $0.state == "working" }.count, color: TerminalTheme.accent),
+            OverviewMetric(title: "aguardando", count: filtered.filter { $0.state == "paused" }.count, color: TerminalTheme.warning),
+            OverviewMetric(title: "para revisar", count: filtered.filter { $0.state == "done" }.count, color: TerminalTheme.positive)
+        ]
+        let other = filtered.filter { !["working", "paused", "done"].contains($0.state) }.count
+        if other > 0 { metrics.append(OverviewMetric(title: "outros estados", count: other, color: TerminalTheme.secondary)) }
+        return metrics
+    }
+
+    private var headline: some View {
+        VStack(alignment: .leading, spacing: 4) {
             Text(project?.name ?? (session.isEmpty ? "Todos os projetos" : session))
-                .font(TerminalTheme.ui(compact ? 24 : 30, weight: .bold)).lineLimit(compact ? 1 : 2)
-                .truncationMode(.middle).fixedSize(horizontal: false, vertical: true)
+                .font(TerminalTheme.mono(16, weight: .semibold)).lineLimit(1).truncationMode(.middle)
                 .help(project?.name ?? (session.isEmpty ? "Todos os projetos" : session))
                 .accessibilityAddTraits(.isHeader)
             if project != nil, !session.isEmpty {
-                Text(session).font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.secondary).lineLimit(1).help(session)
+                Text(session).font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary).lineLimit(1).help(session)
             }
-            let count = projectAgents.count
-            let projectCount = Set(projectAgents.map(\.project)).count
-            let waiting = projectAgents.filter { $0.state == "paused" || $0.state == "lost" }.count
-            (Text("\(count) \(count == 1 ? "agente" : "agentes") em \(projectCount) \(projectCount == 1 ? "projeto" : "projetos")")
-                .foregroundColor(TerminalTheme.secondary) +
-             Text(waiting == 0 ? "" : waiting == 1 ? " · 1 precisa de você" : " · \(waiting) precisam de você")
-                .foregroundColor(TerminalTheme.warning))
-                .font(TerminalTheme.ui(12)).fixedSize(horizontal: false, vertical: true)
-        }.frame(minWidth: 160, alignment: .leading)
+        }.frame(minWidth: 120, alignment: .leading)
     }
 
     private var headActions: some View {
@@ -235,7 +238,7 @@ struct LiveWorkspaceView: View {
     }
 
     private func displayMode(_ title: String, mode: WorkspaceNavigationMode) -> some View {
-        let selected = model.navigation.mode == mode || model.navigation.mode == .workspace && mode == .board
+        let selected = model.navigation.mode == mode || model.navigation.mode == .workspace && mode == .list
         return Button { model.showOverview(mode) } label: {
             Text(title).font(TerminalTheme.ui(12, weight: .semibold))
                 .foregroundStyle(selected ? TerminalTheme.primary : TerminalTheme.secondary)
@@ -359,21 +362,23 @@ struct LiveWorkspaceView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: model.connectionError == nil ? "terminal" : "exclamationmark.triangle")
-                .font(.system(size: 24, weight: .light)).foregroundStyle(TerminalTheme.muted)
-            Text(model.connectionError != nil ? "Não foi possível atualizar os agentes" :
-                 (projectAgents.isEmpty ? "Nenhum agente nesta sessão" : "Nenhum agente neste filtro"))
-                .font(TerminalTheme.ui(20, weight: .medium))
-            Text(model.connectionError != nil ? "Confira o aviso acima e tente atualizar novamente." :
-                 (project == nil ? "Escolha a pasta de destino no compositor e escreva a primeira tarefa." :
-                 (projectAgents.isEmpty ? "Descreva a tarefa abaixo. Acompanhe a execução e revise o resultado aqui." : "Limpe a busca ou ajuste os filtros para ver seus agentes.")))
-                .font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.secondary)
-                .multilineTextAlignment(.center).frame(maxWidth: 360).fixedSize(horizontal: false, vertical: true)
-            if !search.isEmpty || inboxOnly {
-                Button("Limpar busca e filtros") { search = ""; inboxOnly = false }
-            }
-        }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity)
+        ScrollView {
+            VStack(spacing: 12) {
+                Image(systemName: model.connectionError == nil ? "terminal" : "exclamationmark.triangle")
+                    .font(.system(size: 24, weight: .light)).foregroundStyle(TerminalTheme.muted)
+                Text(model.connectionError != nil ? "Não foi possível atualizar os agentes" :
+                     (projectAgents.isEmpty ? "Nenhum agente nesta sessão" : "Nenhum agente neste filtro"))
+                    .font(TerminalTheme.ui(20, weight: .medium))
+                Text(model.connectionError != nil ? "Confira o aviso acima e tente atualizar novamente." :
+                     (project == nil ? "Escolha a pasta de destino no compositor e escreva a primeira tarefa." :
+                     (projectAgents.isEmpty ? "Descreva a tarefa abaixo. Acompanhe a execução e revise o resultado aqui." : "Limpe a busca ou ajuste os filtros para ver seus agentes.")))
+                    .font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.secondary)
+                    .multilineTextAlignment(.center).frame(maxWidth: 360).fixedSize(horizontal: false, vertical: true)
+                if !search.isEmpty || inboxOnly {
+                    Button("Limpar busca e filtros") { search = ""; inboxOnly = false }
+                }
+            }.padding(24).frame(maxWidth: .infinity)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var board: some View {
@@ -482,46 +487,28 @@ struct LiveWorkspaceView: View {
 
     private var agentList: some View {
         GeometryReader { geometry in
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 12) {
-                    Text("#").frame(width: 28, alignment: .leading)
-                    Text("Agente").frame(width: 180, alignment: .leading)
-                    Text("Tipo").frame(width: 72, alignment: .leading)
-                    Text("Estado").frame(width: 128, alignment: .leading)
-                    Text("Atividade").frame(minWidth: 200, maxWidth: .infinity, alignment: .leading)
-                }.font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted).padding(12)
-                TerminalRule()
-                ForEach(Array(Set(filtered.map(\.project))).sorted(), id: \.self) { path in
-                    HStack(spacing: 8) {
-                        RoundedRectangle(cornerRadius: 2).fill(TerminalTheme.projectColor(path)).frame(width: 6, height: 6)
-                        Text(URL(fileURLWithPath: path).lastPathComponent).font(TerminalTheme.mono(12, weight: .semibold))
-                            .foregroundStyle(TerminalTheme.projectColor(path))
-                        Text("\(filtered.filter { $0.project == path }.count)").font(TerminalTheme.mono(10))
-                            .foregroundStyle(TerminalTheme.muted)
-                    }.padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 6)
-                    ForEach(filtered.filter { $0.project == path }) { agent in
-                        Button { open(agent) } label: {
-                            HStack(spacing: 12) {
-                                Text("\(agent.id)").foregroundStyle(TerminalTheme.muted).frame(width: 28, alignment: .leading)
-                                HStack(spacing: 8) {
-                                    Image(systemName: liveStateSymbol(agent.state)).foregroundStyle(liveStateColor(agent.state))
-                                    Text(agent.name).lineLimit(1)
-                                }.frame(width: 180, alignment: .leading)
-                                Text(agent.kind).foregroundStyle(TerminalTheme.providerColor(agent.kind)).frame(width: 72, alignment: .leading)
-                                Text(agent.state == "done" ? "Concluído" : liveStateTitle(agent.state))
-                                    .foregroundStyle(liveStateColor(agent.state)).lineLimit(1)
-                                    .frame(width: 128, alignment: .leading).help(liveStateTitle(agent.state))
-                                Text(agent.activity.isEmpty ? agent.task : agent.activity).lineLimit(1)
-                                    .foregroundStyle(TerminalTheme.secondary)
-                                    .frame(minWidth: 200, maxWidth: .infinity, alignment: .leading)
-                            }.font(TerminalTheme.mono(11)).padding(12).contentShape(Rectangle())
-                        }.buttonStyle(.plain).help(agent.task)
+            ScrollView([.horizontal, .vertical]) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    TerminalListHeading()
+                    ForEach(Array(Set(filtered.map(\.project))).sorted(), id: \.self) { path in
+                        let agents = filtered.filter { $0.project == path }
+                        HStack(spacing: 8) {
+                            Text(URL(fileURLWithPath: path).lastPathComponent)
+                                .foregroundStyle(TerminalTheme.projectColor(path)).lineLimit(1).truncationMode(.middle)
+                            Text("› \(agents.count)").foregroundStyle(TerminalTheme.muted)
+                        }.font(TerminalTheme.mono(13, weight: .semibold))
+                            .padding(.horizontal, 8).padding(.top, 16).padding(.bottom, 4).help(path)
+                        ForEach(agents) { agent in
+                            TerminalAgentRow(number: String(agent.id), name: agent.name, state: agent.state,
+                                             elapsed: workspaceLifetime(agent), provider: agent.kind,
+                                             activity: (agent.archived == true ? "Arquivado · " : "") +
+                                                (agent.activity.isEmpty ? agent.task : agent.activity)) { open(agent) }
+                        }
                     }
-                }
-            }.frame(minWidth: max(720, geometry.size.width - 48), minHeight: geometry.size.height, alignment: .topLeading)
-                .padding(.horizontal, 24)
-        }
+                }.frame(width: max(800, geometry.size.width - 48), alignment: .topLeading)
+                    .frame(minHeight: max(0, geometry.size.height - 12), alignment: .topLeading)
+                    .padding(.horizontal, 24).padding(.bottom, 12)
+            }
         }
     }
 

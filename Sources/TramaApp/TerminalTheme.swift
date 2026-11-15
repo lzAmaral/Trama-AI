@@ -3,10 +3,10 @@ import SwiftUI
 /// Native translation of Octo's desktop tokens (MIT), reference 1dc08a44.
 /// Origin and retained license: ThirdPartyNotices/Octo-MIT.txt.
 enum TerminalTheme {
-    static let background = rgb(0x000000)
-    static let sidebar = rgb(0x000000)
-    static let surface = rgb(0x0a0b0c)
-    static let raised = rgb(0x141718)
+    static let background = rgb(0x17181f)
+    static let sidebar = rgb(0x17181f)
+    static let surface = rgb(0x1c1e27)
+    static let raised = rgb(0x252935)
     static let primary = rgb(0xececf2)
     static let secondary = rgb(0x9a9aa8)
     static let muted = rgb(0x80808e)
@@ -15,12 +15,12 @@ enum TerminalTheme {
     static let warning = rgb(0xf0d65a)
     static let positive = rgb(0x50d782)
     static let danger = rgb(0xf04e5c)
-    static let border = rgb(0x1a1d1f)
-    static let strongBorder = rgb(0x23282a)
+    static let border = rgb(0x323540)
+    static let strongBorder = rgb(0x454959)
     static let waitingSurface = rgb(0x1a1911)
 
     static func ui(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight)
+        .system(size: size, weight: weight, design: .monospaced)
     }
 
     static func mono(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
