@@ -59,3 +59,9 @@ Em 2026-11-08, o bundle redesenhado pôde ser inspecionado: quadro carregado, bu
 Em 2026-11-14, a interface passou a seguir diretamente o Octo em SwiftUI/AppKit: sessões na lateral, abas globais, quadro/lista, grade de snapshots e compositor com pasta explícita e skills locais. A referência visual não atualiza o pin do motor. O controle do computador estava indisponível; renderização isolada não fecha a revisão interativa, VoiceOver ou desempenho. [Paridade](OCTO_NATIVE_PARITY.md) e [validação](OCTO_NATIVE_VALIDATION.md).
 
 A revisão de responsividade do mesmo dia corrigiu cabeçalhos, nomes longos, editores e ações em janelas menores, com 28 capturas em cinco tamanhos e quatro testes AppKit adicionais. [Evidências e limites](RESPONSIVE_UI_VALIDATION.md); revisão interativa continua pendente.
+
+A entrega local de desempenho de 2026-11-14 reduz a espera após entrada confirmada, evita publicações inalteradas no polling automático e executa persistência do workflow fora da thread da interface. Isso não conclui a validação manual sob saída intensa nem reproduz o episódio de publicação de página. [Comportamento, testes e limites](PERFORMANCE_VALIDATION.md).
+
+Em 2026-11-15, a lateral passou a priorizar projetos, com sessões e agentes dentro de cada projeto. A seleção combina projeto e sessão, preservando abas e rascunhos; sessões globais compartilhadas são filtradas na apresentação. [Comportamento e limites](PROJECT_SIDEBAR.md).
+
+O estudo de memória do mesmo dia mede interface e RPCs com shells isolados, saída intensa e 20 ciclos de abertura/fechamento. A extração limitada do histórico e a grade com duas prévias por padrão reduzem memória nos cenários medidos; seis prévias continuam disponíveis. [Medições, reprodução e limites](MEMORY_VALIDATION.md). Isso não comprova ausência de vazamentos em uso prolongado nem conclui a validação manual de desempenho.

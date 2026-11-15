@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import Testing
 import TramaCore
 @testable import TramaApp
@@ -215,4 +216,72 @@ struct WorkspaceFlowTests {
             #expect(AgentPromptComposer.hasTerminalControls(text))
         }
     }
+
+    @Test func unchangedRefreshPreservesContentWithoutRepublishingAgentsOrNavigation() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        model.open(f.agents[0])
+        let selected = model.navigation.selectedAgent
+        var agents = 0, sessions = 0, navigation = 0, invalidations = 0
+        let subscriptions = [model.objectWillChange.sink { invalidations += 1 },
+                             model.$agents.dropFirst().sink { _ in agents += 1 },
+                             model.$sessions.dropFirst().sink { _ in sessions += 1 },
+                             model.$navigation.dropFirst().sink { _ in navigation += 1 }]
+        await model.refresh(showProgress: false)
+        #expect(invalidations == 0)
+        #expect(agents == 0 && sessions == 0 && navigation == 0)
+        #expect(model.navigation.selectedAgent == selected)
+        try Data("invalid".utf8).write(to: f.response)
+        await model.refresh()
+        #expect(model.connectionError != nil)
+        try f.respond(with: f.agents)
+        await model.refresh()
+        #expect(model.connectionError == nil)
+        #expect(agents == 0 && sessions == 0 && navigation == 0)
+        withExtendedLifetime(subscriptions) {}
+    }
+
+    @Test func selectingProjectSessionPersistsBothFiltersWithoutSendingAnEngineRequest() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        model.open(f.agents[0])
+        model.open(f.agents[1])
+        let reference = try #require(f.agents[0].deliveryReference)
+        model.promptDrafts[reference] = "Keep the draft"
+        let requestBefore = try Data(contentsOf: f.request)
+        let tabsBefore = model.navigation.openAgents
+        model.selectScope(projectID: f.projects[0].id, session: "default")
+        #expect(model.navigation.selectedProjectID == f.projects[0].id)
+        #expect(model.navigation.selectedSession == "default")
+        #expect(model.navigation.mode == .board)
+        #expect(model.navigation.selectedAgent == nil)
+        #expect(model.navigation.openAgents == tabsBefore)
+        #expect(model.promptDrafts[reference] == "Keep the draft")
+        #expect(try Data(contentsOf: f.request) == requestBefore)
+        let restored = try f.repository.load()
+        #expect(restored.selectedProjectID == f.projects[0].id && restored.selectedSession == "default")
+        #expect(restored.visibleOpenAgents(projects: f.projects, agents: f.agents) == [f.agents[0]])
+    }
+
+    @Test func projectSessionSelectionBeforeFirstPollOrAfterFailurePreservesRestoredTabs() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        try f.seedTabs()
+        let tabs = try f.repository.load().openAgents
+        let model = f.model()
+        model.selectScope(projectID: f.projects[1].id, session: "default")
+        #expect(model.navigation.openAgents == tabs)
+        #expect(try f.repository.load().openAgents == tabs)
+        try Data("invalid".utf8).write(to: f.response)
+        await model.refresh()
+        model.selectScope(projectID: f.projects[0].id, session: nil)
+        #expect(model.navigation.openAgents == tabs)
+        #expect(try f.repository.load().openAgents == tabs)
+        let before = model.navigation
+        model.selectScope(projectID: UUID(), session: "other")
+        #expect(model.navigation == before)
+        #expect(model.navigationError != nil)
+    }
+
 }

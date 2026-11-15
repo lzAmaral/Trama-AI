@@ -65,8 +65,17 @@ struct DeliveryReviewView: View {
                     TextField("Comentário local sobre esta versão", text: $commentText, axis: .vertical).lineLimit(1...3)
                     Button("Salvar nota") {
                         guard let ref, let line = validLine else { return }
-                        if workflow.addComment(ref: ref, version: snapshot.version, line: line, text: commentText) {
-                            commentText = ""; lineText = ""
+                        let text = commentText
+                        let requestedLineText = lineText
+                        acting = true
+                        Task {
+                            defer { acting = false }
+                            if await workflow.addComment(ref: ref, version: snapshot.version, line: line, text: text) {
+                                if commentText == text {
+                                    commentText = ""
+                                    if lineText == requestedLineText { lineText = "" }
+                                }
+                            }
                         }
                     }.disabled(ref == nil || validLine == nil || commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || workflow.snapshot == nil || loading || acting)
                 }.textFieldStyle(.roundedBorder)
@@ -168,8 +177,9 @@ struct DeliveryReviewView: View {
                 didLoad(nil)
                 return
             }
-            workflow.update { try workflow.repository.recordReviewedDelivery(agentRef: ref, diffVersion: current.version, diffIsEmpty: current.text.isEmpty) }
-            if workflow.error == nil { notice = "Revisão desta versão concluída por sua decisão. Comentários mantidos." }
+            if await workflow.update({ try $0.recordReviewedDelivery(agentRef: ref, diffVersion: current.version, diffIsEmpty: current.text.isEmpty) }) {
+                notice = "Revisão desta versão concluída por sua decisão. Comentários mantidos."
+            }
         } catch { self.error = "Não foi possível validar a versão atual: \(error.localizedDescription)" }
     }
 
@@ -192,7 +202,7 @@ struct DeliveryReviewView: View {
         acting = true; error = nil; notice = nil
         defer { acting = false }
         do {
-            let saved = try workflow.repository.load()
+            let saved = try await workflow.loadSnapshot()
             guard value.comments.allSatisfy({ comment in saved.comments.contains(comment) }) else {
                 error = "As notas mudaram desde a prévia. Feche e prepare outro lote."
                 return
@@ -202,9 +212,9 @@ struct DeliveryReviewView: View {
                 reviewToken: value.preview.token, confirmed: true)
             guard result.deliveredToPTY, result.agentId == agent.id, result.createdAtMs == value.ref.createdAtMs,
                   result.version == value.version, result.noteCount == value.comments.count else { throw EngineClientError.invalidResponse }
-            workflow.update { try workflow.repository.markCommentsSent(value.comments) }
+            let recorded = await workflow.update { try $0.markCommentsSent(value.comments) }
             batch = nil
-            notice = workflow.error == nil
+            notice = recorded
                 ? "Lote entregue à IA. As notas continuam abertas até você resolvê-las explicitamente."
                 : "Lote entregue, mas o registro local falhou. Não reenvie automaticamente; confira a IA antes de qualquer nova tentativa."
         } catch {
@@ -220,6 +230,7 @@ private struct DeliveryCommentRow: View {
     @ObservedObject var workflow: DeliveryWorkflowViewModel
     @State private var editing = false
     @State private var text = ""
+    @State private var saving = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -227,19 +238,28 @@ private struct DeliveryCommentRow: View {
                 .foregroundStyle(old ? TerminalTheme.warning : TerminalTheme.secondary)
             if old { Text("Versão antiga: esta nota não entrará no lote da versão atual.").foregroundStyle(TerminalTheme.warning) }
             if editing {
-                TextField("Texto da nota", text: $text, axis: .vertical).lineLimit(1...5)
+                TextField("Texto da nota", text: $text, axis: .vertical).lineLimit(1...5).disabled(saving)
                 HStack {
-                    Button("Cancelar edição") { editing = false }
+                    Button("Cancelar edição") { editing = false }.disabled(saving)
                     Button("Salvar edição") {
-                        workflow.update { try workflow.repository.updateComment(comment.id, text: text) }
-                        if workflow.error == nil { editing = false }
-                    }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        guard !saving else { return }
+                        let requestedText = text
+                        let commentID = comment.id
+                        saving = true
+                        Task {
+                            defer { saving = false }
+                            if await workflow.update({ try $0.updateComment(commentID, text: requestedText) }) { editing = false }
+                        }
+                    }.disabled(saving || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             } else {
                 Text(comment.text).textSelection(.enabled)
                 HStack {
                     Button("Editar nota") { text = comment.text; editing = true }.disabled(comment.resolvedAt != nil)
-                    Button("Resolver nota") { workflow.update { try workflow.repository.resolveComment(comment.id) } }
+                    Button("Resolver nota") {
+                        let commentID = comment.id
+                        Task { await workflow.update { try $0.resolveComment(commentID) } }
+                    }
                         .disabled(comment.resolvedAt != nil)
                 }
             }

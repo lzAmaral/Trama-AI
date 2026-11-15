@@ -79,6 +79,7 @@ import TramaCore
             model.projectTaskDrafts[projects[0].id] = "Prévia com dados fictícios: revisar o cadastro e a navegação.\nPreservar caracteres: ação, 👩🏽‍💻, \"aspas\" e caminhos longos.\nNenhum agente real será iniciado por este teste."
         }
         let view = WorkspaceView(workspace: workspace, live: model)
+            .environment(\.scenePhase, .active) // Offscreen fixtures have no active native scene.
             .preferredColorScheme(.dark).tint(TerminalTheme.accent)
             .overlay(alignment: .bottomTrailing) {
                 Text("Prévia · dados fictícios").font(.system(size: 10)).foregroundStyle(.yellow)
@@ -124,6 +125,7 @@ import TramaCore
                              expectedEditor: "task-composer-editor")
             model.projectTaskDrafts[projects[0].id] = "Prévia com dados fictícios: revisar os caminhos longos."
             let wideSidebar = WorkspaceView(workspace: workspace, live: model, preferredSidebarWidth: 380)
+                .environment(\.scenePhase, .active) // Offscreen fixtures have no active native scene.
                 .preferredColorScheme(.dark).tint(TerminalTheme.accent)
                 .overlay(alignment: .bottomTrailing) {
                     Text("Prévia · dados fictícios").font(.system(size: 10)).foregroundStyle(.yellow).padding(6).background(.black)
@@ -149,13 +151,24 @@ import TramaCore
             print("Matriz responsiva: \(auditReports.count) layouts nativos com editores dentro dos limites")
             return
         }
+        model.selectScope(projectID: projects[0].id, session: sessionName)
+        workspace.selectedID = projects[0].id
+        try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("project-sidebar.png"))
+        try await render(view, width: 820, height: 560, to: output.appendingPathComponent("project-sidebar-compact.png"))
+        model.selectScope(projectID: nil, session: nil)
+        workspace.selectedID = nil
         try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("octo-native-board.png"))
         try await render(view, width: 820, height: 560, to: output.appendingPathComponent("octo-native-compact.png"))
         model.showOverview(.list)
         try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("octo-native-list.png"))
-        let beforeGrid = try String(contentsOf: root.appendingPathComponent("operations.txt"), encoding: .utf8)
+        model.terminalPreviewDensity = .economical
         model.showOverview(.grid)
-        try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("octo-native-grid.png"))
+        try await render(view, width: 820, height: 560, to: output.appendingPathComponent("memory-grid-two-compact.png"), settleDelay: .milliseconds(1000))
+        try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("memory-grid-two.png"), settleDelay: .milliseconds(1000))
+        let beforeGrid = try String(contentsOf: root.appendingPathComponent("operations.txt"), encoding: .utf8)
+        model.terminalPreviewDensity = .full
+        model.showOverview(.grid)
+        try await render(view, width: 1440, height: 900, to: output.appendingPathComponent("octo-native-grid.png"), settleDelay: .milliseconds(1000))
         let afterGrid = try String(contentsOf: root.appendingPathComponent("operations.txt"), encoding: .utf8)
         let gridOps = String(afterGrid.dropFirst(beforeGrid.count)).split(separator: "\n").map(String.init)
         guard gridOps.allSatisfy({ ["list", "snapshot"].contains($0) }),
@@ -172,6 +185,7 @@ import TramaCore
         model.showOverview(.board)
         let firstRun = WorkspaceModel(repository: firstRunRepository)
         let emptyView = WorkspaceView(workspace: firstRun, live: model)
+            .environment(\.scenePhase, .active) // Offscreen fixtures have no active native scene.
             .preferredColorScheme(.dark).tint(TerminalTheme.accent)
             .overlay(alignment: .bottomTrailing) {
                 Text("Prévia · dados fictícios").font(.system(size: 10)).foregroundStyle(.yellow).padding(6).background(.black)
@@ -181,6 +195,7 @@ import TramaCore
         try Data("invalid fixture".utf8).write(to: corruptURL)
         let failed = WorkspaceModel(repository: ProjectRepository(fileURL: corruptURL))
         let failedView = WorkspaceView(workspace: failed, live: model)
+            .environment(\.scenePhase, .active) // Offscreen fixtures have no active native scene.
             .preferredColorScheme(.dark).tint(TerminalTheme.accent)
         try await render(failedView, width: 820, height: 560, to: output.appendingPathComponent("octo-native-storage-error.png"))
         guard try Data(contentsOf: corruptURL) == Data("invalid fixture".utf8) else {
@@ -225,14 +240,14 @@ import TramaCore
     }
 
     @MainActor static func render<V: View>(_ view: V, width: CGFloat, height: CGFloat, to url: URL,
-                                          expectedEditor: String? = nil) async throws {
+                                          expectedEditor: String? = nil, settleDelay: Duration = .milliseconds(600)) async throws {
         let hosting = NSHostingView(rootView: view)
         hosting.frame = NSRect(x: 0, y: 0, width: width, height: height)
         hosting.appearance = NSAppearance(named: .darkAqua)
         let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = hosting
         hosting.layoutSubtreeIfNeeded()
-        try await Task.sleep(for: .milliseconds(600))
+        try await Task.sleep(for: settleDelay)
         hosting.layoutSubtreeIfNeeded()
         if let expectedEditor {
             let editors = descendants(hosting).compactMap { $0 as? NSTextView }

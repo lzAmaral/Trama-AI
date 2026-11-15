@@ -1,0 +1,45 @@
+{
+  "acknowledgmentAfterPreviousPollMs": 25,
+  "idleIntervalMs": 800,
+  "limits": [
+    "Scheduler-only synthetic acknowledgment; not keyboard-to-pixel latency.",
+    "Excludes RPC, PTY, provider execution, SwiftUI and terminal parsing/drawing.",
+    "Small local sample; wall time depends on host scheduling."
+  ],
+  "minimumIntervalMs": 100,
+  "schema": 1,
+  "withoutWake": {
+    "count": 5,
+    "maxMs": 828.2015833246987,
+    "medianMs": 822.7525833353866,
+    "samplesMs": [
+      822.4137083161622,
+      828.2015833246987,
+      822.7525833353866,
+      808.2556666631717,
+      825.3182083426509
+    ]
+  },
+  "withWake": {
+    "count": 10,
+    "maxMs": 79.17966664535925,
+    "medianMs": 77.14458330883645,
+    "samplesMs": [
+      74.3160416604951,
+      75.55775000946596,
+      78.76841668621637,
+      72.47504167025909,
+      79.17966664535925,
+      77.7902499830816,
+      75.32624999294057,
+      77.15387499774806,
+      77.14458330883645,
+      72.87729167728685
+    ]
+  },
+  "timestampUTC": "2026-11-14T22:09:59.520888+00:00",
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64"
+  }
+}

@@ -88,7 +88,7 @@ struct WorkspaceView: View {
     @State private var showsHelp = false
     @State private var showsNewSession = false
     @State private var newSession = ""
-    @State private var expandedSessions: Set<String> = []
+    @State private var newSessionProjectID: UUID?
     @State private var usageProvider: EngineProvider?
     @State private var usageSnapshots: [String: EngineUsage] = [:]
 
@@ -140,8 +140,9 @@ struct WorkspaceView: View {
             if let id = live.navigation.selectedProjectID, workspace.projects.contains(where: { $0.id == id }) {
                 workspace.selectedID = id
             }
+            await live.workflow.reload()
             while !Task.isCancelled {
-                await live.refresh()
+                await live.refresh(showProgress: false)
                 do { try await Task.sleep(for: .seconds(2)) } catch { break }
             }
         }
@@ -158,25 +159,19 @@ struct WorkspaceView: View {
         .sheet(item: $usageProvider) { provider in
             UsageInspectorView(provider: provider, onUpdated: { usageSnapshots[provider.id] = $0 })
         }
-        .onAppear {
-            if let name = live.navigation.selectedSession { expandedSessions.insert(name) }
-        }
-        .onChange(of: live.navigation.selectedSession) { _, name in
-            if let name { expandedSessions.insert(name) }
-        }
         .alert("Nova sessão", isPresented: $showsNewSession) {
             TextField("Nome da sessão", text: $newSession)
             Button("Cancelar", role: .cancel) { }
             Button("Criar") {
                 let name = newSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
+                let projectID = newSessionProjectID
                 Task { await live.perform {
                     try await live.client.createSession(name: name)
-                    live.selectSession(name)
-                    expandedSessions.insert(name)
+                    live.selectScope(projectID: projectID, session: name)
                 } }
             }.disabled(newSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || live.busy)
-        } message: { Text("Uma sessão agrupa agentes de vários projetos. O destino de cada tarefa é escolhido no compositor.") }
+        } message: { Text("Crie uma sessão e escreva a primeira tarefa no projeto selecionado. Confira a pasta junto da mensagem.") }
         .alert("Atenção aos dados do projeto", isPresented: Binding(
             get: { workspace.errorMessage != nil },
             set: { if !$0 { workspace.errorMessage = nil } }
@@ -199,7 +194,7 @@ struct WorkspaceView: View {
             }.padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 32)
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(workspace.showsDemo ? "Demonstração" : "Sessões")
+                    Text(workspace.showsDemo ? "Demonstração" : "Projetos")
                         .font(TerminalTheme.mono(10, weight: .medium)).foregroundStyle(TerminalTheme.muted)
                         .padding(.horizontal, 12).padding(.bottom, 4)
                     if workspace.showsDemo {
@@ -208,28 +203,13 @@ struct WorkspaceView: View {
                         Text("Use o filtro de projetos para explorar os exemplos.")
                             .font(TerminalTheme.ui(12)).foregroundStyle(TerminalTheme.secondary).padding(.horizontal, 12)
                     } else {
-                        Button { live.selectSession(nil) } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "rectangle.stack").frame(width: 16)
-                                Text("Todas as sessões").lineLimit(1)
-                                Spacer(minLength: 0)
-                                Text("\(live.agents.count)").font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.muted)
-                            }.padding(.horizontal, 10).frame(height: 34)
-                                .background(live.navigation.selectedSession == nil ? TerminalTheme.raised : .clear,
-                                            in: RoundedRectangle(cornerRadius: 8))
-                        }.buttonStyle(.plain).disabled(live.busy)
-                            .accessibilityAddTraits(live.navigation.selectedSession == nil ? .isSelected : [])
-                        ForEach(live.sessions, id: \.self) { name in sessionRow(name) }
-                        if !live.hasLoaded { ProgressView("Carregando…").controlSize(.small).padding(12) }
-                        Button {
-                            newSession = ""; showsNewSession = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus").frame(width: 16)
-                                Text("Nova sessão")
-                                Spacer(minLength: 0)
-                            }.padding(.horizontal, 10).frame(height: 34)
-                        }.buttonStyle(.plain).foregroundStyle(TerminalTheme.secondary).disabled(live.busy)
+                        ProjectSidebarView(projects: workspace.projects, model: live,
+                                           addProject: workspace.chooseProject) { projectID in
+                            newSessionProjectID = projectID
+                            newSession = ""
+                            showsNewSession = true
+                        }
+
                     }
                 }.padding(.horizontal, 12)
             }
@@ -249,50 +229,6 @@ struct WorkspaceView: View {
             }.font(TerminalTheme.ui(14)).buttonStyle(.plain).foregroundStyle(TerminalTheme.secondary)
                 .padding(20)
         }.font(TerminalTheme.ui(13)).background(TerminalTheme.sidebar)
-    }
-
-    private func sessionRow(_ name: String) -> some View {
-        let agents = live.agents.filter { $0.session == name && $0.archived != true }
-        let selected = live.navigation.selectedSession == name
-        let expanded = expandedSessions.contains(name)
-        return VStack(spacing: 2) {
-            HStack(spacing: 6) {
-                Button {
-                    if expanded { expandedSessions.remove(name) } else { expandedSessions.insert(name) }
-                } label: {
-                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                        .font(TerminalTheme.ui(9, weight: .semibold)).frame(width: 16, height: 30)
-                }.buttonStyle(.plain).accessibilityLabel("\(expanded ? "Recolher" : "Expandir") sessão \(name)")
-                Button {
-                    live.selectSession(name); expandedSessions.insert(name)
-                } label: {
-                    HStack {
-                        Text(name).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                            .fontWeight(selected ? .semibold : .regular).help(name)
-                        Spacer(minLength: 0)
-                        Text("\(agents.count)").font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.muted)
-                    }.frame(minHeight: 34).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("Sessão \(name), \(agents.count) agentes")
-                    .accessibilityAddTraits(selected ? .isSelected : [])
-            }.padding(.leading, 6).padding(.trailing, 10)
-                .background(selected ? TerminalTheme.raised : .clear, in: RoundedRectangle(cornerRadius: 8))
-            if expanded {
-                ForEach(agents) { agent in
-                    Button { live.open(agent) } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: liveStateSymbol(agent.state)).frame(width: 12)
-                                .foregroundStyle(liveStateColor(agent.state))
-                            Text(agent.kind == "terminal" ? "$" : String(agent.kind.prefix(1)).uppercased())
-                                .foregroundStyle(TerminalTheme.providerColor(agent.kind)).frame(width: 12)
-                            Text(agent.name).lineLimit(1).truncationMode(.middle).foregroundStyle(agent.state == "paused" ? TerminalTheme.warning : TerminalTheme.secondary)
-                            Spacer(minLength: 0)
-                        }.font(TerminalTheme.mono(11)).padding(.leading, 22).padding(.trailing, 8).frame(height: 28)
-                            .contentShape(Rectangle())
-                    }.buttonStyle(.plain).help("\(agent.name) · #\(agent.id)\n\(agent.project)\n\(agent.task)")
-                        .accessibilityLabel("Abrir \(agent.name), \(liveStateTitle(agent.state)), \(agent.kind)")
-                }
-            }
-        }.disabled(live.busy)
     }
 
     private var usagePanel: some View {
@@ -362,8 +298,8 @@ struct WorkspaceView: View {
                 Spacer()
                 Button("Fechar") { showsHelp = false }.keyboardShortcut(.cancelAction)
             }
-            Text("1. Escolha ou crie uma sessão na barra lateral.")
-            Text("2. No compositor, escolha o provedor e a pasta do projeto.")
+            Text("1. Escolha um projeto na lateral e abra ou crie uma sessão.")
+            Text("2. Escolha o provedor e confira a pasta junto do campo de mensagem.")
             Text("3. Escreva a tarefa e use ⌘Return para iniciar.")
             Text("Abra um cartão ou uma aba para acompanhar o terminal. Responda às aprovações diretamente no terminal do provedor.")
                 .foregroundStyle(TerminalTheme.secondary)

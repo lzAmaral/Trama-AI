@@ -1,16 +1,22 @@
 import SwiftUI
 import TramaCore
 
+enum TerminalPreviewDensity: Int, CaseIterable {
+    case economical = 2
+    case full = 6
+}
+
 /// Native, read-only counterpart to Octo's grid view.
 /// Layout reference: Octo 1dc08a4 desktop/ui/js/grid.js (MIT, Lucas Marujo).
 /// A page owns at most six snapshot tasks; previews never send PTY input or resize.
 struct WorkspaceTerminalGrid: View {
     let agents: [EngineAgent]
     let client: OctoEngineClient
+    @Binding var density: TerminalPreviewDensity
     let onOpen: (EngineAgent) -> Void
     @State private var page = 0
 
-    private let pageSize = 6
+    private var pageSize: Int { density.rawValue }
     private var pageCount: Int { max(1, (agents.count + pageSize - 1) / pageSize) }
     private var displayedAgents: [EngineAgent] {
         Array(agents.dropFirst(min(page, pageCount - 1) * pageSize).prefix(pageSize))
@@ -33,6 +39,14 @@ struct WorkspaceTerminalGrid: View {
                         Text("Prévias somente leitura").font(TerminalTheme.ui(11))
                             .foregroundStyle(TerminalTheme.secondary)
                         Spacer(minLength: 0)
+                        Picker("Prévias por página", selection: $density) {
+                            Text("2 · menor consumo").tag(TerminalPreviewDensity.economical)
+                            Text("6 prévias").tag(TerminalPreviewDensity.full)
+                        }
+                        .labelsHidden().pickerStyle(.menu).fixedSize()
+                        .accessibilityLabel("Prévias por página")
+                        .accessibilityIdentifier("terminal-preview-density")
+                        .help("Duas prévias reduzem o uso de memória. Todos os agentes continuam em execução.")
                         if pageCount > 1 {
                             Text("\(min(page, pageCount - 1) + 1) / \(pageCount)")
                                 .font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary)
@@ -47,13 +61,13 @@ struct WorkspaceTerminalGrid: View {
                                 .accessibilityLabel("Próxima página de terminais")
                         }
                     }
-                    let columnCount = geometry.size.width >= 840 ? 3 : 2
+                    let columnCount = min(pageSize, geometry.size.width >= 840 ? 3 : 2)
                     let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 0), count: columnCount)
                     let tileHeight = min(280, max(176, (geometry.size.height - 36) / 2))
                     ScrollView(.vertical) {
                         LazyVGrid(columns: columns, spacing: 0) {
-                            ForEach(displayedAgents) { agent in
-                                WorkspaceTerminalTile(agent: agent, client: client, compact: geometry.size.width / CGFloat(columnCount) < 280,
+                            ForEach(Array(displayedAgents.enumerated()), id: \.element.id) { index, agent in
+                                WorkspaceTerminalTile(agent: agent, client: client, pollOffset: .milliseconds(index * 80), compact: geometry.size.width / CGFloat(columnCount) < 280,
                                                       onOpen: { onOpen(agent) })
                                     .frame(height: tileHeight)
                                     .id(TerminalPreviewIdentity(agent))
@@ -62,12 +76,16 @@ struct WorkspaceTerminalGrid: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(TerminalTheme.border))
                     }
+                    // A lazy grid can cache removed native terminals. Release the old page
+                    // when its identities change, including density, pagination and filtering.
+                    .id(displayedAgents.map(TerminalPreviewIdentity.init))
                 }
             }
         }
         .onChange(of: agents.map(TerminalPreviewIdentity.init)) { _, _ in
             page = min(page, pageCount - 1)
         }
+        .onChange(of: density) { _, _ in page = 0 }
     }
 }
 
@@ -84,19 +102,22 @@ private struct TerminalPreviewIdentity: Hashable {
 private struct TerminalPreviewPollKey: Equatable {
     let identity: TerminalPreviewIdentity
     let alive: Bool
+    let active: Bool
 }
 
 private struct WorkspaceTerminalTile: View {
     let agent: EngineAgent
     let client: OctoEngineClient
+    let pollOffset: Duration
     let compact: Bool
     let onOpen: () -> Void
+    @Environment(\.scenePhase) private var scenePhase
     @State private var snapshot = Data()
     @State private var hasSnapshot = false
     @State private var error: String?
 
     private var pollKey: TerminalPreviewPollKey {
-        TerminalPreviewPollKey(identity: TerminalPreviewIdentity(agent), alive: agent.isAlive && agent.archived != true)
+        TerminalPreviewPollKey(identity: TerminalPreviewIdentity(agent), alive: agent.isAlive && agent.archived != true, active: scenePhase == .active)
     }
 
     var body: some View {
@@ -206,7 +227,9 @@ private struct WorkspaceTerminalTile: View {
     }
 
     @MainActor private func poll() async {
-        guard agent.createdAtMs != nil, pollKey.alive else { return }
+        guard agent.createdAtMs != nil, pollKey.alive, pollKey.active else { return }
+        // Spread the six previews across the cycle instead of replaying them in one burst.
+        do { try await Task.sleep(for: pollOffset) } catch { return }
         while !Task.isCancelled {
             do {
                 // This is a read-only snapshot. No input, resize, start or resume RPC is sent.
@@ -214,13 +237,14 @@ private struct WorkspaceTerminalTile: View {
                 try Task.checkCancellation()
                 guard let bytes = next.bytes else { throw EngineClientError.invalidResponse }
                 if snapshot != bytes { snapshot = bytes }
-                hasSnapshot = true
-                error = nil
+                if !hasSnapshot { hasSnapshot = true }
+                if error != nil { error = nil }
             } catch is CancellationError {
                 return
             } catch {
                 guard !Task.isCancelled else { return }
-                self.error = error.localizedDescription
+                let message = error.localizedDescription
+                if self.error != message { self.error = message }
             }
             do { try await Task.sleep(for: .seconds(3)) }
             catch { return }

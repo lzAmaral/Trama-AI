@@ -343,4 +343,42 @@ struct WorkspaceNavigationTests {
             #expect(try repository.load().mode == .board)
         }
     }
+    @Test func projectSessionScopeIsAtomicAndKeepsOtherTabs() throws {
+        let aa = agent(1, project: a), bb = agent(2, project: b)
+        var state = WorkspaceNavigationState()
+        try state.open(try ref(aa), projects: [a, b], agents: [aa, bb])
+        try state.open(try ref(bb), projects: [a, b], agents: [aa, bb])
+        try state.selectScope(projectID: a.id, session: "default", projects: [a, b], agents: [aa, bb])
+        #expect(state.selectedProjectID == a.id && state.selectedSession == "default")
+        #expect(state.selectedAgent == nil && state.mode == .board)
+        #expect(state.openAgents == [try ref(aa), try ref(bb)])
+        #expect(state.visibleOpenAgents(projects: [a, b], agents: [aa, bb]) == [aa])
+        let before = state
+        #expect(throws: WorkspaceNavigationState.NavigationError.projectUnavailable) {
+            try state.selectScope(projectID: UUID(), session: "other", projects: [a, b], agents: [aa, bb])
+        }
+        #expect(state == before)
+        #expect(throws: WorkspaceNavigationState.NavigationError.invalidState) {
+            try state.selectScope(projectID: b.id, session: "", projects: [a, b], agents: [aa, bb])
+        }
+        #expect(state == before)
+        try state.selectScope(projectID: b.id, session: nil, projects: [a, b], agents: [aa, bb])
+        #expect(state.selectedProjectID == b.id && state.selectedSession == nil)
+        #expect(state.visibleOpenAgents(projects: [a, b], agents: [aa, bb]) == [bb])
+    }
+
+    @Test func emptySessionWithinProjectRestoresWithoutCreatingAnOwnershipRelation() throws {
+        try withStore { repository in
+            try repository.update { state in
+                try state.selectScope(projectID: a.id, session: "Empty", projects: [a], agents: [])
+            }
+            var restored = try repository.load()
+            #expect(restored.selectedProjectID == a.id && restored.selectedSession == "Empty")
+            restored.reconcile(projects: [a], agents: [], sessions: ["Empty"])
+            #expect(restored.selectedProjectID == a.id && restored.selectedSession == "Empty")
+            restored.reconcile(projects: [a], agents: [], sessions: [])
+            #expect(restored.selectedProjectID == a.id && restored.selectedSession == nil)
+        }
+    }
+
 }

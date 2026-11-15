@@ -196,7 +196,7 @@ struct ProjectTaskComposer: View {
         Button { showsFolderPicker = true } label: {
             HStack(spacing: 6) {
                 Image(systemName: "folder").font(.system(size: 12)).fixedSize()
-                Text(project?.name ?? "Escolher pasta")
+                Text(project.map { shortPath($0.path) } ?? "Escolher pasta")
                     .font(TerminalTheme.mono(12, weight: .medium)).lineLimit(1).truncationMode(.middle)
                     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold)).fixedSize()
@@ -284,7 +284,7 @@ struct ProjectTaskComposer: View {
             }
             TextField("Nome do agente (opcional)", text: $name).textFieldStyle(.roundedBorder)
             Picker("Sessão", selection: Binding(
-                get: { sessionSelection.selectedSession }, set: { model.selectSession($0) }
+                get: { sessionSelection.selectedSession }, set: { model.selectScope(projectID: selectedProjectID, session: $0) }
             )) {
                 if sessionSelection.options.isEmpty { Text("Nenhuma sessão disponível").tag(nil as String?) }
                 ForEach(sessionSelection.options, id: \.self) { Text($0).tag(Optional($0)) }

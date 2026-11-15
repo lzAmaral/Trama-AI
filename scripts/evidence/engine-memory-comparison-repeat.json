@@ -1,0 +1,755 @@
+{
+  "schema": 1,
+  "timestampUTC": "2026-11-15T03:53:41Z",
+  "host": {
+    "system": "Darwin",
+    "release": "25.6.0",
+    "machine": "arm64"
+  },
+  "engineSHA256": {
+    "baseline": "08ed94cfe2f0e51aa29b2d79c089289c07e441bdfa371321671695ddb7f37983",
+    "candidate": "0bb585625a6b7f778505aa456f0b6cb1ef16413328aa5dcdf83eed4aa1be1490"
+  },
+  "repetitions": 8,
+  "samples": {
+    "baseline": {
+      "emptyList": [
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 193.79591700271703,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2211840,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 6.1318749794736505,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1147216,
+          "elapsedMs": 5.55674999486655,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 4.397459008032456,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.97708298987709,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.9225409855134785,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.859000018564984,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2195456,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.5572499909903854,
+          "responseBytes": 70
+        }
+      ],
+      "sixIdleList": [
+        {
+          "maximumRSSBytes": 2801664,
+          "peakFootprintBytes": 1376592,
+          "elapsedMs": 5.79749999451451,
+          "responseBytes": 2457
+        },
+        {
+          "maximumRSSBytes": 2818048,
+          "peakFootprintBytes": 1392976,
+          "elapsedMs": 4.784584016306326,
+          "responseBytes": 2457
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1327416,
+          "elapsedMs": 4.365750006400049,
+          "responseBytes": 2457
+        },
+        {
+          "maximumRSSBytes": 2785280,
+          "peakFootprintBytes": 1360208,
+          "elapsedMs": 4.226874996675178,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1327416,
+          "elapsedMs": 4.221208015223965,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2785280,
+          "peakFootprintBytes": 1343800,
+          "elapsedMs": 3.9312500157393515,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2785280,
+          "peakFootprintBytes": 1360208,
+          "elapsedMs": 3.8501250091940165,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1327416,
+          "elapsedMs": 3.9398329972755164,
+          "responseBytes": 2460
+        }
+      ],
+      "idleSnapshot": [
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1147216,
+          "elapsedMs": 3.846292005619034,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1147216,
+          "elapsedMs": 3.689833014504984,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.5531670146156102,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1147216,
+          "elapsedMs": 3.718249994562939,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.584584017517045,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.54099998367019,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.7280420074239373,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2572288,
+          "peakFootprintBytes": 1130808,
+          "elapsedMs": 3.7372079968918115,
+          "responseBytes": 119
+        }
+      ],
+      "outputSnapshot": [
+        {
+          "maximumRSSBytes": 2654208,
+          "peakFootprintBytes": 1229112,
+          "elapsedMs": 4.344832996139303,
+          "responseBytes": 11171
+        },
+        {
+          "maximumRSSBytes": 3162112,
+          "peakFootprintBytes": 1769832,
+          "elapsedMs": 5.8061659801751375,
+          "responseBytes": 196395
+        },
+        {
+          "maximumRSSBytes": 3555328,
+          "peakFootprintBytes": 2146640,
+          "elapsedMs": 6.621583976084366,
+          "responseBytes": 327595
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 7.888624997576699,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 9.099791990593076,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 9.891833004076034,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.538208007346839,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2261352,
+          "elapsedMs": 11.073292000219226,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.671334010316059,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.961584019241855,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.792416986078024,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.737499997252598,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.066250008298084,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2261352,
+          "elapsedMs": 11.712709005223587,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.444375006249174,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.4245840231888,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 9.242250001989305,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 9.583040984580293,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.43575000949204,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.010083981091157,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.655124991899356,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.010165977291763,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 11.672458000248298,
+          "responseBytes": 359919
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 12.721500010229647,
+          "responseBytes": 359643
+        }
+      ],
+      "loadedSnapshot": [
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 10.156125004868954,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 7.374415989033878,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 6.845916010206565,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 6.5192079928237945,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 6.22687500435859,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 6.099499994888902,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 5.91283300309442,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3653632,
+          "peakFootprintBytes": 2244944,
+          "elapsedMs": 6.068833026802167,
+          "responseBytes": 359643
+        }
+      ],
+      "loadedLogs": [
+        {
+          "maximumRSSBytes": 51068928,
+          "peakFootprintBytes": 49545576,
+          "elapsedMs": 41.3264170056209,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51068928,
+          "peakFootprintBytes": 49545576,
+          "elapsedMs": 23.165207996498793,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51085312,
+          "peakFootprintBytes": 49561960,
+          "elapsedMs": 23.443540994776413,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51036160,
+          "peakFootprintBytes": 49512808,
+          "elapsedMs": 23.166083003161475,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51085312,
+          "peakFootprintBytes": 49561960,
+          "elapsedMs": 23.53620799840428,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51068928,
+          "peakFootprintBytes": 49545576,
+          "elapsedMs": 23.22708402061835,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51036160,
+          "peakFootprintBytes": 49529216,
+          "elapsedMs": 23.75229200697504,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 51052544,
+          "peakFootprintBytes": 49529192,
+          "elapsedMs": 23.429583001416177,
+          "responseBytes": 65875
+        }
+      ]
+    },
+    "candidate": {
+      "emptyList": [
+        {
+          "maximumRSSBytes": 2228224,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 455.7762089825701,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2244608,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 7.814249984221533,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2228224,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 4.670499998610467,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2244608,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 4.554834013106301,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2244608,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 4.1808329988271,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2244608,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.9838750089984387,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2228224,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.780750004807487,
+          "responseBytes": 70
+        },
+        {
+          "maximumRSSBytes": 2228224,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.616166999563575,
+          "responseBytes": 70
+        }
+      ],
+      "sixIdleList": [
+        {
+          "maximumRSSBytes": 2818048,
+          "peakFootprintBytes": 1392976,
+          "elapsedMs": 5.311291984980926,
+          "responseBytes": 2457
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1327416,
+          "elapsedMs": 4.7264159948099405,
+          "responseBytes": 2457
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1343824,
+          "elapsedMs": 4.3091250117868185,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1343824,
+          "elapsedMs": 4.498708003666252,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2785280,
+          "peakFootprintBytes": 1360208,
+          "elapsedMs": 4.196875001071021,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2801664,
+          "peakFootprintBytes": 1376592,
+          "elapsedMs": 4.074333002790809,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2801664,
+          "peakFootprintBytes": 1360184,
+          "elapsedMs": 4.021624976303428,
+          "responseBytes": 2460
+        },
+        {
+          "maximumRSSBytes": 2768896,
+          "peakFootprintBytes": 1327416,
+          "elapsedMs": 4.026375012472272,
+          "responseBytes": 2460
+        }
+      ],
+      "idleSnapshot": [
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.84812502306886,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.5165419976692647,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.8116659852676094,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.8202920113690197,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.766124980757013,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1163600,
+          "elapsedMs": 3.8379580073524266,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.654250002000481,
+          "responseBytes": 119
+        },
+        {
+          "maximumRSSBytes": 2605056,
+          "peakFootprintBytes": 1147192,
+          "elapsedMs": 3.5782089980784804,
+          "responseBytes": 119
+        }
+      ],
+      "loadedSnapshot": [
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 8.418624987825751,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 7.6956250122748315,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2277736,
+          "elapsedMs": 6.743332982296124,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 6.5810829983092844,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 6.012917001498863,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 6.052292010281235,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 6.164332997286692,
+          "responseBytes": 359643
+        },
+        {
+          "maximumRSSBytes": 3686400,
+          "peakFootprintBytes": 2261328,
+          "elapsedMs": 5.971750011667609,
+          "responseBytes": 359643
+        }
+      ],
+      "loadedLogs": [
+        {
+          "maximumRSSBytes": 46661632,
+          "peakFootprintBytes": 45269352,
+          "elapsedMs": 21.132916008355096,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46678016,
+          "peakFootprintBytes": 45285736,
+          "elapsedMs": 18.93495800322853,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46661632,
+          "peakFootprintBytes": 45269352,
+          "elapsedMs": 18.13666700036265,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46678016,
+          "peakFootprintBytes": 45285736,
+          "elapsedMs": 17.90295899263583,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46743552,
+          "peakFootprintBytes": 45351272,
+          "elapsedMs": 17.636332981055602,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46759936,
+          "peakFootprintBytes": 45367656,
+          "elapsedMs": 18.32358297542669,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46759936,
+          "peakFootprintBytes": 45367656,
+          "elapsedMs": 18.096416984917596,
+          "responseBytes": 65875
+        },
+        {
+          "maximumRSSBytes": 46661632,
+          "peakFootprintBytes": 45269352,
+          "elapsedMs": 17.612208990613,
+          "responseBytes": 65875
+        }
+      ]
+    }
+  },
+  "workload": {
+    "shells": 6,
+    "rows": 100,
+    "cols": 240,
+    "lines": 10000,
+    "generatedBytes": 2380000,
+    "completionObserved": true,
+    "loadedSnapshotBytes": 269889
+  },
+  "limits": [
+    "macOS time -l peak footprint/max RSS measure each request process, not app/holders/CLIs.",
+    "Request duration includes /usr/bin/time instrumentation and process startup.",
+    "Six controlled shells; no credentials, authenticated providers or network requests.",
+    "History equality compares binaries on the same stopped, flushed output.",
+    "One host and workload; sample variation is not a universal RAM guarantee."
+  ],
+  "cleanupConfirmed": true,
+  "summary": {
+    "baseline": {
+      "emptyList": {
+        "maximumRSSBytes": 2195456.0,
+        "peakFootprintBytes": 1130808.0,
+        "elapsedMs": 4.187270998954773,
+        "responseBytes": 70.0
+      },
+      "sixIdleList": {
+        "maximumRSSBytes": 2785280.0,
+        "peakFootprintBytes": 1352004.0,
+        "elapsedMs": 4.224041505949572,
+        "responseBytes": 2460.0
+      },
+      "idleSnapshot": {
+        "maximumRSSBytes": 2572288.0,
+        "peakFootprintBytes": 1130808.0,
+        "elapsedMs": 3.7040415045339614,
+        "responseBytes": 119.0
+      },
+      "outputSnapshot": {
+        "maximumRSSBytes": 3653632.0,
+        "peakFootprintBytes": 2244944.0,
+        "elapsedMs": 10.72377098898869,
+        "responseBytes": 359919.0
+      },
+      "loadedSnapshot": {
+        "maximumRSSBytes": 3653632.0,
+        "peakFootprintBytes": 2244944.0,
+        "elapsedMs": 6.373041498591192,
+        "responseBytes": 359643.0
+      },
+      "loadedLogs": {
+        "maximumRSSBytes": 51068928.0,
+        "peakFootprintBytes": 49545576.0,
+        "elapsedMs": 23.436561998096295,
+        "responseBytes": 65875.0
+      }
+    },
+    "candidate": {
+      "emptyList": {
+        "maximumRSSBytes": 2236416.0,
+        "peakFootprintBytes": 1147192.0,
+        "elapsedMs": 4.367833505966701,
+        "responseBytes": 70.0
+      },
+      "sixIdleList": {
+        "maximumRSSBytes": 2777088.0,
+        "peakFootprintBytes": 1352004.0,
+        "elapsedMs": 4.25300000642892,
+        "responseBytes": 2460.0
+      },
+      "idleSnapshot": {
+        "maximumRSSBytes": 2605056.0,
+        "peakFootprintBytes": 1147192.0,
+        "elapsedMs": 3.788895483012311,
+        "responseBytes": 119.0
+      },
+      "loadedSnapshot": {
+        "maximumRSSBytes": 3686400.0,
+        "peakFootprintBytes": 2261328.0,
+        "elapsedMs": 6.372707997797988,
+        "responseBytes": 359643.0
+      },
+      "loadedLogs": {
+        "maximumRSSBytes": 46678016.0,
+        "peakFootprintBytes": 45285736.0,
+        "elapsedMs": 18.116541992640123,
+        "responseBytes": 65875.0
+      }
+    }
+  }
+}
