@@ -6,9 +6,11 @@ Trama reúne projetos locais, agentes de código e terminais em um aplicativo na
 
 **Projeto pessoal · prévia funcional em desenvolvimento · macOS 14+**
 
-![Área de trabalho do Trama com projetos, sessões e agentes fictícios](docs/media/trama-weaver-workspace.png)
+![Visão geral do Trama com mascote, resumo dos agentes e lista de tarefas agrupadas por projeto](docs/media/trama-weaver-workspace.png)
 
-Captura das views nativas com dados fictícios de portfólio; os provedores mostrados não foram executados. [Vídeo de apresentação e roteiro](docs/PORTFOLIO_DEMO.md).
+Interface atual: projetos na lateral, resumo dos agentes e tarefas agrupadas por projeto. Captura nativa com dados fictícios; os provedores exibidos não foram executados.
+
+[Vídeo de apresentação e roteiro](docs/PORTFOLIO_DEMO.md) — o vídeo mostra a interface anterior à captura acima.
 
 ## O que você pode fazer
 
