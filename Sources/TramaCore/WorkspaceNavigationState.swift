@@ -21,11 +21,11 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
         selectedSession = nil
         openAgents = []
         selectedAgent = nil
-        mode = .board
+        mode = .list
     }
 
     public init(selectedProjectID: UUID?, selectedSession: String? = nil, openAgents: [DeliveryAgentReference] = [],
-                selectedAgent: DeliveryAgentReference? = nil, mode: WorkspaceNavigationMode = .board) throws {
+                selectedAgent: DeliveryAgentReference? = nil, mode: WorkspaceNavigationMode = .list) throws {
         self.selectedProjectID = selectedProjectID
         self.selectedSession = selectedSession
         self.openAgents = openAgents
@@ -40,7 +40,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
         guard name == nil || name?.isEmpty == false else { throw NavigationError.invalidState }
         selectedSession = name
         selectedProjectID = nil
-        if mode == .workspace { mode = .board }
+        if mode == .workspace { mode = .list }
         reconcile(projects: projects, agents: agents)
     }
 
@@ -62,7 +62,7 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
         selectedProjectID = projectID
         selectedSession = session
         selectedAgent = nil
-        mode = .board
+        mode = .list
         reconcile(projects: projects, agents: agents)
     }
 

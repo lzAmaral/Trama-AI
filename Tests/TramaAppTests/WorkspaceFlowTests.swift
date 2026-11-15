@@ -125,7 +125,7 @@ struct WorkspaceFlowTests {
         #expect(model.pendingReference == nil)
         await model.refresh()
         #expect(model.navigation.selectedAgent == nil)
-        #expect(model.navigation.mode == .board)
+        #expect(model.navigation.mode == .list)
     }
 
     @Test func selectingAnotherProjectPreservesDraftsAndDoesNotSendOrStopAnything() async throws {
@@ -255,7 +255,7 @@ struct WorkspaceFlowTests {
         model.selectScope(projectID: f.projects[0].id, session: "default")
         #expect(model.navigation.selectedProjectID == f.projects[0].id)
         #expect(model.navigation.selectedSession == "default")
-        #expect(model.navigation.mode == .board)
+        #expect(model.navigation.mode == .list)
         #expect(model.navigation.selectedAgent == nil)
         #expect(model.navigation.openAgents == tabsBefore)
         #expect(model.promptDrafts[reference] == "Keep the draft")

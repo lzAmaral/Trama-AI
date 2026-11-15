@@ -14,7 +14,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "TramaCore"),
-        .executableTarget(name: "TramaApp", dependencies: ["TramaCore", "SwiftTerm"]),
+        .executableTarget(name: "TramaApp", dependencies: ["TramaCore", "SwiftTerm"],
+                          resources: [.process("Resources")]),
         .testTarget(name: "TramaCoreTests", dependencies: ["TramaCore"]),
         .testTarget(name: "TramaAppTests", dependencies: ["TramaApp", "TramaCore"])
     ]

@@ -76,7 +76,7 @@ final class LiveWorkspaceModel: ObservableObject {
                 state = try WorkspaceNavigationState(selectedProjectID: nil, selectedSession: name,
                     openAgents: state.openAgents,
                     selectedAgent: state.selectedSession == name ? state.selectedAgent : nil,
-                    mode: state.mode == .workspace ? .board : state.mode)
+                    mode: state.mode == .workspace ? .list : state.mode)
             }
         }
     }
@@ -92,7 +92,7 @@ final class LiveWorkspaceModel: ObservableObject {
                 }
                 // Until the first successful snapshot, missing agents must not prune restored tabs.
                 state = try WorkspaceNavigationState(selectedProjectID: projectID, selectedSession: session,
-                    openAgents: state.openAgents, selectedAgent: nil, mode: .board)
+                    openAgents: state.openAgents, selectedAgent: nil, mode: .list)
             }
         }
     }
@@ -110,7 +110,7 @@ final class LiveWorkspaceModel: ObservableObject {
         changeNavigation { $0.close(reference, projects: projects, agents: agents) }
     }
 
-    func showOverview(_ mode: WorkspaceNavigationMode = .board) {
+    func showOverview(_ mode: WorkspaceNavigationMode = .list) {
         cancelPendingOpen()
         changeNavigation { $0.setMode(mode) }
     }

@@ -89,7 +89,8 @@ struct ProjectSidebarView: View {
                 }.help(group.project.name).accessibilityLabel("Projeto \(group.project.name), \(group.agents.count) agentes")
                     .accessibilityAddTraits(selected ? .isSelected : [])
             }.buttonStyle(.plain).padding(.horizontal, 6)
-                .background(selected ? TerminalTheme.raised : .clear, in: RoundedRectangle(cornerRadius: 8))
+                .foregroundStyle(selected ? TerminalTheme.accent : TerminalTheme.primary)
+                .background(selected ? TerminalTheme.accent.opacity(0.10) : .clear, in: Rectangle())
             if expanded {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(sessions.sorted(), id: \.self) { name in

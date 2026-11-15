@@ -109,7 +109,8 @@ struct WorkspaceView: View {
                         loadError
                     } else if !workspace.showsDemo {
                         LiveWorkspaceView(projects: workspace.projects, selectedProjectID: $workspace.selectedID, model: live,
-                                          onAddProject: workspace.chooseProject)
+                                          usageSnapshots: usageSnapshots, onConsultUsage: { usageProvider = $0 },
+                                          onInspectEngine: { showsEngine = true }, onAddProject: workspace.chooseProject)
                     } else {
                         AgentBoardView(projects: workspace.projects,
                                        selectedProjectID: $workspace.selectedID,
@@ -184,14 +185,11 @@ struct WorkspaceView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 12) {
-                Text(">").font(TerminalTheme.mono(36, weight: .semibold))
-                    .foregroundStyle(TerminalTheme.accent).frame(width: 52, height: 60)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Trama").font(TerminalTheme.ui(24, weight: .bold))
-                    Text("local · macOS").font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.muted)
-                }
-            }.padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 32)
+            HStack(alignment: .firstTextBaseline) {
+                Text("trama").font(TerminalTheme.mono(28, weight: .bold))
+                Spacer(minLength: 0)
+                Text("local").font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
+            }.padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 24)
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(workspace.showsDemo ? "Demonstração" : "Projetos")
@@ -213,7 +211,6 @@ struct WorkspaceView: View {
                     }
                 }.padding(.horizontal, 12)
             }
-            if !workspace.showsDemo { usagePanel.padding(.horizontal, 12).padding(.top, 16) }
             HStack(spacing: 16) {
                 Button(action: workspace.chooseProject) { Image(systemName: "folder.badge.plus") }
                     .disabled(!workspace.canSave).help("Adicionar projeto (⌘O)").accessibilityLabel("Adicionar projeto")
@@ -229,66 +226,6 @@ struct WorkspaceView: View {
             }.font(TerminalTheme.ui(14)).buttonStyle(.plain).foregroundStyle(TerminalTheme.secondary)
                 .padding(20)
         }.font(TerminalTheme.ui(13)).background(TerminalTheme.sidebar)
-    }
-
-    private var usagePanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            TerminalRule()
-            HStack {
-                Text("Plano e consumo").font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
-                Spacer()
-                Menu {
-                    let supported: Set<String> = ["claude", "codex", "kilo", "opencode", "antigravity", "grok", "kimi"]
-                    ForEach(live.providers.filter { supported.contains($0.id) }) { provider in
-                        Button(provider.id) { usageProvider = provider }
-                    }
-                    Divider()
-                    Button("Motor e provedores…") { showsEngine = true }
-                } label: { Image(systemName: "plus") }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden).tint(TerminalTheme.secondary)
-                .fixedSize().accessibilityLabel("Consultar consumo manualmente")
-            }
-            if usageSnapshots.isEmpty {
-                Text("Consulte um provedor para exibir os limites aqui.")
-                    .font(TerminalTheme.ui(12)).foregroundStyle(TerminalTheme.secondary)
-            }
-            if !usageSnapshots.isEmpty {
-                ScrollView(.vertical) {
-                    VStack(spacing: 8) {
-                        ForEach(usageSnapshots.keys.sorted(), id: \.self) { kind in
-                            if let usage = usageSnapshots[kind] {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(kind).font(TerminalTheme.mono(12, weight: .semibold)).foregroundStyle(TerminalTheme.providerColor(kind))
-                                    if let limits = usage.limits {
-                                        if let window = limits.session { usageWindow("Janela", window) }
-                                        if let window = limits.weekly { usageWindow("Semana", window) }
-                                        if let window = limits.monthly { usageWindow("Mês", window) }
-                                        if let credits = limits.credits { Text("Saldo: \(credits, specifier: "%.2f")").font(TerminalTheme.mono(11)) }
-                                    }
-                                    if let problem = usage.problem { Text(problem).font(TerminalTheme.ui(11)).foregroundStyle(TerminalTheme.warning).lineLimit(2) }
-                                    Text(Date(timeIntervalSince1970: Double(usage.updatedAtMs) / 1000), format: .dateTime.hour().minute())
-                                        .font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
-                                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(TerminalTheme.surface, in: RoundedRectangle(cornerRadius: 10))
-                            }
-                        }
-                    }
-                }.frame(height: min(CGFloat(usageSnapshots.count) * 176, 240))
-            }
-        }
-    }
-
-    private func usageWindow(_ title: String, _ window: EngineUsageWindow) -> some View {
-        VStack(spacing: 4) {
-            HStack {
-                Text(title)
-                Spacer()
-                Text("\(window.usedPercent, specifier: "%.0f")%")
-            }.font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.secondary)
-            ProgressView(value: min(100, max(0, window.usedPercent)), total: 100)
-                .tint(window.usedPercent >= 90 ? TerminalTheme.danger : window.usedPercent >= 70 ? TerminalTheme.warning : TerminalTheme.positive)
-                .accessibilityLabel("Consumo \(title)").accessibilityValue(Text("\(window.usedPercent, specifier: "%.0f") por cento"))
-        }
     }
 
     private var helpPanel: some View {

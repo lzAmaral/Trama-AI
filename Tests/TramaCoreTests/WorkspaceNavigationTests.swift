@@ -28,7 +28,7 @@ struct WorkspaceNavigationTests {
         let aa = agent(1, project: a), bb = agent(2, project: b)
         let ar = try ref(aa), br = try ref(bb)
         var state = WorkspaceNavigationState()
-        #expect(state.mode == .board)
+        #expect(state.mode == .list)
         #expect(state.selectedProjectID == nil)
         try state.open(ar, projects: [a, b], agents: [aa, bb])
         try state.open(br, projects: [a, b], agents: [aa, bb])
@@ -305,15 +305,15 @@ struct WorkspaceNavigationTests {
             let before = try Data(contentsOf: repository.fileURL)
             #expect(throws: POSIXError.self) {
                 try repository.update { state in
-                    state.setMode(.list)
+                    state.setMode(.grid)
                     throw POSIXError(.ECANCELED)
                 }
             }
             let failing = WorkspaceNavigationRepository(fileURL: repository.fileURL, writer: { _, _ in throw POSIXError(.ENOSPC) })
-            #expect(throws: POSIXError.self) { try failing.update { $0.setMode(.list) } }
+            #expect(throws: POSIXError.self) { try failing.update { $0.setMode(.grid) } }
             #expect(try Data(contentsOf: repository.fileURL) == before)
-            #expect(try repository.load().mode == .board)
-            #expect(try repository.update { $0.setMode(.list) }.mode == .list)
+            #expect(try repository.load().mode == .list)
+            #expect(try repository.update { $0.setMode(.grid) }.mode == .grid)
         }
     }
 
@@ -338,9 +338,9 @@ struct WorkspaceNavigationTests {
             let directory = repository.fileURL.deletingLastPathComponent()
             #expect(chmod(directory.path, 0o500) == 0)
             defer { chmod(directory.path, 0o700) }
-            #expect(throws: (any Error).self) { try repository.update { $0.setMode(.list) } }
+            #expect(throws: (any Error).self) { try repository.update { $0.setMode(.grid) } }
             #expect(try Data(contentsOf: repository.fileURL) == before)
-            #expect(try repository.load().mode == .board)
+            #expect(try repository.load().mode == .list)
         }
     }
     @Test func projectSessionScopeIsAtomicAndKeepsOtherTabs() throws {
@@ -350,7 +350,7 @@ struct WorkspaceNavigationTests {
         try state.open(try ref(bb), projects: [a, b], agents: [aa, bb])
         try state.selectScope(projectID: a.id, session: "default", projects: [a, b], agents: [aa, bb])
         #expect(state.selectedProjectID == a.id && state.selectedSession == "default")
-        #expect(state.selectedAgent == nil && state.mode == .board)
+        #expect(state.selectedAgent == nil && state.mode == .list)
         #expect(state.openAgents == [try ref(aa), try ref(bb)])
         #expect(state.visibleOpenAgents(projects: [a, b], agents: [aa, bb]) == [aa])
         let before = state

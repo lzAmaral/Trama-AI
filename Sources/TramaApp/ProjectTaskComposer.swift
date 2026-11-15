@@ -80,8 +80,8 @@ struct ProjectTaskComposer: View {
                 }
             }
             .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 12)
-            .background(TerminalTheme.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(taskFocused ? TerminalTheme.secondary.opacity(0.4) : TerminalTheme.border))
+            .background(TerminalTheme.surface, in: Rectangle())
+            .overlay(Rectangle().stroke(taskFocused ? TerminalTheme.secondary.opacity(0.4) : TerminalTheme.border))
         }
         .overlay(alignment: .top) {
             if skillRequest != nil {

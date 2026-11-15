@@ -10,7 +10,7 @@ struct AgentBoardView: View {
     @State private var search = ""
     @State private var showsSearch = false
     @FocusState private var searchFocused: Bool
-    @State private var mode: BoardDisplayMode = .board
+    @State private var mode: BoardDisplayMode = .list
     @State private var selectedSession: AgentSession?
 
     init(projects: [Project], selectedProjectID: Binding<UUID?>, showsDemo: Bool) {
@@ -40,7 +40,15 @@ struct AgentBoardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             overviewTab
-            header.padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 20)
+            header.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12)
+            WorkspaceOverviewHeader(metrics: overviewMetrics) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("consumo · demonstração").font(TerminalTheme.mono(12))
+                    Text("Explore os agentes fictícios abaixo.\nConsumo real disponível fora da demonstração.")
+                        .font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             if !showsDemo {
                 boardMessage("Nenhum agente conectado", detail: "Desative Demonstração para acompanhar sessões reais.")
             } else if filteredSessions.isEmpty {
@@ -95,21 +103,17 @@ struct AgentBoardView: View {
         }
     }
 
+    private var overviewMetrics: [OverviewMetric] {
+        [OverviewMetric(title: "agentes", count: filteredSessions.count, color: TerminalTheme.primary),
+         OverviewMetric(title: "trabalhando", count: filteredSessions.filter { $0.status == .working }.count, color: TerminalTheme.accent),
+         OverviewMetric(title: "aguardando", count: filteredSessions.filter { $0.status == .needsAttention }.count, color: TerminalTheme.warning),
+         OverviewMetric(title: "concluídos", count: filteredSessions.filter { $0.status == .completed }.count, color: TerminalTheme.positive),
+         OverviewMetric(title: "disponíveis", count: filteredSessions.filter { $0.status == .idle }.count, color: TerminalTheme.secondary)]
+    }
+
     private var heading: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Demonstração").font(TerminalTheme.ui(30, weight: .bold))
-                .accessibilityAddTraits(.isHeader)
-            HStack(spacing: 0) {
-                Text("\(filteredSessions.count) agentes fictícios em \(Set(filteredSessions.map(\.projectID)).count) projetos")
-                    .foregroundStyle(TerminalTheme.secondary)
-                let waiting = filteredSessions.filter { $0.status == .needsAttention }.count
-                if waiting > 0 {
-                    Text(" · \(waiting) precisam de você").foregroundStyle(TerminalTheme.warning)
-                }
-            }.font(TerminalTheme.ui(12))
-            Text("Nenhum processo é iniciado nesta visualização")
-                .font(TerminalTheme.ui(11)).foregroundStyle(TerminalTheme.muted)
-        }.fixedSize(horizontal: false, vertical: true)
+        Text("Demonstração").font(TerminalTheme.mono(16, weight: .semibold))
+            .foregroundStyle(TerminalTheme.accent).accessibilityAddTraits(.isHeader)
     }
 
     private var headActions: some View {
@@ -199,23 +203,38 @@ struct AgentBoardView: View {
     }
 
     private var list: some View {
-        ScrollView {
-            if filteredSessions.isEmpty {
-                boardMessage("Nenhum resultado", detail: "Experimente outro termo ou selecione todos os projetos.")
-            } else {
-                LazyVStack(alignment: .leading, spacing: 24) {
-                    ForEach(statuses, id: \.rawValue) { status in
-                        let rows = filteredSessions.filter { $0.status == status }
-                        VStack(alignment: .leading, spacing: 12) {
-                            BoardColumnHeading(status: status, count: rows.count)
+        GeometryReader { geometry in
+            ScrollView([.horizontal, .vertical]) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    TerminalListHeading()
+                    ForEach(projectOptions) { project in
+                        let rows = filteredSessions.filter { $0.projectID == project.id }
+                        if !rows.isEmpty {
+                            HStack(spacing: 8) {
+                                Text(project.name).foregroundStyle(TerminalTheme.projectColor(project.name))
+                                Text("› \(rows.count)").foregroundStyle(TerminalTheme.muted)
+                            }.font(TerminalTheme.mono(13, weight: .semibold))
+                                .padding(.horizontal, 8).padding(.top, 16).padding(.bottom, 4)
                             ForEach(rows) { session in
-                                demoCard(session)
+                                TerminalAgentRow(number: "", name: session.name, state: demoState(session.status),
+                                                 elapsed: "—", provider: session.provider.localizedCaseInsensitiveContains("claude") ? "claude" : session.provider.lowercased(),
+                                                 activity: session.summary) { selectedSession = session }
                             }
                         }
                     }
-                }
-                .padding(24)
+                }.frame(width: max(800, geometry.size.width - 48), alignment: .topLeading)
+                    .frame(minHeight: max(0, geometry.size.height - 12), alignment: .topLeading)
+                    .padding(.horizontal, 24).padding(.bottom, 12)
             }
+        }
+    }
+
+    private func demoState(_ status: AgentStatus) -> String {
+        switch status {
+        case .needsAttention: "paused"
+        case .working: "working"
+        case .completed: "done"
+        case .idle: "idle"
         }
     }
 
