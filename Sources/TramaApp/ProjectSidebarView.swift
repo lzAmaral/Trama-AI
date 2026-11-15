@@ -17,7 +17,7 @@ struct ProjectSidebarView: View {
     }
 
     private var groups: [WorkspaceProjectGroup] {
-        WorkspaceProjectGroup.groups(projects: projects, agents: model.agents)
+        WorkspaceProjectGroup.groups(projects: projects, agents: model.agents, catalog: model.availableProjectSessions)
     }
 
     var body: some View {
@@ -67,8 +67,7 @@ struct ProjectSidebarView: View {
         let id = group.project.id
         let expanded = expandedProjects.contains(id)
         let selected = model.navigation.selectedProjectID == id
-        var sessions = group.sessions
-        if selected, let name = model.navigation.selectedSession, model.sessions.contains(name), !sessions.contains(name) { sessions.append(name) }
+        let sessions = group.sessions
         return VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
                 Button {
@@ -93,7 +92,7 @@ struct ProjectSidebarView: View {
                 .background(selected ? TerminalTheme.accent.opacity(0.10) : .clear, in: Rectangle())
             if expanded {
                 VStack(alignment: .leading, spacing: 2) {
-                    ForEach(sessions.sorted(), id: \.self) { name in
+                    ForEach(sessions, id: \.self) { name in
                         sessionRow(name, projectID: id, agents: group.agents.filter { $0.session == name })
                     }
                     if sessions.isEmpty {
@@ -108,6 +107,7 @@ struct ProjectSidebarView: View {
     }
 
     private func sessionRow(_ name: String, projectID: UUID?, agents: [EngineAgent]) -> some View {
+        let title = model.sessionName(name, projectID: projectID)
         let key = SessionKey(projectID: projectID, name: name)
         let expanded = expandedSessions.contains(key)
         let selected = model.navigation.selectedProjectID == projectID && model.navigation.selectedSession == name
@@ -117,17 +117,17 @@ struct ProjectSidebarView: View {
                     if expanded { expandedSessions.remove(key) } else { expandedSessions.insert(key) }
                 } label: {
                     Image(systemName: expanded ? "chevron.down" : "chevron.right").font(.system(size: 9)).frame(width: 16, height: 30)
-                }.accessibilityLabel("\(expanded ? "Recolher" : "Expandir") sessão \(name)")
+                }.accessibilityLabel("\(expanded ? "Recolher" : "Expandir") sessão \(title)")
                 Button {
                     model.selectScope(projectID: projectID, session: name)
                     expandedSessions.insert(key)
                 } label: {
                     HStack {
-                        Text(name).lineLimit(2).truncationMode(.middle)
+                        Text(title).lineLimit(2).truncationMode(.middle)
                         Spacer(minLength: 0)
                         Text("\(agents.count)").font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.muted)
                     }.frame(minHeight: 30).contentShape(Rectangle())
-                }.accessibilityLabel("Sessão \(name), \(agents.count) agentes")
+                }.accessibilityLabel("Sessão \(title), \(agents.count) agentes")
                     .accessibilityAddTraits(selected ? .isSelected : [])
             }.buttonStyle(.plain).font(TerminalTheme.ui(12)).padding(.horizontal, 4)
                 .background(selected ? TerminalTheme.surface : .clear, in: RoundedRectangle(cornerRadius: 6))

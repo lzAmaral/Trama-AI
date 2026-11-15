@@ -19,7 +19,7 @@ struct NewAgentView: View {
     @FocusState private var taskFocused: Bool
 
     private var sessionSelection: EngineSessionSelection {
-        EngineSessionSelection(sessions: model.sessions, preferredSession: session)
+        model.sessionSelection(projectID: projectID, preferred: session)
     }
 
     init(model: LiveWorkspaceModel, projects: [Project], initialProjectID: UUID?, initialSession: String,
@@ -28,8 +28,7 @@ struct NewAgentView: View {
         self.projects = projects
         self.onStarted = onStarted
         _projectID = State(initialValue: initialProjectID)
-        _session = State(initialValue: EngineSessionSelection(sessions: model.sessions,
-                                                            preferredSession: initialSession).selectedSession)
+        _session = State(initialValue: model.sessionSelection(projectID: initialProjectID, preferred: initialSession).selectedSession)
     }
 
     private var selectedProject: Project? { projects.first { $0.id == projectID } }
@@ -42,7 +41,7 @@ struct NewAgentView: View {
     }
     private var task: String { taskDraft.wrappedValue }
     private var valid: Bool {
-        selectedProject != nil && sessionSelection.selectedSession != nil &&
+        selectedProject != nil && sessionSelection.selectedSession != nil && model.sessionCatalogError == nil &&
         model.providers.contains { $0.id == kind && $0.installed } && (kind == "terminal" || !task.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
@@ -69,7 +68,7 @@ struct NewAgentView: View {
                         if sessionSelection.options.isEmpty {
                             Text("Nenhuma sessão disponível").tag(nil as String?)
                         }
-                        ForEach(sessionSelection.options, id: \.self) { Text($0).tag(Optional($0)) }
+                        ForEach(sessionSelection.options, id: \.self) { Text(model.sessionName($0, projectID: projectID)).tag(Optional($0)) }
                     }.disabled(sessionSelection.options.isEmpty)
                     TextField("Nome do agente (opcional)", text: $name)
                     Toggle("Isolar em um worktree Git", isOn: $isolate)
@@ -133,6 +132,7 @@ struct NewAgentView: View {
                  ? "O terminal executa comandos na pasta escolhida. Você poderá interagir e encerrá-lo pelo Trama."
                  : "O CLI usará seu login existente e poderá enviar dados ao provedor. As aprovações do CLI permanecem ativas no terminal.")
                 .font(TerminalTheme.mono(12)).foregroundStyle(TerminalTheme.secondary)
+            if let error = model.sessionCatalogError { Text(error).foregroundStyle(TerminalTheme.warning) }
             if let error = model.error { Text(error).foregroundStyle(TerminalTheme.warning).lineLimit(4) }
             if creationFailed {
                 Text("Tarefa preservada. Atualize o quadro antes de tentar de novo: o agente pode ter sido criado.")
@@ -157,6 +157,7 @@ struct NewAgentView: View {
         .onChange(of: kind) { _, _ in skills = []; skillError = nil }
         .onChange(of: projectID) { _, id in
             skills = []; skillError = nil; creationFailed = false; taskFocused = id != nil
+            session = model.sessionSelection(projectID: id, preferred: nil).selectedSession
         }
     }
 
@@ -174,6 +175,7 @@ struct NewAgentView: View {
         Task { @MainActor in
             defer { creating = false }
             await model.perform {
+                try await model.prepareSession(requestedSession, projectID: project.id)
                 let reference = try await model.client.startIdentified(kind: requestedKind, cwd: project.path, name: requestedName,
                                                                       task: requestedTask, session: requestedSession, isolate: requestedIsolation)
                 if model.projectTaskDrafts[project.id] == requestedTask { model.projectTaskDrafts[project.id] = nil }

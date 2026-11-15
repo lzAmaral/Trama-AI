@@ -8,11 +8,12 @@ public struct WorkspaceProjectGroup: Identifiable, Equatable, Sendable {
     public let agents: [EngineAgent]
     public let sessions: [String]
 
-    public static func groups(projects: [Project], agents: [EngineAgent]) -> [Self] {
+    public static func groups(projects: [Project], agents: [EngineAgent], catalog: [ProjectSession] = []) -> [Self] {
         let visible = agents.filter { $0.archived != true }
         return projects.map { project in
             let members = visible.filter { WorkspaceNavigationState.matches(agent: $0, project: project) }
-            return Self(project: project, agents: members, sessions: Array(Set(members.map(\.session))).sorted())
+            return Self(project: project, agents: members,
+                        sessions: ProjectSession.sessions(for: project, agents: members, catalog: catalog))
         }
     }
 }

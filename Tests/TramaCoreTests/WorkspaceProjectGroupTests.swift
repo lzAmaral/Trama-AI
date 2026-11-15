@@ -20,10 +20,10 @@ struct WorkspaceProjectGroupTests {
         let groups = WorkspaceProjectGroup.groups(projects: [b, empty, a], agents: [aa, bb, otherSession, archived, unknown])
         #expect(groups.map(\.id) == [b.id, empty.id, a.id])
         #expect(groups[0].agents == [bb])
-        #expect(groups[0].sessions == ["shared"])
-        #expect(groups[1].agents.isEmpty && groups[1].sessions.isEmpty)
+        #expect(Set(groups[0].sessions) == [ProjectSession.generalID(for: b.id), "shared"])
+        #expect(groups[1].agents.isEmpty && groups[1].sessions == [ProjectSession.generalID(for: empty.id)])
         #expect(groups[2].agents == [aa, otherSession])
-        #expect(groups[2].sessions == ["planning", "shared"])
+        #expect(Set(groups[2].sessions) == [ProjectSession.generalID(for: a.id), "planning", "shared"])
     }
 
     @Test func worktreeAndCanonicalAliasStayUnderTheOriginalProject() throws {

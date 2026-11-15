@@ -168,8 +168,7 @@ struct WorkspaceView: View {
                 guard !name.isEmpty else { return }
                 let projectID = newSessionProjectID
                 Task { await live.perform {
-                    try await live.client.createSession(name: name)
-                    live.selectScope(projectID: projectID, session: name)
+                    try live.createProjectSession(name: name, projectID: projectID)
                 } }
             }.disabled(newSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || live.busy)
         } message: { Text("Crie uma sessão e escreva a primeira tarefa no projeto selecionado. Confira a pasta junto da mensagem.") }

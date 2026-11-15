@@ -4,6 +4,7 @@ import TramaCore
 struct DeliveryInboxView: View {
     @ObservedObject var workflow: DeliveryWorkflowViewModel
     let agents: [EngineAgent]
+    var sessionName: (EngineAgent) -> String = { $0.session }
     let openAgent: (EngineAgent, String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var onlyPending = true
@@ -56,7 +57,7 @@ struct DeliveryInboxView: View {
                 Spacer()
                 Text(item.readAt == nil ? "Não visto" : "Visto")
             }
-            Text(agent.map { "\($0.name) · #\($0.id) · \($0.session)" } ?? "Registro #\(item.agentRef.id) indisponível nesta atualização")
+            Text(agent.map { "\($0.name) · #\($0.id) · \(sessionName($0))" } ?? "Registro #\(item.agentRef.id) indisponível nesta atualização")
             Text(item.createdAt.formatted()).foregroundStyle(TerminalTheme.secondary)
             if item.kind == .paused || item.kind == .lost {
                 Text(item.inputDeliveredAt == nil ? "Sem entrada entregue registrada" : "Entrada entregue ao CLI")

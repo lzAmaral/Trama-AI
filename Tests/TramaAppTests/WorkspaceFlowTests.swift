@@ -284,4 +284,142 @@ struct WorkspaceFlowTests {
         #expect(model.navigationError != nil)
     }
 
+    @Test func emptyProjectNeverInheritsAnotherProjectsSessionAndRepairSurvivesReload() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        try f.respond(with: [f.agents[0]])
+        await model.refresh()
+        model.selectScope(projectID: f.projects[0].id, session: "default")
+        let requestBefore = try Data(contentsOf: f.request)
+        model.selectProject(f.projects[1].id)
+        #expect(model.navigation.selectedSession == nil)
+        let selection = model.sessionSelection(projectID: f.projects[1].id, preferred: "default")
+        #expect(selection.options == [ProjectSession.generalID(for: f.projects[1].id)])
+        #expect(model.sessionName(try #require(selection.selectedSession), projectID: f.projects[1].id) == "Geral")
+        #expect(try Data(contentsOf: f.request) == requestBefore)
+        let restored = f.model()
+        #expect(restored.navigation.selectedSession == nil)
+        // Repair a saved project/session pair produced by the old sidebar.
+        restored.selectScope(projectID: f.projects[1].id, session: "default")
+        await restored.refresh()
+        #expect(restored.navigation.selectedSession == nil)
+    }
+
+    @Test func creatingAndRenamingProjectSessionsNeverCallsEngineAndRetainsEmptySessions() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        let before = try Data(contentsOf: f.request)
+        try model.createProjectSession(name: "Landing page", projectID: f.projects[0].id)
+        let first = try #require(model.navigation.selectedSession)
+        try model.createProjectSession(name: "Landing page", projectID: f.projects[1].id)
+        let second = try #require(model.navigation.selectedSession)
+        #expect(first != second)
+        #expect(first.count == 32 && second.count == 32)
+        try model.renameProjectSession(first, name: "Checkout", projectID: f.projects[0].id)
+        #expect(try Data(contentsOf: f.request) == before)
+        let restored = f.model()
+        await restored.refresh()
+        #expect(restored.navigation.selectedSession == second)
+        #expect(restored.sessionName(first, projectID: f.projects[0].id) == "Checkout")
+        #expect(restored.sessionName(second, projectID: f.projects[1].id) == "Landing page")
+        #expect(!restored.sessionSelection(projectID: f.projects[1].id, preferred: first).options.contains(first))
+        restored.resetNavigation()
+        #expect(restored.projectSessions.count == 2)
+        #expect(f.model().projectSessions.count == 2)
+    }
+
+    @Test func activeLegacySessionCanBeCalledGeneralWithoutMovingOrStoppingAgents() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        model.open(f.agents[0])
+        let before = try Data(contentsOf: f.request)
+        try model.renameProjectSession("default", name: "Geral", projectID: f.projects[0].id)
+        #expect(model.sessionName("default", projectID: f.projects[0].id) == "Geral")
+        #expect(model.sessionName("default", projectID: f.projects[1].id) == "default")
+        #expect(model.sessionSelection(projectID: f.projects[0].id, preferred: nil).options == ["default"])
+        #expect(model.navigation.selectedAgent == f.agents[0].deliveryReference)
+        #expect(model.agents == f.agents)
+        #expect(try Data(contentsOf: f.request) == before)
+    }
+
+    @Test func corruptSessionCatalogBlocksPreparationWithoutCallingEngine() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        let url = f.client.homeURL.appendingPathComponent("trama-project-sessions.json")
+        let bytes = Data("broken catalog".utf8)
+        try bytes.write(to: url)
+        let before = try Data(contentsOf: f.request)
+        await #expect(throws: (any Error).self) {
+            try await model.prepareSession(ProjectSession.generalID(for: f.projects[0].id), projectID: f.projects[0].id)
+        }
+        #expect(try Data(contentsOf: f.request) == before)
+        #expect(try Data(contentsOf: url) == bytes)
+    }
+
+    @Test func preparationRechecksLegacyMembershipAndNeverRecreatesRemovedAliases() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        await model.refresh()
+        try f.respond(with: [f.agents[1]])
+        await #expect(throws: (any Error).self) {
+            try await model.prepareSession("default", projectID: f.projects[0].id)
+        }
+        #expect(try JSONDecoder().decode(EngineRequest.self, from: Data(contentsOf: f.request)).operation == "list")
+        try model.renameProjectSession("default", name: "Geral", projectID: f.projects[0].id)
+        let result = try JSONSerialization.jsonObject(with: JSONEncoder().encode(EngineSessionList(agents: [], sessions: [])))
+        try JSONSerialization.data(withJSONObject: ["protocol": 1, "ok": true, "result": result]).write(to: f.response)
+        await #expect(throws: (any Error).self) {
+            try await model.prepareSession("default", projectID: f.projects[0].id)
+        }
+        #expect(try JSONDecoder().decode(EngineRequest.self, from: Data(contentsOf: f.request)).operation == "list")
+        await model.refresh()
+        #expect(!model.sessionSelection(projectID: f.projects[0].id, preferred: "default").options.contains("default"))
+    }
+
+    @Test func failedCatalogReadDoesNotEraseRestoredEmptySessionSelection() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let model = f.model()
+        try model.createProjectSession(name: "Planning", projectID: f.projects[0].id)
+        let selected = model.navigation.selectedSession
+        let url = f.client.homeURL.appendingPathComponent("trama-project-sessions.json")
+        let valid = try Data(contentsOf: url)
+        try Data("broken catalog".utf8).write(to: url)
+        let restored = f.model()
+        await restored.refresh()
+        #expect(restored.sessionCatalogError != nil)
+        #expect(restored.navigation.selectedSession == selected)
+        try valid.write(to: url)
+        await restored.refresh()
+        #expect(restored.sessionCatalogError == nil)
+        #expect(restored.navigation.selectedSession == selected)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TRAMA_TEST_ENGINE_PATH"] != nil))
+    func explicitPreparationCreatesDistinctRealEngineSessionsWithoutLaunchingAgents() async throws {
+        let f = try Fixture(); defer { f.cleanup() }
+        let path = try #require(ProcessInfo.processInfo.environment["TRAMA_TEST_ENGINE_PATH"])
+        let client = OctoEngineClient(executableURL: URL(fileURLWithPath: path), homeURL: f.root.appendingPathComponent("real-engine"))
+        let model = LiveWorkspaceModel(client: client, navigationRepository: f.repository)
+        model.configure(projects: f.projects)
+        await model.refresh()
+        let before = try await client.listSessions()
+        let first = ProjectSession.generalID(for: f.projects[0].id)
+        let second = ProjectSession.generalID(for: f.projects[1].id)
+        model.selectProject(f.projects[0].id)
+        #expect(try await client.listSessions() == before)
+        try await model.prepareSession(first, projectID: f.projects[0].id)
+        try await model.prepareSession(first, projectID: f.projects[0].id)
+        try await model.prepareSession(second, projectID: f.projects[1].id)
+        let after = try await client.listSessions()
+        #expect(after.sessions.contains(first) && after.sessions.contains(second))
+        #expect(after.agents.isEmpty)
+        await #expect(throws: (any Error).self) {
+            try await model.prepareSession(first, projectID: f.projects[1].id)
+        }
+        #expect(try await client.listSessions() == after)
+    }
+
 }

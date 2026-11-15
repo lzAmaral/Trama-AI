@@ -15,6 +15,7 @@ struct LiveWorkspaceView: View {
     @State private var showsSearch = false
 
     private var session: String { model.navigation.selectedSession ?? "" }
+    private var sessionTitle: String { model.sessionName(session, projectID: selectedProjectID) }
     @State private var showsComposer = false
     @State private var showsNewSession = false
     @State private var newSession = ""
@@ -38,7 +39,7 @@ struct LiveWorkspaceView: View {
 
     private var project: Project? { projects.first { $0.id == selectedProjectID } }
     private var warnings: [String] {
-        [model.error, model.connectionError, model.navigationError, model.workflow.error].compactMap { $0 }
+        [model.error, model.connectionError, model.navigationError, model.sessionCatalogError, model.workflow.error].compactMap { $0 }
     }
     private var sessionAgents: [EngineAgent] {
         model.agents.filter { session.isEmpty || $0.session == session }
@@ -65,7 +66,7 @@ struct LiveWorkspaceView: View {
         return projectAgents.first { $0.deliveryReference != nil && $0.deliveryReference == model.navigation.selectedAgent }
     }
     private var canRenameSession: Bool {
-        !session.isEmpty && !model.busy && model.agents.filter { $0.session == session }.allSatisfy { $0.state == "exited" }
+        !session.isEmpty && selectedProjectID != nil && !model.busy && model.sessionCatalogError == nil
     }
 
     var body: some View {
@@ -124,7 +125,8 @@ struct LiveWorkspaceView: View {
         .sheet(isPresented: $showsInbox, onDismiss: {
             if let agent = inboxAgent { inboxAgent = nil; open(agent, panel: inboxPanel) }
         }) {
-            DeliveryInboxView(workflow: model.workflow, agents: model.agents) { agent, panel in
+            DeliveryInboxView(workflow: model.workflow, agents: model.agents,
+                              sessionName: { model.sessionName($0.session, projectID: model.projectID(for: $0)) }) { agent, panel in
                 inboxAgent = agent; inboxPanel = panel
             }
         }
@@ -136,7 +138,7 @@ struct LiveWorkspaceView: View {
                 let name = newSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
                 let projectID = selectedProjectID
-                Task { await model.perform { try await model.client.createSession(name: name); model.selectScope(projectID: projectID, session: name) } }
+                Task { await model.perform { try model.createProjectSession(name: name, projectID: projectID) } }
             }.disabled(newSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.busy)
         } message: { Text("Sessões agrupam agentes. O projeto e a pasta de destino continuam explícitos no compositor.") }
         .alert("Renomear sessão", isPresented: $showsRenameSession) {
@@ -146,10 +148,10 @@ struct LiveWorkspaceView: View {
                 let from = sessionToRename
                 let to = renamedSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard canRenameSession, !to.isEmpty else { return }
-                let projectID = selectedProjectID
-                Task { await model.perform { try await model.client.renameSession(from: from, to: to); model.selectScope(projectID: projectID, session: to) } }
-            }.disabled(renamedSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || renamedSession == sessionToRename || model.busy)
-        } message: { Text("A sessão \(sessionToRename) é compartilhada. O novo nome será aplicado aos agentes de todos os projetos que usam essa sessão.") }
+                guard let projectID = selectedProjectID else { return }
+                Task { await model.perform { try model.renameProjectSession(from, name: to, projectID: projectID) } }
+            }.disabled(renamedSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || renamedSession == model.sessionName(sessionToRename, projectID: selectedProjectID) || model.busy)
+        } message: { Text("O nome muda apenas neste projeto. Os agentes e suas tarefas continuam na mesma sessão.") }
         .alert("Redefinir preferências de navegação?", isPresented: $confirmReset) {
             Button("Cancelar", role: .cancel) { }
             Button("Redefinir navegação") { model.resetNavigation() }
@@ -177,12 +179,12 @@ struct LiveWorkspaceView: View {
 
     private var headline: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(project?.name ?? (session.isEmpty ? "Todos os projetos" : session))
+            Text(project?.name ?? (session.isEmpty ? "Todos os projetos" : sessionTitle))
                 .font(TerminalTheme.mono(16, weight: .semibold)).lineLimit(1).truncationMode(.middle)
-                .help(project?.name ?? (session.isEmpty ? "Todos os projetos" : session))
+                .help(project?.name ?? (session.isEmpty ? "Todos os projetos" : sessionTitle))
                 .accessibilityAddTraits(.isHeader)
             if project != nil, !session.isEmpty {
-                Text(session).font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary).lineLimit(1).help(session)
+                Text(sessionTitle).font(TerminalTheme.mono(11)).foregroundStyle(TerminalTheme.secondary).lineLimit(1).help(sessionTitle)
             }
         }.frame(minWidth: 120, alignment: .leading)
     }
@@ -260,9 +262,9 @@ struct LiveWorkspaceView: View {
             Button("Próxima intervenção") { openNextIntervention() }
                 .keyboardShortcut("n", modifiers: [.command, .shift]).disabled(model.workflow.pending.isEmpty)
             Divider()
-            Button("Nova sessão…") { newSession = ""; showsNewSession = true }.disabled(model.busy)
+            Button("Nova sessão…") { newSession = ""; showsNewSession = true }.disabled(model.busy || selectedProjectID == nil || model.sessionCatalogError != nil)
             Button("Renomear sessão…") {
-                sessionToRename = session; renamedSession = session; showsRenameSession = true
+                sessionToRename = session; renamedSession = sessionTitle; showsRenameSession = true
             }.disabled(!canRenameSession)
             Button("Retenção de logs…") { showsRetention = true }
             Button("Piloto e alertas…") { showsPilot = true }
