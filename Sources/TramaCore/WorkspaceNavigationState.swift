@@ -52,6 +52,20 @@ public struct WorkspaceNavigationState: Codable, Equatable, Sendable {
         reconcile(projects: projects, agents: agents)
     }
 
+    /// Selects a project/session pair in one transition. Sessions remain global engine groupings;
+    /// the project restricts the visible agents without moving records or closing their tabs.
+    public mutating func selectScope(projectID: UUID?, session: String?, projects: [Project], agents: [EngineAgent]) throws {
+        guard projectID == nil || projects.contains(where: { $0.id == projectID }) else {
+            throw NavigationError.projectUnavailable
+        }
+        guard session == nil || session?.isEmpty == false else { throw NavigationError.invalidState }
+        selectedProjectID = projectID
+        selectedSession = session
+        selectedAgent = nil
+        mode = .board
+        reconcile(projects: projects, agents: agents)
+    }
+
     /// Opens a tab, including exited/archived history, without starting or controlling a process.
     public mutating func open(_ reference: DeliveryAgentReference, projects: [Project], agents: [EngineAgent]) throws {
         guard let agent = Self.exactAgent(reference, agents: agents) else {

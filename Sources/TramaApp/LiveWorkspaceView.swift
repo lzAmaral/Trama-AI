@@ -103,11 +103,11 @@ struct LiveWorkspaceView: View {
         .onChange(of: model.navigation.selectedSession) { _, _ in search = ""; inboxOnly = false }
         .onAppear { taskProjectID = selectedProjectID }
         .task {
-            model.workflow.update { try model.workflow.repository.recordVisit() }
+            await model.workflow.update { try $0.recordVisit() }
             await model.loadProviders()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            model.workflow.update { try model.workflow.repository.recordVisit() }
+            Task { await model.workflow.update { try $0.recordVisit() } }
         }
         .background { Button("Buscar agentes") { showsSearch = true }.keyboardShortcut("f").hidden() }
         .sheet(isPresented: $showsComposer) {
@@ -129,7 +129,8 @@ struct LiveWorkspaceView: View {
             Button("Criar") {
                 let name = newSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
-                Task { await model.perform { try await model.client.createSession(name: name); model.selectSession(name) } }
+                let projectID = selectedProjectID
+                Task { await model.perform { try await model.client.createSession(name: name); model.selectScope(projectID: projectID, session: name) } }
             }.disabled(newSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.busy)
         } message: { Text("Sessões agrupam agentes. O projeto e a pasta de destino continuam explícitos no compositor.") }
         .alert("Renomear sessão", isPresented: $showsRenameSession) {
@@ -139,9 +140,10 @@ struct LiveWorkspaceView: View {
                 let from = sessionToRename
                 let to = renamedSession.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard canRenameSession, !to.isEmpty else { return }
-                Task { await model.perform { try await model.client.renameSession(from: from, to: to); model.selectSession(to) } }
+                let projectID = selectedProjectID
+                Task { await model.perform { try await model.client.renameSession(from: from, to: to); model.selectScope(projectID: projectID, session: to) } }
             }.disabled(renamedSession.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || renamedSession == sessionToRename || model.busy)
-        } message: { Text("Os agentes encerrados de \(sessionToRename) passarão a usar o novo nome.") }
+        } message: { Text("A sessão \(sessionToRename) é compartilhada. O novo nome será aplicado aos agentes de todos os projetos que usam essa sessão.") }
         .alert("Redefinir preferências de navegação?", isPresented: $confirmReset) {
             Button("Cancelar", role: .cancel) { }
             Button("Redefinir navegação") { model.resetNavigation() }
@@ -164,11 +166,14 @@ struct LiveWorkspaceView: View {
 
     private func headline(compact: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(session.isEmpty ? "Todas as sessões" : session)
+            Text(project?.name ?? (session.isEmpty ? "Todos os projetos" : session))
                 .font(TerminalTheme.ui(compact ? 24 : 30, weight: .bold)).lineLimit(compact ? 1 : 2)
                 .truncationMode(.middle).fixedSize(horizontal: false, vertical: true)
-                .help(session.isEmpty ? "Todas as sessões" : session)
+                .help(project?.name ?? (session.isEmpty ? "Todos os projetos" : session))
                 .accessibilityAddTraits(.isHeader)
+            if project != nil, !session.isEmpty {
+                Text(session).font(TerminalTheme.ui(13)).foregroundStyle(TerminalTheme.secondary).lineLimit(1).help(session)
+            }
             let count = projectAgents.count
             let projectCount = Set(projectAgents.map(\.project)).count
             let waiting = projectAgents.filter { $0.state == "paused" || $0.state == "lost" }.count
@@ -183,13 +188,11 @@ struct LiveWorkspaceView: View {
     private var headActions: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) {
-                projectFilter
                 displayModes
                 searchButton
                 workspaceOptions
             }
             VStack(alignment: .leading, spacing: 8) {
-                projectFilter
                 HStack(spacing: 8) {
                     displayModes
                     Spacer(minLength: 0)
@@ -198,22 +201,6 @@ struct LiveWorkspaceView: View {
                 }
             }
         }.font(TerminalTheme.ui(12))
-    }
-
-    private var projectFilter: some View {
-        Menu {
-            Button("Todos os projetos") { selectedProjectID = nil }
-            ForEach(projects) { project in
-                Button(project.name) { selectedProjectID = project.id }
-            }
-        } label: {
-            Label(project?.name ?? "Todos os projetos", systemImage: "folder")
-                .lineLimit(1).truncationMode(.middle)
-        }.menuStyle(.borderlessButton).tint(TerminalTheme.secondary)
-            .padding(.horizontal, 10).frame(width: 200, height: 32)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(TerminalTheme.border))
-            .help(project.map { "\($0.name)\n\($0.path)" } ?? "Todos os projetos")
-            .accessibilityLabel("Filtrar por projeto: \(project?.name ?? "Todos os projetos")")
     }
 
     private var displayModes: some View {
@@ -339,7 +326,7 @@ struct LiveWorkspaceView: View {
                             Divider()
                         }
                         Button("Reler preferências") { model.reloadNavigation() }
-                        Button("Reler inbox") { model.workflow.reload() }
+                        Button("Reler inbox") { Task { await model.workflow.reload() } }
                         if model.error != nil { Button("Dispensar erro da última ação") { model.error = nil } }
                     }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                 }.frame(width: 420, height: 320)
@@ -365,7 +352,8 @@ struct LiveWorkspaceView: View {
             } else if model.navigation.mode == .list {
                 agentList
             } else if model.navigation.mode == .grid {
-                WorkspaceTerminalGrid(agents: filtered, client: model.client, onOpen: { open($0) })
+                WorkspaceTerminalGrid(agents: filtered, client: model.client,
+                                      density: $model.terminalPreviewDensity, onOpen: { open($0) })
                     .padding(.horizontal, 24)
             } else { board }
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -545,7 +533,7 @@ struct LiveWorkspaceView: View {
     }
     private func open(_ agent: EngineAgent, panel: String = "terminal") {
         selectedPanel = panel; panelRequestID = UUID(); model.open(agent); selectedProjectID = model.navigation.selectedProjectID
-        if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: panel) }
+        if let ref = agent.deliveryReference { Task { await model.workflow.opened(ref, panel: panel) } }
     }
     private func openNextIntervention() {
         let available = model.workflow.pending.filter { item in model.agents.contains { $0.deliveryReference == item.agentRef } }

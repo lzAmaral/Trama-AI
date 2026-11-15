@@ -138,7 +138,7 @@ struct AgentPromptComposer: View {
                                                                text: text, confirmed: true)
                 guard result.deliveredToPTY else { throw EngineClientError.invalidResponse }
                 if model.promptDrafts[ref] == text { model.promptDrafts[ref] = nil }
-                model.workflow.inputDelivered(ref, sentAt: sentAt)
+                await model.workflow.inputDelivered(ref, sentAt: sentAt)
                 notice = "Entregue ao terminal de \(agent.name). Acompanhe a resposta acima."
             }
             if model.error != nil {

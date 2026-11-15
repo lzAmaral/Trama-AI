@@ -29,7 +29,7 @@ struct DeliveryInboxView: View {
                 Toggle("Somente pendentes", isOn: $onlyPending).toggleStyle(.checkbox)
                 Toggle("Somente não vistos", isOn: $onlyUnread).toggleStyle(.checkbox)
                 Spacer()
-                Button("Reler inbox") { workflow.reload() }
+                Button("Reler inbox") { Task { await workflow.reload() } }
             }
             if let error = workflow.error { Text(error).foregroundStyle(TerminalTheme.warning).textSelection(.enabled) }
             if workflow.snapshot == nil {
@@ -72,14 +72,14 @@ struct DeliveryInboxView: View {
             HStack {
                 if let agent {
                     Button("Abrir agente") {
-                        workflow.update { try workflow.repository.markRead(item.id) }
+                        Task { await workflow.update { try $0.markRead(item.id) } }
                         dismiss()
                         openAgent(agent, interventionPanel(item))
                     }
                 }
                 Spacer()
                 if item.isPending {
-                    Button("Dispensar item") { workflow.update { try workflow.repository.dismissIntervention(item.id) } }
+                    Button("Dispensar item") { Task { await workflow.update { try $0.dismissIntervention(item.id) } } }
                         .help("Fecha apenas o item local; não envia entrada, aprova CLI ou conclui revisão")
                 }
             }

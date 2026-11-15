@@ -420,12 +420,55 @@ pub(super) fn logs(store: &Store, id: u32) -> io::Result<Value> {
             return Err(invalid("recorded log exceeds replay limit"));
         }
     }
-    let text = cli::transcript(store, id)?.unwrap_or_default().join("\n");
-    let mut start = text.len().saturating_sub(65_536);
-    while !text.is_char_boundary(start) {
-        start += 1;
+    let Some(mut parser) = orkai::holder::oplog::replay(&path)? else {
+        return Ok(json!({"text":"","truncated":false}));
+    };
+    let screen = parser.screen_mut();
+    let (_, cols) = screen.size();
+    screen.set_scrollback(usize::MAX);
+    let history = screen.scrollback();
+    screen.set_scrollback(0);
+    let visible: Vec<String> = screen.rows(0, cols).collect();
+    // Preserve pinned Octo termfmt::transcript semantics (MIT, Lucas Marujo, 2026):
+    // trim each row and omit trailing empty rows. Read newest first so the output
+    // limit also bounds materialized history. Replay/ANSI interpretation stays upstream.
+    // https://github.com/lucasmarujo/octo/blob/f66aa854313026870aaf57f65d26d9cbfbf32269/src/termfmt.rs
+    let newest_first = visible.into_iter().rev().chain((1..=history).map(|offset| {
+        screen.set_scrollback(offset);
+        screen.rows(0, cols).next().unwrap_or_default()
+    }));
+    let (text, truncated) = transcript_tail(newest_first, 65_536);
+    Ok(json!({"text":text,"truncated":truncated}))
+}
+
+fn transcript_tail(lines: impl IntoIterator<Item = String>, limit: usize) -> (String, bool) {
+    let mut parts = Vec::new();
+    let mut bytes = 0;
+    let mut truncated = false;
+    for line in lines {
+        let line = line.trim_end();
+        if parts.is_empty() && line.is_empty() {
+            continue;
+        }
+        let separator = usize::from(!parts.is_empty());
+        if bytes + separator > limit {
+            truncated = true;
+            break;
+        }
+        let remaining = limit - bytes - separator;
+        let mut start = line.len().saturating_sub(remaining);
+        while !line.is_char_boundary(start) {
+            start += 1;
+        }
+        parts.push(line[start..].to_owned());
+        bytes += separator + line.len() - start;
+        if start > 0 {
+            truncated = true;
+            break;
+        }
     }
-    Ok(json!({"text":&text[start..],"truncated":start > 0}))
+    parts.reverse();
+    (parts.join("\n"), truncated)
 }
 
 pub(super) fn export_logs(store: &Store, id: u32, request: &Request) -> io::Result<Value> {

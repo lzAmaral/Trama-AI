@@ -4,9 +4,11 @@
 
 A interface SwiftUI usa `OctoEngineClient` para executar `trama-engine` com argumentos separados e JSON via stdin/stdout. O executável depende da biblioteca `orkai` do Octo, revisão `f66aa854313026870aaf57f65d26d9cbfbf32269` (0.2.19). Os holders duráveis são lançados pelo motor; fechar uma janela ou cancelar uma consulta não os encerra.
 
-Optamos por RPC de uma operação por processo, com polling do quadro a cada dois segundos e snapshot do terminal aberto a cada 800 ms. Isso permite reaproveitar Launcher/Store/client sem inicializar Hub/Peer, cujo watcher upstream consultaria consumo automaticamente. Não é um stream contínuo de terminal; alta frequência de digitação e saída merece medição antes da distribuição.
+Optamos por RPC de uma operação por processo, com polling do quadro a cada dois segundos e pausa ociosa de 800 ms entre snapshots do terminal aberto. Entrada e resize confirmados acordam a captura, com uma consulta por vez e intervalo mínimo de 100 ms entre inícios. O terminal e as prévias da grade pausam a captura fora da cena ativa. O polling automático sem mudanças não publica carregamento ou conteúdo novamente; armazenamento de inbox/workflow roda fora do MainActor em fila ordenada. [Comportamento e validação de desempenho](PERFORMANCE_VALIDATION.md). Isso permite reaproveitar Launcher/Store/client sem inicializar Hub/Peer, cujo watcher upstream consultaria consumo automaticamente. Não é um stream contínuo de terminal; alta frequência de digitação e saída merece medição antes da distribuição.
 
 As [medições reproduzíveis](../scripts/VALIDATION.md) exercitam 3,64 MB de saída de shell controlado, com binário privado fixado por SHA-256 e cleanup confirmado. Elas medem transporte, JSON/base64 e probes, sem desenho do terminal ou digitação na UI. A avaliação desta entrega mantém RPC por operação: ainda é necessário medir latência de interação, renderização, CPU e memória do aplicativo antes de justificar a complexidade de conexão persistente, backpressure e reconexão de um stream. A pausa de polling se soma à duração de cada consulta; a medição do transporte não fecha o critério manual de desempenho da interface.
+
+O [estudo de memória](MEMORY_VALIDATION.md) acrescenta medições da interface nativa com shells isolados, carga e ciclos de abertura/fechamento. A grade abre duas prévias por página por padrão; o seletor permite seis. A escolha vale para a instância da área de trabalho e não encerra agentes. O histórico continua usando o replay upstream, mas materializa apenas a cauda necessária para a resposta. Essas medições não encerram a validação interativa ou de acessibilidade.
 
 O binário também despacha `__holder`, `__agents` e `__hook`, necessários porque o launcher copia seu próprio executável. `__pwa-bridge` é recusado. Dados ficam exclusivamente no diretório do Trama; não há migração automática de instalações Octo.
 
@@ -23,7 +25,7 @@ O binário também despacha `__holder`, `__agents` e `__hook`, necessários porq
 | send_prompt | Texto confirmado para IA já aberta; identidade, runtime autenticado e estados observados são conferidos; envio único sem retry |
 | create_session | Cria agrupamento persistente |
 | rename_session / move_agent | Renomeia agrupamento ou move registro; exige agentes afetados encerrados e destino sem colisão |
-| input / resize / snapshot | Entrada PTY, dimensões e viewport ANSI |
+| input / resize / snapshot | Entrada PTY, dimensões e tela ANSI com o histórico incluído pelo upstream |
 | remove | Exclui registro/histórico de agente encerrado sem worktree, mediante confirmação |
 | stop / resume | Encerra ou recupera somente sessão interrompida |
 | skills | Descoberta upstream por provedor e projeto |
@@ -62,6 +64,7 @@ A exportação prepara uma prévia em memória. O usuário pode ocultar textos l
 - Snapshot e diff até 512.000 bytes; envelope Rust até 900.000 bytes.
 - Terminal entre 2–100 linhas e 10–240 colunas. A UI ajusta os pedidos a esses limites.
 - Replay recusa arquivos de log acima de 16 MiB por arquivo e retorna os últimos 64 KiB de texto. Isso limita leitura/exibição, não constitui política de retenção de todo o armazenamento upstream.
+- O replay ainda mantém até 5.000 linhas no parser upstream; o limite de 64 KiB da resposta não é o limite de RAM da operação. Snapshots também podem incluir até 1.000 linhas de histórico, embora o SwiftTerm não mantenha scrollback adicional.
 - Ocultação literal na exportação aceita até 32 textos, 1024 bytes cada e 8192 bytes no total. Não identifica nem remove todos os segredos automaticamente.
 - A árvore de processos contém no máximo 256 nós e sempre declara visibilidade incompleta. Relações `parentId` vêm de registros upstream; nome de executável não comprova relação lógica de subagentes. Não há controle por PID.
 - Cliente Swift limita saída/tempo e descarta stderr. Nas novas operações de snapshot/revisão/PR, o processo estabelece um grupo privado para seus filhos transitórios; o cliente só cancela o grupo após conferir sua identidade. As operações anteriores continuam cancelando apenas o processo da solicitação. Após timeout de uma mutação, atualize o quadro antes de tentar novamente: a ação pode ter ocorrido. Não há retry automático.

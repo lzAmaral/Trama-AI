@@ -1,0 +1,5217 @@
+{
+  "comparablePhases": [
+    "warmup",
+    "idle",
+    "output",
+    "settled",
+    "inactive"
+  ],
+  "engineSHA256": "0bb585625a6b7f778505aa456f0b6cb1ef16413328aa5dcdf83eed4aa1be1490",
+  "harnessSHA256": "ff8978157da4d04fde0d1aebd3efc8d2ddf7aba880aa7fd23f8aa2350db0e968",
+  "host": {
+    "machine": "arm64",
+    "release": "25.6.0",
+    "system": "Darwin"
+  },
+  "scenarios": [
+    {
+      "cleanupConfirmed": true,
+      "cycles": 0,
+      "densityReduction": {
+        "performed": false
+      },
+      "expectedTerminalViews": 2,
+      "limitations": [
+        "Scene phase is injected to make scenarios deterministic; focus and keyboard latency are not measured.",
+        "Visible NSWindow and terminal buffer markers are checked; rendered pixels are not inspected by this benchmark.",
+        "Measures the UI process only; holder/CLI memory is measured separately.",
+        "AppKit/SwiftUI caches may remain after view release; growth alone does not establish a leak."
+      ],
+      "mode": "grid2",
+      "nativeTerminalBuffersWithCompletionMarker": 2,
+      "outputCompletionConfirmed": true,
+      "repetition": 1,
+      "samples": [
+        {
+          "cpuSeconds": 0.310155,
+          "footprintBytes": 35324768,
+          "phase": "warmup",
+          "residentBytes": 90390528,
+          "seconds": 0,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 0.449046,
+          "footprintBytes": 97698728,
+          "phase": "warmup",
+          "residentBytes": 109510656,
+          "seconds": 0.25074537500040606,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.452666,
+          "footprintBytes": 97682344,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 0.5177978333376814,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.454368,
+          "footprintBytes": 97682344,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 0.7805778333276976,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.455217,
+          "footprintBytes": 97682344,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 1.0407127916696481,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.456584,
+          "footprintBytes": 97682344,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 1.3064612916496117,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.457651,
+          "footprintBytes": 50774952,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 1.5691751249833032,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.45844,
+          "footprintBytes": 50774952,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 1.830531791667454,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.458835,
+          "footprintBytes": 50774952,
+          "phase": "warmup",
+          "residentBytes": 109543424,
+          "seconds": 2.097500250005396,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.517204,
+          "footprintBytes": 50987944,
+          "phase": "warmup",
+          "residentBytes": 109887488,
+          "seconds": 2.374057958339108,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.543154,
+          "footprintBytes": 50840488,
+          "phase": "warmup",
+          "residentBytes": 109821952,
+          "seconds": 2.626157291670097,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.544105,
+          "footprintBytes": 50807720,
+          "phase": "warmup",
+          "residentBytes": 109821952,
+          "seconds": 2.893178291647928,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.544665,
+          "footprintBytes": 50807720,
+          "phase": "warmup",
+          "residentBytes": 109821952,
+          "seconds": 3.160259166645119,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.550797,
+          "footprintBytes": 50807720,
+          "phase": "warmup",
+          "residentBytes": 109821952,
+          "seconds": 3.4120730833383277,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.551659,
+          "footprintBytes": 50807720,
+          "phase": "warmup",
+          "residentBytes": 109821952,
+          "seconds": 3.684763541648863,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.552348,
+          "footprintBytes": 50807720,
+          "phase": "warmup",
+          "residentBytes": 109821952,
+          "seconds": 3.944387875002576,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.553386,
+          "footprintBytes": 50807720,
+          "phase": "idle",
+          "residentBytes": 109821952,
+          "seconds": 4.2117539166647475,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.554202,
+          "footprintBytes": 50807720,
+          "phase": "idle",
+          "residentBytes": 109821952,
+          "seconds": 4.4667609999887645,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.557584,
+          "footprintBytes": 50807720,
+          "phase": "idle",
+          "residentBytes": 109821952,
+          "seconds": 4.73126637499081,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.558784,
+          "footprintBytes": 50807720,
+          "phase": "idle",
+          "residentBytes": 109821952,
+          "seconds": 4.9979268749884795,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.560202,
+          "footprintBytes": 50742184,
+          "phase": "idle",
+          "residentBytes": 109756416,
+          "seconds": 5.264004291646415,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.561038,
+          "footprintBytes": 50742184,
+          "phase": "idle",
+          "residentBytes": 109756416,
+          "seconds": 5.527742000005674,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.561727,
+          "footprintBytes": 50742184,
+          "phase": "idle",
+          "residentBytes": 109756416,
+          "seconds": 5.783130875002826,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.562311,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.046290583326481,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.56567,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.309138249984244,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.5697,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.575324291654397,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.573193,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.840094458311796,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.573723,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.107204041647492,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.574614,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.367989624995971,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.575387,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.628741916647414,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.57621,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.895354583335575,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.57688,
+          "footprintBytes": 50758568,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 8.14744316667202,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.642356,
+          "footprintBytes": 50791336,
+          "phase": "output",
+          "residentBytes": 109772800,
+          "seconds": 8.873881583334878,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.642637,
+          "footprintBytes": 50791336,
+          "phase": "output",
+          "residentBytes": 109772800,
+          "seconds": 9.12758016664884,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.643577,
+          "footprintBytes": 50758568,
+          "phase": "output",
+          "residentBytes": 109772800,
+          "seconds": 9.393762874999084,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.683724,
+          "footprintBytes": 102597544,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 9.65913733333582,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.684092,
+          "footprintBytes": 102597544,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 9.91832279166556,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.684577,
+          "footprintBytes": 100238248,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 10.17358520833659,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.685074,
+          "footprintBytes": 100238248,
+          "phase": "output",
+          "residentBytes": 110166016,
+          "seconds": 10.44058766667149,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.685948,
+          "footprintBytes": 97993640,
+          "phase": "output",
+          "residentBytes": 110166016,
+          "seconds": 10.704582708334783,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.687523,
+          "footprintBytes": 51610536,
+          "phase": "output",
+          "residentBytes": 110166016,
+          "seconds": 10.967440916661872,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.745649,
+          "footprintBytes": 51626920,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 11.233999791671522,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.746012,
+          "footprintBytes": 51626920,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 11.489699916652171,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.746629,
+          "footprintBytes": 51102632,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 11.756784541648813,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.74742,
+          "footprintBytes": 51102632,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 12.015958874981152,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.748197,
+          "footprintBytes": 51102632,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 12.277625958318822,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.748975,
+          "footprintBytes": 51102632,
+          "phase": "output",
+          "residentBytes": 110149632,
+          "seconds": 12.541191708325641,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.753486,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 12.807966166670667,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.753937,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 13.074960500001907,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.756894,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 13.342128166666953,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.757798,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 13.609516625001561,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.758487,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 13.874537750001764,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.759023,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 14.141204666666454,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.759871,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 14.40273429165245,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.760599,
+          "footprintBytes": 51217320,
+          "phase": "output",
+          "residentBytes": 110264320,
+          "seconds": 14.661979041673476,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.761373,
+          "footprintBytes": 51233704,
+          "phase": "output",
+          "residentBytes": 110280704,
+          "seconds": 14.928560500004096,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.762408,
+          "footprintBytes": 51233704,
+          "phase": "output",
+          "residentBytes": 110280704,
+          "seconds": 15.195294916658895,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.843152,
+          "footprintBytes": 51266472,
+          "phase": "output",
+          "residentBytes": 110313472,
+          "seconds": 15.461762124992674,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.848387,
+          "footprintBytes": 52003752,
+          "phase": "output",
+          "residentBytes": 111050752,
+          "seconds": 15.72851629165234,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.889564,
+          "footprintBytes": 103875496,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 15.995262374985032,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.89045,
+          "footprintBytes": 103875496,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 16.261456458334578,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.891614,
+          "footprintBytes": 103875496,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 16.528578166646184,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.892368,
+          "footprintBytes": 101630888,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 16.783659666660242,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.893326,
+          "footprintBytes": 52364200,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 17.044504749996122,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.894107,
+          "footprintBytes": 52364200,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 17.298560875002295,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.899034,
+          "footprintBytes": 52364200,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 17.56537395832129,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.899672,
+          "footprintBytes": 52364200,
+          "phase": "output",
+          "residentBytes": 111460352,
+          "seconds": 17.82605329164653,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.948923,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111476736,
+          "seconds": 18.66241708333837,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.95019,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 18.927716499980306,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.956996,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 19.178668208332965,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.957893,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 19.444457499979762,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.963819,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 19.70724274998065,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.964621,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 19.973924416670343,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.965609,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 20.23978533333866,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.966407,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 20.49888641666621,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.96734,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 20.762136250006733,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.968118,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 21.025560958340066,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.968815,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 21.28256799999508,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.969558,
+          "footprintBytes": 52364200,
+          "phase": "settled",
+          "residentBytes": 111443968,
+          "seconds": 21.545428416662617,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.007496,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 21.846417708322406,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.009509,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 22.113525291671976,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.010406,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 22.377550916658947,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.011293,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 22.644390666653635,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.012132,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 22.907232708326774,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.01289,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 23.17420204167138,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.013781,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 23.440610499994364,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.01462,
+          "footprintBytes": 52495272,
+          "phase": "inactive",
+          "residentBytes": 111509504,
+          "seconds": 23.70720829165657,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.017433,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 23.967086916672997,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.019395,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 24.228658499981975,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.020173,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 24.481071749993134,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.020886,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 24.74359033332439,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.021762,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 25.0086624166579,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.022424,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 25.27513329166686,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.022882,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 25.541812458337517,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.023268,
+          "footprintBytes": 52511656,
+          "phase": "inactive",
+          "residentBytes": 111525888,
+          "seconds": 25.808848583314102,
+          "terminalViews": 2
+        }
+      ],
+      "schema": 1,
+      "summary": {
+        "idle": {
+          "cpuSecondsDelta": 0.023493999999999904,
+          "maximumFootprintBytes": 50807720,
+          "medianFootprintBytes": 50758568.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "inactive": {
+          "cpuSecondsDelta": 0.01577200000000012,
+          "maximumFootprintBytes": 52511656,
+          "medianFootprintBytes": 52503464.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "output": {
+          "cpuSecondsDelta": 0.257316,
+          "maximumFootprintBytes": 103875496,
+          "medianFootprintBytes": 51266472,
+          "sampleCount": 35,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "settled": {
+          "cpuSecondsDelta": 0.02063500000000007,
+          "maximumFootprintBytes": 52364200,
+          "medianFootprintBytes": 52364200.0,
+          "sampleCount": 12,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "warmup": {
+          "cpuSecondsDelta": 0.24219299999999994,
+          "maximumFootprintBytes": 97698728,
+          "medianFootprintBytes": 50807720.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            0,
+            2
+          ]
+        }
+      },
+      "terminalViewsReleasedWithinOneSecond": 0,
+      "visibleWindow": true
+    },
+    {
+      "cleanupConfirmed": true,
+      "cycles": 0,
+      "densityReduction": {
+        "finalTerminalViews": 2,
+        "initialTerminalViews": 6,
+        "nativeTerminalBuffersWithCompletionMarker": 2,
+        "performed": true,
+        "previousViewsReleasedWithinTwoSeconds": 6,
+        "removedViewsStillRetained": 0
+      },
+      "expectedTerminalViews": 6,
+      "limitations": [
+        "Scene phase is injected to make scenarios deterministic; focus and keyboard latency are not measured.",
+        "Visible NSWindow and terminal buffer markers are checked; rendered pixels are not inspected by this benchmark.",
+        "Measures the UI process only; holder/CLI memory is measured separately.",
+        "AppKit/SwiftUI caches may remain after view release; growth alone does not establish a leak."
+      ],
+      "mode": "grid",
+      "nativeTerminalBuffersWithCompletionMarker": 6,
+      "outputCompletionConfirmed": true,
+      "repetition": 1,
+      "samples": [
+        {
+          "cpuSeconds": 0.28942,
+          "footprintBytes": 37094240,
+          "phase": "warmup",
+          "residentBytes": 92110848,
+          "seconds": -4.1676685214042664e-08,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 0.488594,
+          "footprintBytes": 98501520,
+          "phase": "warmup",
+          "residentBytes": 112050176,
+          "seconds": 0.2651180000102613,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.52301,
+          "footprintBytes": 104711056,
+          "phase": "warmup",
+          "residentBytes": 112279552,
+          "seconds": 0.5238092500076164,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.524261,
+          "footprintBytes": 104711056,
+          "phase": "warmup",
+          "residentBytes": 112295936,
+          "seconds": 0.791462875000434,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.525283,
+          "footprintBytes": 104711056,
+          "phase": "warmup",
+          "residentBytes": 112295936,
+          "seconds": 1.056949291669298,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.52679,
+          "footprintBytes": 104711056,
+          "phase": "warmup",
+          "residentBytes": 112295936,
+          "seconds": 1.3245435833232477,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.527799,
+          "footprintBytes": 60146576,
+          "phase": "warmup",
+          "residentBytes": 112295936,
+          "seconds": 1.589130791660864,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.528796,
+          "footprintBytes": 60146576,
+          "phase": "warmup",
+          "residentBytes": 112295936,
+          "seconds": 1.8559644583438057,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.529728,
+          "footprintBytes": 60146576,
+          "phase": "warmup",
+          "residentBytes": 112295936,
+          "seconds": 2.1133024583396036,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.586605,
+          "footprintBytes": 58147752,
+          "phase": "warmup",
+          "residentBytes": 112492544,
+          "seconds": 2.385749000008218,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.614107,
+          "footprintBytes": 58180520,
+          "phase": "warmup",
+          "residentBytes": 112525312,
+          "seconds": 2.6456459583423566,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.615466,
+          "footprintBytes": 58082216,
+          "phase": "warmup",
+          "residentBytes": 112525312,
+          "seconds": 2.9130662083334755,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.616484,
+          "footprintBytes": 58082216,
+          "phase": "warmup",
+          "residentBytes": 112525312,
+          "seconds": 3.178242791676894,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.627033,
+          "footprintBytes": 58082216,
+          "phase": "warmup",
+          "residentBytes": 112525312,
+          "seconds": 3.4338267499988433,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.630457,
+          "footprintBytes": 58082216,
+          "phase": "warmup",
+          "residentBytes": 112525312,
+          "seconds": 3.697014500008663,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.632227,
+          "footprintBytes": 58082216,
+          "phase": "idle",
+          "residentBytes": 112525312,
+          "seconds": 3.964196583343437,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.63293,
+          "footprintBytes": 58082216,
+          "phase": "idle",
+          "residentBytes": 112525312,
+          "seconds": 4.2267039166763425,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.636329,
+          "footprintBytes": 58082216,
+          "phase": "idle",
+          "residentBytes": 112525312,
+          "seconds": 4.48866333332262,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.639068,
+          "footprintBytes": 58082216,
+          "phase": "idle",
+          "residentBytes": 112525312,
+          "seconds": 4.743358458334114,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.640427,
+          "footprintBytes": 58082216,
+          "phase": "idle",
+          "residentBytes": 112525312,
+          "seconds": 5.0096219166589435,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.641649,
+          "footprintBytes": 58049448,
+          "phase": "idle",
+          "residentBytes": 112492544,
+          "seconds": 5.271702708327211,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.642616,
+          "footprintBytes": 58049448,
+          "phase": "idle",
+          "residentBytes": 112492544,
+          "seconds": 5.539147416653577,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.643509,
+          "footprintBytes": 58049448,
+          "phase": "idle",
+          "residentBytes": 112492544,
+          "seconds": 5.795735874999082,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.644563,
+          "footprintBytes": 58049448,
+          "phase": "idle",
+          "residentBytes": 112492544,
+          "seconds": 6.056068458332447,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.645676,
+          "footprintBytes": 58049448,
+          "phase": "idle",
+          "residentBytes": 112492544,
+          "seconds": 6.319717750011478,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.651795,
+          "footprintBytes": 58016680,
+          "phase": "idle",
+          "residentBytes": 112492544,
+          "seconds": 6.577452458324842,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.662309,
+          "footprintBytes": 58098600,
+          "phase": "idle",
+          "residentBytes": 112574464,
+          "seconds": 6.828706583328312,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.663931,
+          "footprintBytes": 58098600,
+          "phase": "idle",
+          "residentBytes": 112574464,
+          "seconds": 7.094886874983786,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.664875,
+          "footprintBytes": 58098600,
+          "phase": "idle",
+          "residentBytes": 112574464,
+          "seconds": 7.36083620833233,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.665858,
+          "footprintBytes": 58098600,
+          "phase": "idle",
+          "residentBytes": 112574464,
+          "seconds": 7.62653050001245,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.666849,
+          "footprintBytes": 58098600,
+          "phase": "idle",
+          "residentBytes": 112574464,
+          "seconds": 7.8919983333325945,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.67343,
+          "footprintBytes": 58098600,
+          "phase": "output",
+          "residentBytes": 112574464,
+          "seconds": 8.60247337500914,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.674848,
+          "footprintBytes": 58114984,
+          "phase": "output",
+          "residentBytes": 112590848,
+          "seconds": 8.860478833317757,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.743133,
+          "footprintBytes": 58229672,
+          "phase": "output",
+          "residentBytes": 112607232,
+          "seconds": 9.115321666671662,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.743516,
+          "footprintBytes": 58229672,
+          "phase": "output",
+          "residentBytes": 112607232,
+          "seconds": 9.366113625001162,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.745857,
+          "footprintBytes": 58442664,
+          "phase": "output",
+          "residentBytes": 112918528,
+          "seconds": 9.619174541672692,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.820117,
+          "footprintBytes": 118064040,
+          "phase": "output",
+          "residentBytes": 114032640,
+          "seconds": 9.881998249999015,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.83847,
+          "footprintBytes": 119849896,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 10.140803541667992,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.838935,
+          "footprintBytes": 119849896,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 10.402468749991385,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.840053,
+          "footprintBytes": 112247720,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 10.663642375002382,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.840642,
+          "footprintBytes": 110740392,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 10.923522541677812,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.844345,
+          "footprintBytes": 110740392,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 11.188690833339933,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.844842,
+          "footprintBytes": 66700200,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 11.442453166673658,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.845499,
+          "footprintBytes": 66700200,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 11.707274124986725,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.84621,
+          "footprintBytes": 61490088,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 11.964332083327463,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.846672,
+          "footprintBytes": 61490088,
+          "phase": "output",
+          "residentBytes": 114294784,
+          "seconds": 12.231378208321985,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.84744,
+          "footprintBytes": 61490088,
+          "phase": "output",
+          "residentBytes": 114196480,
+          "seconds": 12.486064958327916,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.848668,
+          "footprintBytes": 61490088,
+          "phase": "output",
+          "residentBytes": 114196480,
+          "seconds": 12.745088833326008,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.907711,
+          "footprintBytes": 112870312,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 13.009297499986133,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.912333,
+          "footprintBytes": 112870312,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 13.269030374998692,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.913488,
+          "footprintBytes": 111362984,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 13.531496374984272,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.914309,
+          "footprintBytes": 111362984,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 13.787818583339686,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.915455,
+          "footprintBytes": 63407016,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 14.053243250004016,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.916429,
+          "footprintBytes": 63407016,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 14.312294458330143,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.917535,
+          "footprintBytes": 63407016,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 14.578861791669624,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.918469,
+          "footprintBytes": 63407016,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 14.842719500011299,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.919361,
+          "footprintBytes": 62882728,
+          "phase": "output",
+          "residentBytes": 115638272,
+          "seconds": 15.109553208341822,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.000514,
+          "footprintBytes": 62981032,
+          "phase": "output",
+          "residentBytes": 115736576,
+          "seconds": 15.360806208336726,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.000897,
+          "footprintBytes": 62981032,
+          "phase": "output",
+          "residentBytes": 115736576,
+          "seconds": 15.627851041674148,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.002647,
+          "footprintBytes": 62882728,
+          "phase": "output",
+          "residentBytes": 115736576,
+          "seconds": 15.895374291663757,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.070328,
+          "footprintBytes": 114787240,
+          "phase": "output",
+          "residentBytes": 116260864,
+          "seconds": 16.15340149999247,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.086781,
+          "footprintBytes": 116294568,
+          "phase": "output",
+          "residentBytes": 116260864,
+          "seconds": 16.42047858334263,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.088075,
+          "footprintBytes": 114787240,
+          "phase": "output",
+          "residentBytes": 116260864,
+          "seconds": 16.6824227499892,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.089124,
+          "footprintBytes": 113279912,
+          "phase": "output",
+          "residentBytes": 116260864,
+          "seconds": 16.9470865833282,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.090281,
+          "footprintBytes": 113296296,
+          "phase": "output",
+          "residentBytes": 116277248,
+          "seconds": 17.204828249989077,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.093291,
+          "footprintBytes": 66241448,
+          "phase": "output",
+          "residentBytes": 116277248,
+          "seconds": 17.46485958332778,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.140138,
+          "footprintBytes": 63374248,
+          "phase": "settled",
+          "residentBytes": 116293632,
+          "seconds": 18.285076000000117,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.141012,
+          "footprintBytes": 63374248,
+          "phase": "settled",
+          "residentBytes": 116293632,
+          "seconds": 18.54759258334525,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.141961,
+          "footprintBytes": 63374248,
+          "phase": "settled",
+          "residentBytes": 116293632,
+          "seconds": 18.814998791669495,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.143328,
+          "footprintBytes": 63374248,
+          "phase": "settled",
+          "residentBytes": 116195328,
+          "seconds": 19.079106958321063,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.156601,
+          "footprintBytes": 63603624,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 19.345252875005826,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.158014,
+          "footprintBytes": 63603624,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 19.599741083336994,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.163431,
+          "footprintBytes": 63603624,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 19.852913250011625,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.164661,
+          "footprintBytes": 63603624,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 20.105798708333168,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.1656710000000001,
+          "footprintBytes": 62161832,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 20.37161008332623,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.166577,
+          "footprintBytes": 62161832,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 20.638325791660463,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.167495,
+          "footprintBytes": 62161832,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 20.905054958333494,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.168462,
+          "footprintBytes": 62161832,
+          "phase": "settled",
+          "residentBytes": 116424704,
+          "seconds": 21.157688250008505,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.226866,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116441088,
+          "seconds": 21.482294833345804,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.228896,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116441088,
+          "seconds": 21.749360916670412,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.233234,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 22.014763624989428,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.2342710000000001,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 22.266761333332397,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.2352319999999999,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 22.531555124995066,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.236172,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 22.789233833318576,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.237173,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 23.053247166652,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.238157,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 23.317039416666375,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.239118,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 23.571561583317816,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.240018,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 23.822553500009235,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.244422,
+          "footprintBytes": 62194600,
+          "phase": "inactive",
+          "residentBytes": 116457472,
+          "seconds": 24.08132745831972,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.245635,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116408320,
+          "seconds": 24.33625412499532,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.24662,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116408320,
+          "seconds": 24.59932187499362,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.247579,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116408320,
+          "seconds": 24.858880208339542,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.248365,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116408320,
+          "seconds": 25.113252208335325,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.249171,
+          "footprintBytes": 62178216,
+          "phase": "inactive",
+          "residentBytes": 116408320,
+          "seconds": 25.372657791653182,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.327341,
+          "footprintBytes": 62325672,
+          "phase": "densityReduced",
+          "residentBytes": 116867072,
+          "seconds": 25.71551304165041,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 1.370463,
+          "footprintBytes": 104383400,
+          "phase": "densityReduced",
+          "residentBytes": 116981760,
+          "seconds": 25.978120499989018,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.373428,
+          "footprintBytes": 104383400,
+          "phase": "densityReduced",
+          "residentBytes": 116981760,
+          "seconds": 26.245190958317835,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.374242,
+          "footprintBytes": 104383400,
+          "phase": "densityReduced",
+          "residentBytes": 116981760,
+          "seconds": 26.51193158334354,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.375382,
+          "footprintBytes": 104383400,
+          "phase": "densityReduced",
+          "residentBytes": 116981760,
+          "seconds": 26.772616041678702,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.376355,
+          "footprintBytes": 104121256,
+          "phase": "densityReduced",
+          "residentBytes": 116981760,
+          "seconds": 27.038308916671667,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.3774549999999999,
+          "footprintBytes": 57394088,
+          "phase": "densityReduced",
+          "residentBytes": 116899840,
+          "seconds": 27.30388316666358,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.378431,
+          "footprintBytes": 57394088,
+          "phase": "densityReduced",
+          "residentBytes": 116899840,
+          "seconds": 27.569982458342565,
+          "terminalViews": 2
+        }
+      ],
+      "schema": 1,
+      "summary": {
+        "densityReduced": {
+          "cpuSecondsDelta": 0.05108999999999986,
+          "maximumFootprintBytes": 104383400,
+          "medianFootprintBytes": 104252328.0,
+          "sampleCount": 8,
+          "terminalViewCounts": [
+            0,
+            2
+          ]
+        },
+        "idle": {
+          "cpuSecondsDelta": 0.03462200000000004,
+          "maximumFootprintBytes": 58098600,
+          "medianFootprintBytes": 58082216.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "inactive": {
+          "cpuSecondsDelta": 0.02230500000000002,
+          "maximumFootprintBytes": 62194600,
+          "medianFootprintBytes": 62194600.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "output": {
+          "cpuSecondsDelta": 0.41986100000000004,
+          "maximumFootprintBytes": 119849896,
+          "medianFootprintBytes": 66241448,
+          "sampleCount": 35,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "settled": {
+          "cpuSecondsDelta": 0.028323999999999794,
+          "maximumFootprintBytes": 63603624,
+          "medianFootprintBytes": 63374248.0,
+          "sampleCount": 12,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "warmup": {
+          "cpuSecondsDelta": 0.34103700000000003,
+          "maximumFootprintBytes": 104711056,
+          "medianFootprintBytes": 60146576,
+          "sampleCount": 15,
+          "terminalViewCounts": [
+            0,
+            2,
+            6
+          ]
+        }
+      },
+      "terminalViewsReleasedWithinOneSecond": 0,
+      "visibleWindow": true
+    },
+    {
+      "cleanupConfirmed": true,
+      "cycles": 0,
+      "densityReduction": {
+        "finalTerminalViews": 2,
+        "initialTerminalViews": 6,
+        "nativeTerminalBuffersWithCompletionMarker": 2,
+        "performed": true,
+        "previousViewsReleasedWithinTwoSeconds": 6,
+        "removedViewsStillRetained": 0
+      },
+      "expectedTerminalViews": 6,
+      "limitations": [
+        "Scene phase is injected to make scenarios deterministic; focus and keyboard latency are not measured.",
+        "Visible NSWindow and terminal buffer markers are checked; rendered pixels are not inspected by this benchmark.",
+        "Measures the UI process only; holder/CLI memory is measured separately.",
+        "AppKit/SwiftUI caches may remain after view release; growth alone does not establish a leak."
+      ],
+      "mode": "grid",
+      "nativeTerminalBuffersWithCompletionMarker": 6,
+      "outputCompletionConfirmed": true,
+      "repetition": 2,
+      "samples": [
+        {
+          "cpuSeconds": 0.295003,
+          "footprintBytes": 37159776,
+          "phase": "warmup",
+          "residentBytes": 92143616,
+          "seconds": -4.164758138358593e-08,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 0.474227,
+          "footprintBytes": 98239376,
+          "phase": "warmup",
+          "residentBytes": 111820800,
+          "seconds": 0.25183616668800823,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.497252,
+          "footprintBytes": 102925200,
+          "phase": "warmup",
+          "residentBytes": 112033792,
+          "seconds": 0.5056296666734852,
+          "terminalViews": 5
+        },
+        {
+          "cpuSeconds": 0.508629,
+          "footprintBytes": 104498064,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 0.7726856250083074,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.509677,
+          "footprintBytes": 104498064,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 1.0345206666679587,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.510789,
+          "footprintBytes": 104498064,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 1.2861314583278727,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.511747,
+          "footprintBytes": 104498064,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 1.5515254583442584,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.512443,
+          "footprintBytes": 59933584,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 1.814936791663058,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.512933,
+          "footprintBytes": 59933584,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 2.082017000007909,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.516048,
+          "footprintBytes": 57590672,
+          "phase": "warmup",
+          "residentBytes": 112132096,
+          "seconds": 2.34237766667502,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.594276,
+          "footprintBytes": 57869200,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 2.608736249996582,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.594954,
+          "footprintBytes": 57869200,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 2.874553375004325,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.595924,
+          "footprintBytes": 57770896,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.1417467083374504,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.607396,
+          "footprintBytes": 57770896,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.404530750005506,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.614111,
+          "footprintBytes": 57770896,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.671153208328178,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.615101,
+          "footprintBytes": 57770896,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.927877250011079,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.616228,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.193452500010608,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.617032,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.461467291665031,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.621214,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.72709462500643,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.62234,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.985314624995226,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.623266,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 5.251512791670393,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.6246,
+          "footprintBytes": 57721744,
+          "phase": "idle",
+          "residentBytes": 112295936,
+          "seconds": 5.516481666680193,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.625354,
+          "footprintBytes": 57721744,
+          "phase": "idle",
+          "residentBytes": 112295936,
+          "seconds": 5.775929041672498,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.625902,
+          "footprintBytes": 57721744,
+          "phase": "idle",
+          "residentBytes": 112295936,
+          "seconds": 6.043076791684143,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.627194,
+          "footprintBytes": 57721744,
+          "phase": "idle",
+          "residentBytes": 112295936,
+          "seconds": 6.308064083335921,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.642081,
+          "footprintBytes": 57754512,
+          "phase": "idle",
+          "residentBytes": 112328704,
+          "seconds": 6.566333166672848,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.646591,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 6.828326416667551,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.647147,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.095427000022028,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.64792,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.354727249999996,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.648855,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.622175208351109,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.649674,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.878325875004521,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.650389,
+          "footprintBytes": 57770896,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 8.14488666667603,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.719034,
+          "footprintBytes": 57836432,
+          "phase": "output",
+          "residentBytes": 112361472,
+          "seconds": 8.865186583338073,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.71927,
+          "footprintBytes": 57836432,
+          "phase": "output",
+          "residentBytes": 112361472,
+          "seconds": 9.1235793333326,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.719924,
+          "footprintBytes": 57787280,
+          "phase": "output",
+          "residentBytes": 112361472,
+          "seconds": 9.380283666687319,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.724362,
+          "footprintBytes": 58966928,
+          "phase": "output",
+          "residentBytes": 113541120,
+          "seconds": 9.631429333356209,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.793125,
+          "footprintBytes": 120128400,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 9.88227500001085,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.793728,
+          "footprintBytes": 120128400,
+          "phase": "output",
+          "residentBytes": 114491392,
+          "seconds": 10.138135250017513,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.794385,
+          "footprintBytes": 120128400,
+          "phase": "output",
+          "residentBytes": 114442240,
+          "seconds": 10.396955500007607,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.795237,
+          "footprintBytes": 114099088,
+          "phase": "output",
+          "residentBytes": 114442240,
+          "seconds": 10.655323416664032,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.831446,
+          "footprintBytes": 64766864,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 10.922455874999287,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.860849,
+          "footprintBytes": 64766864,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 11.18301366668311,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.861605,
+          "footprintBytes": 64766864,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 11.439794166682987,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.862241,
+          "footprintBytes": 64717712,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 11.697152000007918,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.862769,
+          "footprintBytes": 61588368,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 11.950297083356418,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.86327,
+          "footprintBytes": 61588368,
+          "phase": "output",
+          "residentBytes": 114507776,
+          "seconds": 12.217182291671634,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.864246,
+          "footprintBytes": 61588368,
+          "phase": "output",
+          "residentBytes": 114409472,
+          "seconds": 12.483584958332358,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.869663,
+          "footprintBytes": 61899688,
+          "phase": "output",
+          "residentBytes": 114704384,
+          "seconds": 12.741797458351357,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.875605,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 13.001260583347175,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.876816,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 13.265855583333177,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.877667,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 13.526999000023352,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.878547,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 13.79365833333577,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.879204,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 14.060859874996822,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.880267,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 14.327158625004813,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.881172,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 14.593640166684054,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.881668,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 14.857772333343746,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.884167,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115654656,
+          "seconds": 15.124891083338298,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.965906,
+          "footprintBytes": 62948264,
+          "phase": "output",
+          "residentBytes": 115752960,
+          "seconds": 15.39134708335041,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.966648,
+          "footprintBytes": 62948264,
+          "phase": "output",
+          "residentBytes": 115752960,
+          "seconds": 15.657031708338764,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.972602,
+          "footprintBytes": 62849960,
+          "phase": "output",
+          "residentBytes": 115752960,
+          "seconds": 15.917636041674996,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.055723,
+          "footprintBytes": 126731200,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 16.182957791665103,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.056226,
+          "footprintBytes": 126731200,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 16.450069375016028,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.05753,
+          "footprintBytes": 125223872,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 16.71536912501324,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.058634,
+          "footprintBytes": 120701888,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 16.974489000014728,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.060609,
+          "footprintBytes": 64275392,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 17.23954166666954,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.065274,
+          "footprintBytes": 64275392,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 17.496114958339604,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.066235,
+          "footprintBytes": 64275392,
+          "phase": "output",
+          "residentBytes": 116555776,
+          "seconds": 17.761770583339967,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.106761,
+          "footprintBytes": 63226816,
+          "phase": "settled",
+          "residentBytes": 116572160,
+          "seconds": 18.585747541685123,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.107423,
+          "footprintBytes": 63226816,
+          "phase": "settled",
+          "residentBytes": 116523008,
+          "seconds": 18.84278554166667,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.115163,
+          "footprintBytes": 63357888,
+          "phase": "settled",
+          "residentBytes": 116654080,
+          "seconds": 19.100099500006763,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.119756,
+          "footprintBytes": 63587264,
+          "phase": "settled",
+          "residentBytes": 116883456,
+          "seconds": 19.367281166661996,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.124868,
+          "footprintBytes": 63603648,
+          "phase": "settled",
+          "residentBytes": 116899840,
+          "seconds": 19.63476937499945,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.12618,
+          "footprintBytes": 63603648,
+          "phase": "settled",
+          "residentBytes": 116899840,
+          "seconds": 19.9014356250118,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.127146,
+          "footprintBytes": 63603648,
+          "phase": "settled",
+          "residentBytes": 116899840,
+          "seconds": 20.167018458334496,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.128286,
+          "footprintBytes": 63620032,
+          "phase": "settled",
+          "residentBytes": 116916224,
+          "seconds": 20.434406583342934,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.129057,
+          "footprintBytes": 63620032,
+          "phase": "settled",
+          "residentBytes": 116916224,
+          "seconds": 20.69358754166751,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.130215,
+          "footprintBytes": 63620032,
+          "phase": "settled",
+          "residentBytes": 116867072,
+          "seconds": 20.952229333342984,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.131121,
+          "footprintBytes": 63620032,
+          "phase": "settled",
+          "residentBytes": 116867072,
+          "seconds": 21.219312541681575,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.134192,
+          "footprintBytes": 63620032,
+          "phase": "settled",
+          "residentBytes": 116867072,
+          "seconds": 21.473711875005392,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.189741,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 21.791583708341932,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.191804,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 22.058670583355706,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.19293,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 22.31614233335131,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.193861,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 22.577091666666092,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.1946080000000001,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 22.8435153333412,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.195128,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 23.11057070834795,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.195639,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 23.377699125005165,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.196662,
+          "footprintBytes": 63636416,
+          "phase": "inactive",
+          "residentBytes": 116883456,
+          "seconds": 23.643595708330395,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.201544,
+          "footprintBytes": 63620032,
+          "phase": "inactive",
+          "residentBytes": 116850688,
+          "seconds": 23.909671875007916,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.20261,
+          "footprintBytes": 63587264,
+          "phase": "inactive",
+          "residentBytes": 116785152,
+          "seconds": 24.175885541684693,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.203626,
+          "footprintBytes": 63521728,
+          "phase": "inactive",
+          "residentBytes": 116719616,
+          "seconds": 24.4426354583411,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.204552,
+          "footprintBytes": 63521728,
+          "phase": "inactive",
+          "residentBytes": 116719616,
+          "seconds": 24.693377250019694,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.2053,
+          "footprintBytes": 63521728,
+          "phase": "inactive",
+          "residentBytes": 116719616,
+          "seconds": 24.960104208352277,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.205978,
+          "footprintBytes": 63521728,
+          "phase": "inactive",
+          "residentBytes": 116719616,
+          "seconds": 25.212196666689124,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.206956,
+          "footprintBytes": 63521728,
+          "phase": "inactive",
+          "residentBytes": 116719616,
+          "seconds": 25.469150208344217,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.208016,
+          "footprintBytes": 63521728,
+          "phase": "inactive",
+          "residentBytes": 116719616,
+          "seconds": 25.729120750009315,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.2892540000000001,
+          "footprintBytes": 63636416,
+          "phase": "densityReduced",
+          "residentBytes": 117080064,
+          "seconds": 26.072077833348885,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 1.332539,
+          "footprintBytes": 105776064,
+          "phase": "densityReduced",
+          "residentBytes": 117178368,
+          "seconds": 26.326038541679736,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.333132,
+          "footprintBytes": 105776064,
+          "phase": "densityReduced",
+          "residentBytes": 117178368,
+          "seconds": 26.582562499999767,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.333703,
+          "footprintBytes": 105776064,
+          "phase": "densityReduced",
+          "residentBytes": 117178368,
+          "seconds": 26.83706704166252,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.334411,
+          "footprintBytes": 104334272,
+          "phase": "densityReduced",
+          "residentBytes": 117178368,
+          "seconds": 27.104333291674266,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.3356919999999999,
+          "footprintBytes": 104301504,
+          "phase": "densityReduced",
+          "residentBytes": 117145600,
+          "seconds": 27.370815541682532,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.336547,
+          "footprintBytes": 57394112,
+          "phase": "densityReduced",
+          "residentBytes": 117145600,
+          "seconds": 27.633139333338477,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.337448,
+          "footprintBytes": 57394112,
+          "phase": "densityReduced",
+          "residentBytes": 117145600,
+          "seconds": 27.88738650002051,
+          "terminalViews": 2
+        }
+      ],
+      "schema": 1,
+      "summary": {
+        "densityReduced": {
+          "cpuSecondsDelta": 0.04819399999999985,
+          "maximumFootprintBytes": 105776064,
+          "medianFootprintBytes": 104317888.0,
+          "sampleCount": 8,
+          "terminalViewCounts": [
+            0,
+            2
+          ]
+        },
+        "idle": {
+          "cpuSecondsDelta": 0.034161,
+          "maximumFootprintBytes": 57770896,
+          "medianFootprintBytes": 57770896.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "inactive": {
+          "cpuSecondsDelta": 0.01827500000000004,
+          "maximumFootprintBytes": 63636416,
+          "medianFootprintBytes": 63628224.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "output": {
+          "cpuSecondsDelta": 0.3472010000000001,
+          "maximumFootprintBytes": 126731200,
+          "medianFootprintBytes": 62849960,
+          "sampleCount": 35,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "settled": {
+          "cpuSecondsDelta": 0.027430999999999983,
+          "maximumFootprintBytes": 63620032,
+          "medianFootprintBytes": 63603648.0,
+          "sampleCount": 12,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "warmup": {
+          "cpuSecondsDelta": 0.320098,
+          "maximumFootprintBytes": 104498064,
+          "medianFootprintBytes": 58901392.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            0,
+            2,
+            5,
+            6
+          ]
+        }
+      },
+      "terminalViewsReleasedWithinOneSecond": 0,
+      "visibleWindow": true
+    },
+    {
+      "cleanupConfirmed": true,
+      "cycles": 0,
+      "densityReduction": {
+        "performed": false
+      },
+      "expectedTerminalViews": 2,
+      "limitations": [
+        "Scene phase is injected to make scenarios deterministic; focus and keyboard latency are not measured.",
+        "Visible NSWindow and terminal buffer markers are checked; rendered pixels are not inspected by this benchmark.",
+        "Measures the UI process only; holder/CLI memory is measured separately.",
+        "AppKit/SwiftUI caches may remain after view release; growth alone does not establish a leak."
+      ],
+      "mode": "grid2",
+      "nativeTerminalBuffersWithCompletionMarker": 2,
+      "outputCompletionConfirmed": true,
+      "repetition": 2,
+      "samples": [
+        {
+          "cpuSeconds": 0.2776,
+          "footprintBytes": 35193696,
+          "phase": "warmup",
+          "residentBytes": 90259456,
+          "seconds": 0,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 0.421335,
+          "footprintBytes": 97616784,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 0.26689575001364574,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.423297,
+          "footprintBytes": 97600400,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 0.5297752500046045,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.423849,
+          "footprintBytes": 97600400,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 0.7968493750086054,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.424745,
+          "footprintBytes": 97600400,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 1.0642210416845046,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.426005,
+          "footprintBytes": 50693008,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 1.3297839166771155,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.426804,
+          "footprintBytes": 50693008,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 1.595464375015581,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.427829,
+          "footprintBytes": 50693008,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 1.8605137499980628,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.428545,
+          "footprintBytes": 50693008,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 2.1279133333300706,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.431424,
+          "footprintBytes": 50693008,
+          "phase": "warmup",
+          "residentBytes": 109576192,
+          "seconds": 2.384856375021627,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.490778,
+          "footprintBytes": 50824080,
+          "phase": "warmup",
+          "residentBytes": 109805568,
+          "seconds": 2.646899375016801,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.491636,
+          "footprintBytes": 50824080,
+          "phase": "warmup",
+          "residentBytes": 109805568,
+          "seconds": 2.9088920833310112,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.493041,
+          "footprintBytes": 50791312,
+          "phase": "warmup",
+          "residentBytes": 109805568,
+          "seconds": 3.173012875020504,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.498839,
+          "footprintBytes": 50791312,
+          "phase": "warmup",
+          "residentBytes": 109805568,
+          "seconds": 3.4395126666640863,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.499422,
+          "footprintBytes": 50791312,
+          "phase": "warmup",
+          "residentBytes": 109805568,
+          "seconds": 3.70666062500095,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.500437,
+          "footprintBytes": 50791312,
+          "phase": "idle",
+          "residentBytes": 109805568,
+          "seconds": 3.9707131250179373,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.501055,
+          "footprintBytes": 50791312,
+          "phase": "idle",
+          "residentBytes": 109805568,
+          "seconds": 4.235321000014665,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.501929,
+          "footprintBytes": 50791312,
+          "phase": "idle",
+          "residentBytes": 109805568,
+          "seconds": 4.4994247916620225,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.505771,
+          "footprintBytes": 50807696,
+          "phase": "idle",
+          "residentBytes": 109821952,
+          "seconds": 4.750473208347103,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.507308,
+          "footprintBytes": 50807696,
+          "phase": "idle",
+          "residentBytes": 109821952,
+          "seconds": 5.017538500018418,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.50798,
+          "footprintBytes": 50758544,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 5.279142875020625,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.508528,
+          "footprintBytes": 50725776,
+          "phase": "idle",
+          "residentBytes": 109740032,
+          "seconds": 5.540753333334578,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.50897,
+          "footprintBytes": 50725776,
+          "phase": "idle",
+          "residentBytes": 109740032,
+          "seconds": 5.807761375006521,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.50976,
+          "footprintBytes": 50725776,
+          "phase": "idle",
+          "residentBytes": 109740032,
+          "seconds": 6.064691958337789,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.514425,
+          "footprintBytes": 50758544,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.328318541665794,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.516192,
+          "footprintBytes": 50709392,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.595585666684201,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.520348,
+          "footprintBytes": 50709392,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 6.857941416674294,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.52124,
+          "footprintBytes": 50709392,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.122437500016531,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.521884,
+          "footprintBytes": 50709392,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.387567958328873,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.522338,
+          "footprintBytes": 50709392,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.653097375005018,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.523122,
+          "footprintBytes": 50709392,
+          "phase": "idle",
+          "residentBytes": 109772800,
+          "seconds": 7.911916958342772,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.531945,
+          "footprintBytes": 50709392,
+          "phase": "output",
+          "residentBytes": 109772800,
+          "seconds": 8.637955916667124,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.587458,
+          "footprintBytes": 50807696,
+          "phase": "output",
+          "residentBytes": 109772800,
+          "seconds": 8.889813291665632,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.587729,
+          "footprintBytes": 50807696,
+          "phase": "output",
+          "residentBytes": 109772800,
+          "seconds": 9.15018258334021,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.589992,
+          "footprintBytes": 51184528,
+          "phase": "output",
+          "residentBytes": 110182400,
+          "seconds": 9.408939916669624,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.621608,
+          "footprintBytes": 107119504,
+          "phase": "output",
+          "residentBytes": 110624768,
+          "seconds": 9.668482083332492,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.622,
+          "footprintBytes": 107119504,
+          "phase": "output",
+          "residentBytes": 110624768,
+          "seconds": 9.927900083333952,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.622501,
+          "footprintBytes": 102515600,
+          "phase": "output",
+          "residentBytes": 110624768,
+          "seconds": 10.19027416667086,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.622976,
+          "footprintBytes": 102515600,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 10.44458920834586,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.62365,
+          "footprintBytes": 102515600,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 10.701987375010503,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.624837,
+          "footprintBytes": 53789584,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 10.968986291671172,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.62602,
+          "footprintBytes": 53789584,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 11.222564166673692,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.626451,
+          "footprintBytes": 53789584,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 11.489595833350904,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.626953,
+          "footprintBytes": 53265296,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 11.747853083332302,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.627456,
+          "footprintBytes": 53265296,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 12.0149367916747,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.628175,
+          "footprintBytes": 53265296,
+          "phase": "output",
+          "residentBytes": 110608384,
+          "seconds": 12.2732905416633,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.631058,
+          "footprintBytes": 53429136,
+          "phase": "output",
+          "residentBytes": 110739456,
+          "seconds": 12.532125083351275,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.632731,
+          "footprintBytes": 53674896,
+          "phase": "output",
+          "residentBytes": 110985216,
+          "seconds": 12.79919275001157,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.63394,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 13.064762083347887,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.638362,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 13.33079166666721,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.639134,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 13.59751708334079,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.63992,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 13.86191029168549,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.640707,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 14.129641000006814,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.641327,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 14.396777708345326,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.641851,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 14.663868875009939,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.642622,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 14.929699875006918,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.643536,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111017984,
+          "seconds": 15.196862166689243,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.720982,
+          "footprintBytes": 53724072,
+          "phase": "output",
+          "residentBytes": 111083520,
+          "seconds": 15.463840208336478,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.725147,
+          "footprintBytes": 54313896,
+          "phase": "output",
+          "residentBytes": 111673344,
+          "seconds": 15.717157958337339,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.776261,
+          "footprintBytes": 108676008,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 15.98017116668052,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.776932,
+          "footprintBytes": 108676008,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 16.24528733335319,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.777886,
+          "footprintBytes": 104072104,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 16.506158875010442,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.77868,
+          "footprintBytes": 104072104,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 16.77238904166734,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.779884,
+          "footprintBytes": 54821800,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 17.03830008333898,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.780601,
+          "footprintBytes": 54821800,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 17.291985500021838,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.783239,
+          "footprintBytes": 54821800,
+          "phase": "output",
+          "residentBytes": 112230400,
+          "seconds": 17.542938833328662,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.832675,
+          "footprintBytes": 54821800,
+          "phase": "settled",
+          "residentBytes": 112246784,
+          "seconds": 18.369869416666916,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.833436,
+          "footprintBytes": 54821800,
+          "phase": "settled",
+          "residentBytes": 112246784,
+          "seconds": 18.63389141668449,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.834815,
+          "footprintBytes": 54821800,
+          "phase": "settled",
+          "residentBytes": 112214016,
+          "seconds": 18.892185500008054,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.840231,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 19.154647000017576,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.840965,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 19.40807441668585,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.841908,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 19.661332833347842,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.846511,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 19.927712666685693,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.84738,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 20.192369249998592,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.848197,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 20.45588020834839,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.848781,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 20.722966916684527,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.849451,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 20.990189500007546,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.850217,
+          "footprintBytes": 55067560,
+          "phase": "settled",
+          "residentBytes": 112476160,
+          "seconds": 21.255709874996683,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.899705,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 21.570825333328685,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.903939,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 21.83382808335591,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.90673,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 22.101136833342025,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.90768,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 22.36527662500157,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.908382,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 22.62502091669012,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.90932,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 22.889050666679395,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.910107,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 23.14390700001968,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.910743,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 23.410517250013072,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.911251,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 23.677587125013815,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.912398,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 23.943991708336398,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.916261,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 24.210065041668713,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.9169,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 24.47244412501459,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.91764,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 24.73903745834832,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.918572,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 25.005718583328417,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.919445,
+          "footprintBytes": 55149480,
+          "phase": "inactive",
+          "residentBytes": 112492544,
+          "seconds": 25.27234979168861,
+          "terminalViews": 2
+        }
+      ],
+      "schema": 1,
+      "summary": {
+        "idle": {
+          "cpuSecondsDelta": 0.022684999999999955,
+          "maximumFootprintBytes": 50807696,
+          "medianFootprintBytes": 50725776.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "inactive": {
+          "cpuSecondsDelta": 0.01973999999999998,
+          "maximumFootprintBytes": 55149480,
+          "medianFootprintBytes": 55149480,
+          "sampleCount": 15,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "output": {
+          "cpuSecondsDelta": 0.251294,
+          "maximumFootprintBytes": 108676008,
+          "medianFootprintBytes": 53724072,
+          "sampleCount": 35,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "settled": {
+          "cpuSecondsDelta": 0.017541999999999947,
+          "maximumFootprintBytes": 55067560,
+          "medianFootprintBytes": 55067560.0,
+          "sampleCount": 12,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "warmup": {
+          "cpuSecondsDelta": 0.22182199999999996,
+          "maximumFootprintBytes": 97616784,
+          "medianFootprintBytes": 50791312,
+          "sampleCount": 15,
+          "terminalViewCounts": [
+            0,
+            2
+          ]
+        }
+      },
+      "terminalViewsReleasedWithinOneSecond": 0,
+      "visibleWindow": true
+    },
+    {
+      "cleanupConfirmed": true,
+      "cycles": 0,
+      "densityReduction": {
+        "performed": false
+      },
+      "expectedTerminalViews": 2,
+      "limitations": [
+        "Scene phase is injected to make scenarios deterministic; focus and keyboard latency are not measured.",
+        "Visible NSWindow and terminal buffer markers are checked; rendered pixels are not inspected by this benchmark.",
+        "Measures the UI process only; holder/CLI memory is measured separately.",
+        "AppKit/SwiftUI caches may remain after view release; growth alone does not establish a leak."
+      ],
+      "mode": "grid2",
+      "nativeTerminalBuffersWithCompletionMarker": 2,
+      "outputCompletionConfirmed": true,
+      "repetition": 3,
+      "samples": [
+        {
+          "cpuSeconds": 0.274622,
+          "footprintBytes": 35324792,
+          "phase": "warmup",
+          "residentBytes": 90390528,
+          "seconds": 0,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 0.420152,
+          "footprintBytes": 98157480,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 0.2644491666578688,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.424249,
+          "footprintBytes": 98141096,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 0.521208458347246,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.425238,
+          "footprintBytes": 98141096,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 0.7874386666808277,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.425668,
+          "footprintBytes": 98141096,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 1.0465253749862313,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.426744,
+          "footprintBytes": 98141096,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 1.3128748333256226,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.427417,
+          "footprintBytes": 51233704,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 1.579833541676635,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.427942,
+          "footprintBytes": 51233704,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 1.8469580833334476,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.4288,
+          "footprintBytes": 51233704,
+          "phase": "warmup",
+          "residentBytes": 110149632,
+          "seconds": 2.108454833331052,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.508651,
+          "footprintBytes": 51332008,
+          "phase": "warmup",
+          "residentBytes": 110411776,
+          "seconds": 2.392958083335543,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.508922,
+          "footprintBytes": 51332008,
+          "phase": "warmup",
+          "residentBytes": 110411776,
+          "seconds": 2.6598913749912754,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.509718,
+          "footprintBytes": 51299240,
+          "phase": "warmup",
+          "residentBytes": 110411776,
+          "seconds": 2.926932750007836,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.511016,
+          "footprintBytes": 51299240,
+          "phase": "warmup",
+          "residentBytes": 110411776,
+          "seconds": 3.19139308333979,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.516739,
+          "footprintBytes": 51299240,
+          "phase": "warmup",
+          "residentBytes": 110411776,
+          "seconds": 3.457915166654857,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.5176,
+          "footprintBytes": 51299240,
+          "phase": "warmup",
+          "residentBytes": 110411776,
+          "seconds": 3.7133749583445024,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.518767,
+          "footprintBytes": 51299240,
+          "phase": "idle",
+          "residentBytes": 110411776,
+          "seconds": 3.980313500011107,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.519481,
+          "footprintBytes": 51299240,
+          "phase": "idle",
+          "residentBytes": 110411776,
+          "seconds": 4.235697291675024,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.520605,
+          "footprintBytes": 51299240,
+          "phase": "idle",
+          "residentBytes": 110411776,
+          "seconds": 4.496728958329186,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.524909,
+          "footprintBytes": 51299240,
+          "phase": "idle",
+          "residentBytes": 110411776,
+          "seconds": 4.7633383749926,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.525774,
+          "footprintBytes": 51299240,
+          "phase": "idle",
+          "residentBytes": 110411776,
+          "seconds": 5.027454374998342,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.526786,
+          "footprintBytes": 51250088,
+          "phase": "idle",
+          "residentBytes": 110362624,
+          "seconds": 5.290699583332753,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.527616,
+          "footprintBytes": 51250088,
+          "phase": "idle",
+          "residentBytes": 110362624,
+          "seconds": 5.553989041654859,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.528506,
+          "footprintBytes": 51250088,
+          "phase": "idle",
+          "residentBytes": 110362624,
+          "seconds": 5.80756766666309,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.529451,
+          "footprintBytes": 51250088,
+          "phase": "idle",
+          "residentBytes": 110362624,
+          "seconds": 6.063387958332896,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.535074,
+          "footprintBytes": 51250088,
+          "phase": "idle",
+          "residentBytes": 110362624,
+          "seconds": 6.329984125011833,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.537996,
+          "footprintBytes": 51299264,
+          "phase": "idle",
+          "residentBytes": 110395392,
+          "seconds": 6.591136958333664,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.539734,
+          "footprintBytes": 51299264,
+          "phase": "idle",
+          "residentBytes": 110395392,
+          "seconds": 6.844572500005597,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.5406,
+          "footprintBytes": 51299264,
+          "phase": "idle",
+          "residentBytes": 110395392,
+          "seconds": 7.1119224166614,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.541472,
+          "footprintBytes": 51299264,
+          "phase": "idle",
+          "residentBytes": 110395392,
+          "seconds": 7.372687291674083,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.542222,
+          "footprintBytes": 51299264,
+          "phase": "idle",
+          "residentBytes": 110395392,
+          "seconds": 7.639904874988133,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.54273,
+          "footprintBytes": 51299264,
+          "phase": "idle",
+          "residentBytes": 110395392,
+          "seconds": 7.907001999992644,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.549636,
+          "footprintBytes": 51299264,
+          "phase": "output",
+          "residentBytes": 110395392,
+          "seconds": 8.633699500001967,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.585426,
+          "footprintBytes": 51397568,
+          "phase": "output",
+          "residentBytes": 110395392,
+          "seconds": 8.888676000002306,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.608986,
+          "footprintBytes": 51397568,
+          "phase": "output",
+          "residentBytes": 110395392,
+          "seconds": 9.14150475000497,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.609782,
+          "footprintBytes": 51364800,
+          "phase": "output",
+          "residentBytes": 110395392,
+          "seconds": 9.40503512500436,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.647333,
+          "footprintBytes": 103384000,
+          "phase": "output",
+          "residentBytes": 110936064,
+          "seconds": 9.672085250000237,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.647623,
+          "footprintBytes": 103384000,
+          "phase": "output",
+          "residentBytes": 110936064,
+          "seconds": 9.938662416680017,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.648138,
+          "footprintBytes": 103384000,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 10.202324874990154,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.648573,
+          "footprintBytes": 103384000,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 10.459725416672882,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.649263,
+          "footprintBytes": 52396992,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 10.725348041654797,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.650634,
+          "footprintBytes": 52396992,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 10.98596658333554,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.651652,
+          "footprintBytes": 52396992,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 11.247999041661387,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.652128,
+          "footprintBytes": 52396992,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 11.515117083326913,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.652811,
+          "footprintBytes": 51872704,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 11.774017999996431,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.653194,
+          "footprintBytes": 51872704,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 12.03911895834608,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.653761,
+          "footprintBytes": 51872704,
+          "phase": "output",
+          "residentBytes": 110919680,
+          "seconds": 12.299736916669644,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.655965,
+          "footprintBytes": 51872704,
+          "phase": "output",
+          "residentBytes": 110886912,
+          "seconds": 12.565164458326763,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.6823,
+          "footprintBytes": 101270464,
+          "phase": "output",
+          "residentBytes": 111296512,
+          "seconds": 12.820459708338603,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.682944,
+          "footprintBytes": 101270464,
+          "phase": "output",
+          "residentBytes": 111296512,
+          "seconds": 13.087601916660788,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.687452,
+          "footprintBytes": 98911168,
+          "phase": "output",
+          "residentBytes": 111296512,
+          "seconds": 13.354897583340062,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.688006,
+          "footprintBytes": 98911168,
+          "phase": "output",
+          "residentBytes": 111296512,
+          "seconds": 13.613172749988735,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.688764,
+          "footprintBytes": 52265920,
+          "phase": "output",
+          "residentBytes": 111296512,
+          "seconds": 13.870334375009406,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.689612,
+          "footprintBytes": 52265920,
+          "phase": "output",
+          "residentBytes": 111296512,
+          "seconds": 14.137255208333954,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.690513,
+          "footprintBytes": 52282304,
+          "phase": "output",
+          "residentBytes": 111312896,
+          "seconds": 14.403437125001801,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.691198,
+          "footprintBytes": 52282304,
+          "phase": "output",
+          "residentBytes": 111312896,
+          "seconds": 14.666638166672783,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.691864,
+          "footprintBytes": 52282304,
+          "phase": "output",
+          "residentBytes": 111312896,
+          "seconds": 14.92979929165449,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.694711,
+          "footprintBytes": 52282304,
+          "phase": "output",
+          "residentBytes": 111312896,
+          "seconds": 15.187472541671013,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.773376,
+          "footprintBytes": 52249536,
+          "phase": "output",
+          "residentBytes": 111345664,
+          "seconds": 15.454676208319142,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.774246,
+          "footprintBytes": 52249536,
+          "phase": "output",
+          "residentBytes": 111345664,
+          "seconds": 15.713041541661369,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.827543,
+          "footprintBytes": 104285120,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 15.97999608333339,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.828383,
+          "footprintBytes": 104285120,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 16.230855708330637,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.829353,
+          "footprintBytes": 101925824,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 16.497672583325766,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.830291,
+          "footprintBytes": 101925824,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 16.762683583336184,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.83148,
+          "footprintBytes": 53298112,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 17.019565291673644,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.832221,
+          "footprintBytes": 53298112,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 17.276637000002665,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.836863,
+          "footprintBytes": 53298112,
+          "phase": "output",
+          "residentBytes": 111919104,
+          "seconds": 17.542942208325258,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.886665,
+          "footprintBytes": 52773824,
+          "phase": "settled",
+          "residentBytes": 111935488,
+          "seconds": 18.366486124985386,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.887324,
+          "footprintBytes": 52773824,
+          "phase": "settled",
+          "residentBytes": 111935488,
+          "seconds": 18.62261141667841,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.888368,
+          "footprintBytes": 52773824,
+          "phase": "settled",
+          "residentBytes": 111902720,
+          "seconds": 18.889670333330287,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.894496,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 19.14617654166068,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.895447,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 19.413307624985464,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.900088,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 19.679908416670514,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.900855,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 19.946616000001086,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.901721,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 20.21041458332911,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.902551,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 20.471108916652156,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.903453,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 20.734175666671945,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.904251,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 21.00058508332586,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.905182,
+          "footprintBytes": 52921280,
+          "phase": "settled",
+          "residentBytes": 112050176,
+          "seconds": 21.251860083342763,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.960327,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 21.573299000010593,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.964572,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 21.84032904167543,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.965515,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 22.104433708329452,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.966366,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 22.364366333320504,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.966994,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 22.63084120833082,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.967755,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 22.897897166665643,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.968541,
+          "footprintBytes": 52986816,
+          "phase": "inactive",
+          "residentBytes": 112050176,
+          "seconds": 23.163293833320495,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.969439,
+          "footprintBytes": 53003200,
+          "phase": "inactive",
+          "residentBytes": 112066560,
+          "seconds": 23.429937999986578,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.97025,
+          "footprintBytes": 53003200,
+          "phase": "inactive",
+          "residentBytes": 112066560,
+          "seconds": 23.694893708336167,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.975631,
+          "footprintBytes": 52954048,
+          "phase": "inactive",
+          "residentBytes": 112017408,
+          "seconds": 23.95552874999703,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.976422,
+          "footprintBytes": 52954048,
+          "phase": "inactive",
+          "residentBytes": 112017408,
+          "seconds": 24.220367125002667,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.977301,
+          "footprintBytes": 52954048,
+          "phase": "inactive",
+          "residentBytes": 112017408,
+          "seconds": 24.48664333333727,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.978225,
+          "footprintBytes": 52954048,
+          "phase": "inactive",
+          "residentBytes": 112017408,
+          "seconds": 24.753868791653076,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.97881,
+          "footprintBytes": 52954048,
+          "phase": "inactive",
+          "residentBytes": 112017408,
+          "seconds": 25.01846099999966,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.979345,
+          "footprintBytes": 52954048,
+          "phase": "inactive",
+          "residentBytes": 112017408,
+          "seconds": 25.27818479167763,
+          "terminalViews": 2
+        }
+      ],
+      "schema": 1,
+      "summary": {
+        "idle": {
+          "cpuSecondsDelta": 0.023963000000000068,
+          "maximumFootprintBytes": 51299264,
+          "medianFootprintBytes": 51299240.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "inactive": {
+          "cpuSecondsDelta": 0.01901799999999998,
+          "maximumFootprintBytes": 53003200,
+          "medianFootprintBytes": 52986816,
+          "sampleCount": 15,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "output": {
+          "cpuSecondsDelta": 0.287227,
+          "maximumFootprintBytes": 104285120,
+          "medianFootprintBytes": 52396992,
+          "sampleCount": 35,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "settled": {
+          "cpuSecondsDelta": 0.018517000000000006,
+          "maximumFootprintBytes": 52921280,
+          "medianFootprintBytes": 52921280.0,
+          "sampleCount": 12,
+          "terminalViewCounts": [
+            2
+          ]
+        },
+        "warmup": {
+          "cpuSecondsDelta": 0.24297799999999997,
+          "maximumFootprintBytes": 98157480,
+          "medianFootprintBytes": 51299240,
+          "sampleCount": 15,
+          "terminalViewCounts": [
+            0,
+            2
+          ]
+        }
+      },
+      "terminalViewsReleasedWithinOneSecond": 0,
+      "visibleWindow": true
+    },
+    {
+      "cleanupConfirmed": true,
+      "cycles": 0,
+      "densityReduction": {
+        "finalTerminalViews": 2,
+        "initialTerminalViews": 6,
+        "nativeTerminalBuffersWithCompletionMarker": 2,
+        "performed": true,
+        "previousViewsReleasedWithinTwoSeconds": 6,
+        "removedViewsStillRetained": 0
+      },
+      "expectedTerminalViews": 6,
+      "limitations": [
+        "Scene phase is injected to make scenarios deterministic; focus and keyboard latency are not measured.",
+        "Visible NSWindow and terminal buffer markers are checked; rendered pixels are not inspected by this benchmark.",
+        "Measures the UI process only; holder/CLI memory is measured separately.",
+        "AppKit/SwiftUI caches may remain after view release; growth alone does not establish a leak."
+      ],
+      "mode": "grid",
+      "nativeTerminalBuffersWithCompletionMarker": 6,
+      "outputCompletionConfirmed": true,
+      "repetition": 3,
+      "samples": [
+        {
+          "cpuSeconds": 0.291272,
+          "footprintBytes": 37192568,
+          "phase": "warmup",
+          "residentBytes": 92160000,
+          "seconds": -4.1676685214042664e-08,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 0.456037,
+          "footprintBytes": 98436032,
+          "phase": "warmup",
+          "residentBytes": 111902720,
+          "seconds": 0.25619179164641537,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 0.488298,
+          "footprintBytes": 104694720,
+          "phase": "warmup",
+          "residentBytes": 112164864,
+          "seconds": 0.5115368333354127,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.489693,
+          "footprintBytes": 104694720,
+          "phase": "warmup",
+          "residentBytes": 112181248,
+          "seconds": 0.7742223749810364,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.490403,
+          "footprintBytes": 104694720,
+          "phase": "warmup",
+          "residentBytes": 112181248,
+          "seconds": 1.025343041663291,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.491632,
+          "footprintBytes": 104694720,
+          "phase": "warmup",
+          "residentBytes": 112181248,
+          "seconds": 1.2766299999784678,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.492553,
+          "footprintBytes": 104694720,
+          "phase": "warmup",
+          "residentBytes": 112181248,
+          "seconds": 1.530342333338922,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.493447,
+          "footprintBytes": 60130240,
+          "phase": "warmup",
+          "residentBytes": 112181248,
+          "seconds": 1.7969989583361894,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.494259,
+          "footprintBytes": 60130240,
+          "phase": "warmup",
+          "residentBytes": 112181248,
+          "seconds": 2.0637275833287276,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.550089,
+          "footprintBytes": 58016704,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 2.3535698750056326,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.57756,
+          "footprintBytes": 58016704,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 2.612382583320141,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.578377,
+          "footprintBytes": 57918400,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 2.879386499989778,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.579275,
+          "footprintBytes": 57918400,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.1453481666685548,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.589749,
+          "footprintBytes": 57918400,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.408500749996165,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.596452,
+          "footprintBytes": 57918400,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.6757069583400153,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.597067,
+          "footprintBytes": 57918400,
+          "phase": "warmup",
+          "residentBytes": 112345088,
+          "seconds": 3.9428790416568518,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.598306,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.2091046666610055,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.599264,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.476281041657785,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.60382,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.730494041665224,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.605116,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 4.996955708338646,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.606073,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 5.259962208336219,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.606897,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 5.52657854167046,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.607682,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 5.786376708332682,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.608617,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 6.053781416645506,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.612153,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 6.316522916662507,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.624141,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 6.5755998749809805,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.627091,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 6.842384791671066,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.628211,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.098632958339294,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.629163,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.363631083338987,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.630004,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.629917624988593,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.630549,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 7.897050666651921,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.631509,
+          "footprintBytes": 57918400,
+          "phase": "idle",
+          "residentBytes": 112345088,
+          "seconds": 8.16448341665091,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.704189,
+          "footprintBytes": 58000320,
+          "phase": "output",
+          "residentBytes": 112377856,
+          "seconds": 8.925193791656056,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.704524,
+          "footprintBytes": 58000320,
+          "phase": "output",
+          "residentBytes": 112377856,
+          "seconds": 9.181848791660741,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.707945,
+          "footprintBytes": 58262464,
+          "phase": "output",
+          "residentBytes": 112689152,
+          "seconds": 9.435593208327191,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.768223,
+          "footprintBytes": 115901376,
+          "phase": "output",
+          "residentBytes": 113311744,
+          "seconds": 9.692557125003077,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.792252,
+          "footprintBytes": 119145408,
+          "phase": "output",
+          "residentBytes": 113541120,
+          "seconds": 9.944171458337223,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.79271,
+          "footprintBytes": 119145408,
+          "phase": "output",
+          "residentBytes": 113524736,
+          "seconds": 10.199628250004025,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.793135,
+          "footprintBytes": 117638080,
+          "phase": "output",
+          "residentBytes": 113475584,
+          "seconds": 10.461838708317373,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.793854,
+          "footprintBytes": 109200320,
+          "phase": "output",
+          "residentBytes": 113475584,
+          "seconds": 10.722793583321618,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.795163,
+          "footprintBytes": 99304384,
+          "phase": "output",
+          "residentBytes": 113475584,
+          "seconds": 10.984003458317602,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.859019,
+          "footprintBytes": 63701952,
+          "phase": "output",
+          "residentBytes": 113524736,
+          "seconds": 11.247042000002693,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.859538,
+          "footprintBytes": 63701952,
+          "phase": "output",
+          "residentBytes": 113524736,
+          "seconds": 11.513152208324755,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.860791,
+          "footprintBytes": 60785600,
+          "phase": "output",
+          "residentBytes": 113524736,
+          "seconds": 11.776421124988701,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.861286,
+          "footprintBytes": 60785600,
+          "phase": "output",
+          "residentBytes": 113524736,
+          "seconds": 12.03231087498716,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.861831,
+          "footprintBytes": 60785600,
+          "phase": "output",
+          "residentBytes": 113524736,
+          "seconds": 12.291198583319783,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.862784,
+          "footprintBytes": 60785600,
+          "phase": "output",
+          "residentBytes": 113426432,
+          "seconds": 12.558358916663565,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.870588,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 12.812038000003668,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.872629,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 13.079119291651295,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.876912,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 13.346481333312113,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.877627,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 13.606934083334636,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.878266,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 13.874114041653229,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.87925,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 14.140170666651102,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.880062,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 14.405214041646104,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.880957,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 14.671988458314445,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.881524,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 14.93913312497898,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.882872,
+          "footprintBytes": 61637568,
+          "phase": "output",
+          "residentBytes": 114311168,
+          "seconds": 15.193799125001533,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.968325,
+          "footprintBytes": 61735872,
+          "phase": "output",
+          "residentBytes": 114409472,
+          "seconds": 15.450163958332269,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 0.969428,
+          "footprintBytes": 61719488,
+          "phase": "output",
+          "residentBytes": 114409472,
+          "seconds": 15.706117749999976,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.050773,
+          "footprintBytes": 117949376,
+          "phase": "output",
+          "residentBytes": 115425280,
+          "seconds": 15.973226208327105,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.079083,
+          "footprintBytes": 120964032,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 16.240360583324218,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.080447,
+          "footprintBytes": 119456704,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 16.506368666654453,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.081554,
+          "footprintBytes": 116442048,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 16.7730670000019,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.083002,
+          "footprintBytes": 114934720,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 17.04060620832024,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.084115,
+          "footprintBytes": 67814336,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 17.293254958320176,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.088995,
+          "footprintBytes": 67814336,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 17.54518404166447,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.090001,
+          "footprintBytes": 67814336,
+          "phase": "output",
+          "residentBytes": 115441664,
+          "seconds": 17.80950966666569,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.137294,
+          "footprintBytes": 62604224,
+          "phase": "settled",
+          "residentBytes": 115458048,
+          "seconds": 18.662530999979936,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.145079,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 18.92375979165081,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.155985,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 19.184475624992047,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.156955,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 19.443209666671464,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.16149,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 19.709856500005117,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.162368,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 19.972329541662475,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.163338,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 20.234208416659385,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.16408,
+          "footprintBytes": 63144896,
+          "phase": "settled",
+          "residentBytes": 115949568,
+          "seconds": 20.494591083319392,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.164997,
+          "footprintBytes": 63161280,
+          "phase": "settled",
+          "residentBytes": 115965952,
+          "seconds": 20.748942624981282,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.165947,
+          "footprintBytes": 63161280,
+          "phase": "settled",
+          "residentBytes": 115965952,
+          "seconds": 21.00908762498875,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.167036,
+          "footprintBytes": 63161280,
+          "phase": "settled",
+          "residentBytes": 115916800,
+          "seconds": 21.26824645831948,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.167833,
+          "footprintBytes": 63161280,
+          "phase": "settled",
+          "residentBytes": 115916800,
+          "seconds": 21.53030670832959,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.228283,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 21.853861374984263,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.230705,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 22.120614624989685,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.231715,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 22.383690333314007,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.232433,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 22.64879691664828,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.233006,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 22.916083083313424,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.234099,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 23.168239541671937,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.23494,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 23.42608824998024,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.235678,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 23.69055545833544,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.236705,
+          "footprintBytes": 63161280,
+          "phase": "inactive",
+          "residentBytes": 115916800,
+          "seconds": 23.951494208333315,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.241215,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 24.217693708313163,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.242109,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 24.477219124994008,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.242933,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 24.743200916651404,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.24393,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 25.002390416659182,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.244791,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 25.267824208334787,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.245756,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 25.526532708317973,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.246765,
+          "footprintBytes": 63144896,
+          "phase": "inactive",
+          "residentBytes": 115867648,
+          "seconds": 25.785485416650772,
+          "terminalViews": 6
+        },
+        {
+          "cpuSeconds": 1.3264770000000001,
+          "footprintBytes": 63210432,
+          "phase": "densityReduced",
+          "residentBytes": 116277248,
+          "seconds": 26.118470041663386,
+          "terminalViews": 0
+        },
+        {
+          "cpuSeconds": 1.371184,
+          "footprintBytes": 105268160,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 26.385341833316488,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.371581,
+          "footprintBytes": 105268160,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 26.652267541649053,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.372066,
+          "footprintBytes": 103826368,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 26.91938300000038,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.3731149999999999,
+          "footprintBytes": 103826368,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 27.183770749979885,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.374167,
+          "footprintBytes": 103826368,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 27.450388333323644,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.374908,
+          "footprintBytes": 56918976,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 27.71169520833064,
+          "terminalViews": 2
+        },
+        {
+          "cpuSeconds": 1.375439,
+          "footprintBytes": 56918976,
+          "phase": "densityReduced",
+          "residentBytes": 116424704,
+          "seconds": 27.978799374977825,
+          "terminalViews": 2
+        }
+      ],
+      "schema": 1,
+      "summary": {
+        "densityReduced": {
+          "cpuSecondsDelta": 0.04896199999999995,
+          "maximumFootprintBytes": 105268160,
+          "medianFootprintBytes": 103826368.0,
+          "sampleCount": 8,
+          "terminalViewCounts": [
+            0,
+            2
+          ]
+        },
+        "idle": {
+          "cpuSecondsDelta": 0.03320299999999998,
+          "maximumFootprintBytes": 57918400,
+          "medianFootprintBytes": 57918400.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "inactive": {
+          "cpuSecondsDelta": 0.018481999999999887,
+          "maximumFootprintBytes": 63161280,
+          "medianFootprintBytes": 63161280.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "output": {
+          "cpuSecondsDelta": 0.38581200000000004,
+          "maximumFootprintBytes": 120964032,
+          "medianFootprintBytes": 61719488,
+          "sampleCount": 35,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "settled": {
+          "cpuSecondsDelta": 0.030538999999999872,
+          "maximumFootprintBytes": 63161280,
+          "medianFootprintBytes": 63144896.0,
+          "sampleCount": 12,
+          "terminalViewCounts": [
+            6
+          ]
+        },
+        "warmup": {
+          "cpuSecondsDelta": 0.30579500000000004,
+          "maximumFootprintBytes": 104694720,
+          "medianFootprintBytes": 59073472.0,
+          "sampleCount": 16,
+          "terminalViewCounts": [
+            0,
+            2,
+            6
+          ]
+        }
+      },
+      "terminalViewsReleasedWithinOneSecond": 0,
+      "visibleWindow": true
+    }
+  ],
+  "schema": 1,
+  "timestampUTC": "2026-11-15T04:12:53Z",
+  "workload": {
+    "generatedBytesPerShell": 3640000,
+    "linesPerShell": 40000,
+    "sampleIntervalSeconds": 0.25,
+    "shells": 6,
+    "windowPoints": [
+      1440,
+      900
+    ]
+  }
+}

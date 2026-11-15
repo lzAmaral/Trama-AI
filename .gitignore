@@ -26,3 +26,6 @@ Engine/target/
 # Local Python tooling caches
 __pycache__/
 *.py[cod]
+
+# Private Sites hosting identity; static source is versioned with the app.
+sites/trama/.openai/

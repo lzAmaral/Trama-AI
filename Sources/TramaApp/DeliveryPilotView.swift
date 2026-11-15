@@ -8,6 +8,7 @@ struct DeliveryPilotView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var exportText = ""
     @State private var notice: String?
+    @State private var updating = false
 
     private var enabled: Bool { workflow.snapshot?.metrics.enabled == true }
 
@@ -26,18 +27,23 @@ struct DeliveryPilotView: View {
                 Text(enabled ? "Piloto ativado" : "Piloto desativado")
                 Spacer()
                 Button(enabled ? "Desativar e limpar métricas" : "Participar do piloto local") {
-                    workflow.update { try workflow.repository.setMetricsEnabled(!enabled) }
-                    if workflow.snapshot?.metrics.enabled == true {
-                        workflow.update { try workflow.repository.recordVisit() }
+                    guard !updating else { return }
+                    let requestedEnabled = !enabled
+                    updating = true
+                    Task {
+                        defer { updating = false }
+                        if await workflow.update({ try $0.setMetricsEnabled(requestedEnabled) }), requestedEnabled {
+                            await workflow.update { try $0.recordVisit() }
+                        }
+                        exportText = ""; notice = nil
                     }
-                    exportText = ""; notice = nil
-                }.disabled(workflow.snapshot == nil)
+                }.disabled(workflow.snapshot == nil || updating)
             }
             Text("Ao ativar, começa uma nova janela de medição. Desativar apaga somente as métricas; sua inbox, comentários e vínculos de PR permanecem.")
                 .foregroundStyle(TerminalTheme.secondary)
             Text("As métricas são calculadas localmente. O armazenamento funcional mantém identidades, notas e PRs para os fluxos do aplicativo; esses dados não entram na exportação agregada.")
                 .foregroundStyle(TerminalTheme.secondary)
-            Button("Preparar exportação de contagens e tempos") { prepareExport() }.disabled(workflow.snapshot == nil)
+            Button("Preparar exportação de contagens e tempos") { Task { await prepareExport() } }.disabled(workflow.snapshot == nil || updating)
             if !exportText.isEmpty {
                 ScrollView {
                     Text(exportText).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
@@ -54,9 +60,9 @@ struct DeliveryPilotView: View {
             .background(TerminalTheme.background).preferredColorScheme(.dark)
     }
 
-    private func prepareExport() {
+    @MainActor private func prepareExport() async {
         do {
-            let value = try workflow.repository.exportMetrics()
+            let value = try await workflow.exportMetrics()
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             exportText = String(decoding: try encoder.encode(value), as: UTF8.self)

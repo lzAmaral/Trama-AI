@@ -10,6 +10,7 @@ final class LiveWorkspaceModel: ObservableObject {
     private var workflowUpdates: AnyCancellable?
     private var projects: [Project] = []
     private var hasSuccessfulPoll = false
+    private var refreshInFlight = false
     private var canPersistNavigation = true
     private var pendingProjectID: UUID?
 
@@ -17,6 +18,8 @@ final class LiveWorkspaceModel: ObservableObject {
     @Published var navigationError: String?
     @Published var promptDrafts: [DeliveryAgentReference: String] = [:]
     @Published var projectTaskDrafts: [UUID: String] = [:]
+    // Presentation only: changing the page size never stops or suspends an agent.
+    @Published var terminalPreviewDensity: TerminalPreviewDensity = .economical
     @Published private(set) var pendingReference: DeliveryAgentReference?
     @Published var agents: [EngineAgent] = []
     @Published var sessions: [String] = []
@@ -74,6 +77,22 @@ final class LiveWorkspaceModel: ObservableObject {
                     openAgents: state.openAgents,
                     selectedAgent: state.selectedSession == name ? state.selectedAgent : nil,
                     mode: state.mode == .workspace ? .board : state.mode)
+            }
+        }
+    }
+
+    func selectScope(projectID: UUID?, session: String?) {
+        cancelPendingOpen()
+        changeNavigation { state in
+            if hasSuccessfulPoll {
+                try state.selectScope(projectID: projectID, session: session, projects: projects, agents: agents)
+            } else {
+                guard projectID == nil || projects.contains(where: { $0.id == projectID }) else {
+                    throw WorkspaceNavigationState.NavigationError.projectUnavailable
+                }
+                // Until the first successful snapshot, missing agents must not prune restored tabs.
+                state = try WorkspaceNavigationState(selectedProjectID: projectID, selectedSession: session,
+                    openAgents: state.openAgents, selectedAgent: nil, mode: .board)
             }
         }
     }
@@ -152,21 +171,31 @@ final class LiveWorkspaceModel: ObservableObject {
         } catch { navigationError = error.localizedDescription }
     }
 
-    func refresh() async {
-        guard !refreshing else { return }
-        refreshing = true
-        defer { refreshing = false; hasLoaded = true }
+    func refresh(showProgress: Bool = true) async {
+        guard !refreshInFlight else { return }
+        refreshInFlight = true
+        if showProgress || !hasLoaded { refreshing = true }
+        defer {
+            refreshInFlight = false
+            if refreshing { refreshing = false }
+            if !hasLoaded { hasLoaded = true }
+        }
         do {
             let result = try await client.listSessions()
             try Task.checkCancellation()
-            agents = result.agents
-            sessions = result.sessions
+            if agents != result.agents { agents = result.agents }
+            if sessions != result.sessions { sessions = result.sessions }
             hasSuccessfulPoll = true
-            navigation.reconcile(projects: projects, agents: agents, sessions: sessions)
+            var nextNavigation = navigation
+            nextNavigation.reconcile(projects: projects, agents: agents, sessions: sessions)
+            if navigation != nextNavigation { navigation = nextNavigation }
             focusPendingAgent()
-            workflow.observe(result.agents)
-            connectionError = nil
-        } catch is CancellationError { } catch { connectionError = error.localizedDescription }
+            await workflow.observe(result.agents)
+            if connectionError != nil { connectionError = nil }
+        } catch is CancellationError { } catch {
+            let message = error.localizedDescription
+            if connectionError != message { connectionError = message }
+        }
     }
 
     func loadProviders() async {

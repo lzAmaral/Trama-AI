@@ -1,95 +1,6 @@
 import SwiftUI
 import TramaCore
 
-@MainActor
-private final class TerminalSessionModel: ObservableObject {
-    @Published var snapshot = Data()
-    @Published var hasSnapshot = false
-    @Published var error: String?
-    @Published var actionError: String?
-    private var resizeTask: Task<Void, Never>?
-    private var resizeGeneration = 0
-    private var requestedSize: (Int, Int)?
-    private lazy var actions: TerminalActionQueue = makeActionQueue()
-
-    private func makeActionQueue() -> TerminalActionQueue {
-        let client = client
-        let id = id
-        let createdAtMs = createdAtMs
-        let delivered = delivered
-        return TerminalActionQueue(
-            sendInput: { data in
-                let sentAt = Date()
-                try await client.sendInput(agentId: id, data: data, createdAtMs: createdAtMs)
-                delivered(sentAt)
-            },
-            sendResize: { rows, cols in try await client.resize(agentId: id, rows: rows, cols: cols, createdAtMs: createdAtMs) },
-            onFailure: { [weak self] failure in
-                switch failure {
-                case .input(let error): self?.actionError = "Falha ao enviar entrada. Ela não será reenviada automaticamente: \(error)"
-                case .resize(let error): self?.actionError = "Não foi possível ajustar o terminal: \(error)"
-                }
-            })
-    }
-    let client: OctoEngineClient
-    let id: UInt32
-    let createdAtMs: UInt64?
-    let delivered: @MainActor (Date) -> Void
-
-    init(client: OctoEngineClient, id: UInt32, createdAtMs: UInt64?, delivered: @escaping @MainActor (Date) -> Void) {
-        self.client = client; self.id = id; self.createdAtMs = createdAtMs; self.delivered = delivered
-    }
-
-    func poll() async {
-        do {
-            let next = try await client.snapshot(agentId: id)
-            guard let bytes = next.bytes else { throw EngineClientError.invalidResponse }
-            try Task.checkCancellation()
-            if bytes != snapshot { snapshot = bytes }
-            hasSnapshot = true
-            error = nil
-            if resizeTask == nil { actions.reconcile(rows: next.rows, cols: next.cols) }
-        } catch is CancellationError { } catch { self.error = error.localizedDescription }
-    }
-
-    func input(_ data: Data) {
-        guard !data.isEmpty else { return }
-        actionError = actions.input(data) ? nil : "Entrada não enviada. O terminal está inativo ou o limite de 24.000 bytes pendentes foi atingido. Envie trechos menores."
-    }
-
-    func resize(rows: Int, cols: Int, active: Bool = true) {
-        guard rows > 0, cols > 0 else { return }
-        let rows = max(2, min(rows, 100))
-        let cols = max(10, min(cols, 240))
-        requestedSize = (rows, cols)
-        guard active else { return }
-        resizeTask?.cancel()
-        resizeGeneration += 1
-        let generation = resizeGeneration
-        resizeTask = Task {
-            defer { if resizeGeneration == generation { resizeTask = nil } }
-            do {
-                try await Task.sleep(for: .milliseconds(250))
-                actions.resize(rows: rows, cols: cols)
-            } catch is CancellationError { } catch { if resizeGeneration == generation { self.actionError = error.localizedDescription } }
-        }
-    }
-
-    func suspend() {
-        actions.suspend()
-        resizeTask?.cancel()
-        resizeTask = nil
-        resizeGeneration += 1
-    }
-
-    func reconnect() {
-        error = nil
-        actionError = nil
-        actions.resume()
-        if let (rows, cols) = requestedSize { resize(rows: rows, cols: cols) }
-    }
-}
-
 struct LiveAgentDetail: View {
     @ObservedObject var model: LiveWorkspaceModel
     let agentID: UInt32
@@ -100,6 +11,7 @@ struct LiveAgentDetail: View {
     let panelRequestID: UUID?
     @StateObject private var terminal: TerminalSessionModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab = "terminal"
     @State private var reviewReloadID = UUID()
     @State private var logText = ""
@@ -126,7 +38,7 @@ struct LiveAgentDetail: View {
         self.initialTab = initialTab; self.panelRequestID = panelRequestID
         _tab = State(initialValue: initialTab)
         _terminal = StateObject(wrappedValue: TerminalSessionModel(client: model.client, id: agentID, createdAtMs: initial.createdAtMs) { [weak workflow = model.workflow] sentAt in
-            if let ref = initial.deliveryReference { workflow?.inputDelivered(ref, sentAt: sentAt) }
+            if let ref = initial.deliveryReference { await workflow?.inputDelivered(ref, sentAt: sentAt) }
         })
     }
 
@@ -147,7 +59,6 @@ struct LiveAgentDetail: View {
         .preferredColorScheme(.dark)
         .onAppear {
             terminal.reconnect()
-            if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: tab) }
         }
         .onDisappear { terminal.suspend() }
         .onChange(of: panelRequestID) { _, _ in tab = initialTab }
@@ -158,14 +69,12 @@ struct LiveAgentDetail: View {
                 showsMove = false; showsExport = false
             }
         }
-        .task {
-            while !Task.isCancelled {
-                if isAlive && tab == "terminal" { await terminal.poll() }
-                do { try await Task.sleep(for: .milliseconds(800)) } catch { break }
-            }
+        .task(id: isAlive && tab == "terminal" && scenePhase == .active) {
+            guard isAlive, tab == "terminal", scenePhase == .active else { return }
+            await terminal.poller.run { await terminal.poll() }
         }
         .task(id: tab) {
-            if let ref = agent.deliveryReference { model.workflow.opened(ref, panel: tab) }
+            if let ref = agent.deliveryReference { await model.workflow.opened(ref, panel: tab) }
             if tab == "logs" { await loadLogs() }
             if tab == "processes" { await loadProcesses() }
         }
@@ -247,7 +156,7 @@ struct LiveAgentDetail: View {
         VStack(alignment: .leading, spacing: isEmbedded ? 6 : 12) {
             detailHeader
             if !isEmbedded {
-                Text("\(agent.kind) · \(agent.session) · \(agent.cwd)")
+                Text("\(agent.kind) · \(agent.session)")
                     .foregroundStyle(TerminalTheme.secondary).lineLimit(2).textSelection(.enabled)
             }
             panelPicker
@@ -357,9 +266,6 @@ struct LiveAgentDetail: View {
                         .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            Text(agent.cwd).foregroundStyle(TerminalTheme.muted)
-                .lineLimit(1).truncationMode(.middle).textSelection(.enabled).help(agent.cwd)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }.font(TerminalTheme.mono(10))
     }
 
@@ -382,8 +288,6 @@ struct LiveAgentDetail: View {
                     inspectorSection("Worktree") {
                         Label(branch, systemImage: "arrow.triangle.branch").font(TerminalTheme.mono(11))
                             .fixedSize(horizontal: false, vertical: true).help(branch)
-                        Text(agent.cwd).font(TerminalTheme.mono(10)).foregroundStyle(TerminalTheme.secondary)
-                            .textSelection(.enabled).fixedSize(horizontal: false, vertical: true).help(agent.cwd)
                         Button("Abrir alterações") { tab = "diff" }.buttonStyle(NativeActionButtonStyle())
                         Text("Revise o diff antes de integrar. O merge exige encerramento e confirmação.")
                             .font(TerminalTheme.ui(11)).foregroundStyle(TerminalTheme.muted)

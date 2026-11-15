@@ -72,7 +72,7 @@ struct DeliveryPullRequestView: View {
                             Spacer()
                             Button("Desvincular PR local") {
                                 guard let ref else { return }
-                                workflow.update { try workflow.repository.removePullRequestLink(agentRef: ref) }
+                                Task { await workflow.update { try $0.removePullRequestLink(agentRef: ref) } }
                             }
                         }
                         if validatedPullRequestURL(link) == nil { Text("URL inválida ou fora do GitHub esperado. Abertura bloqueada.").foregroundStyle(TerminalTheme.warning) }
@@ -123,7 +123,7 @@ struct DeliveryPullRequestView: View {
             guard validatedPullRequestURL(value) != nil else { throw EngineClientError.invalidResponse }
             let current = try await client.diffSnapshot(agentId: agent.id)
             guard current.createdAtMs == ref.createdAtMs else { throw EngineClientError.invalidResponse }
-            workflow.update { try workflow.repository.setPullRequestLink(value) }
+            await workflow.update { try $0.setPullRequestLink(value) }
             local = current; localObservedAt = Date(); localError = nil
         } catch { self.error = "Consulta não concluída; nenhum retry automático: \(error.localizedDescription)" }
     }
