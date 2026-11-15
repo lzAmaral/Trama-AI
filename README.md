@@ -2,27 +2,41 @@
 
 **Seus projetos e agentes, em um só lugar.**
 
-App nativo para macOS em SwiftUI, com terminal e motor Rust para executar CLIs de agentes em projetos locais.
+Trama reúne projetos locais, agentes de código e terminais em um aplicativo nativo para macOS. Acompanhe vários CLIs mantendo o contexto de cada pasta, tarefa e alteração.
 
-## Estado atual
+**Projeto pessoal · prévia funcional em desenvolvimento · macOS 14+**
 
-A barra lateral agrupa agentes por sessão; o cabeçalho filtra o projeto e o compositor fixo do rodapé mostra a pasta de destino. Escreva a tarefa, escolha o provedor e clique **Iniciar agente**; a criação abre uma aba com o terminal no painel principal. O agente aberto tem um campo próprio para enviar a próxima instrução. Fechar a aba mantém o processo em execução. Projeto, abas e visualização são restaurados localmente. Veja [o fluxo da área de trabalho](docs/WORKSPACE_FLOW.md).
+![Área de trabalho do Trama com projetos, sessões e agentes fictícios](docs/media/trama-workspace.png)
 
-O quadro usa sessões reais por padrão: criar tarefas, acompanhar estados, enviar entrada ao terminal, encerrar e recuperar sessões interrompidas. Há filtros por projeto/sessão, busca, lista, histórico, descoberta de skills, worktrees, diff e merge confirmado. Sessões podem ser renomeadas e registros encerrados movidos entre elas. Worktrees podem ser arquivados no lugar, preservando arquivos e branch; o quadro permite mostrar os arquivados. O modo **Demonstração** continua separado e identificado.
+Captura das views nativas com dados fictícios de portfólio; os provedores mostrados não foram executados. [Vídeo de apresentação e roteiro](docs/PORTFOLIO_DEMO.md).
 
-O histórico tem exportação com prévia, ocultação literal opcional e revisão manual antes de salvar, além de retenção manual com candidatos e confirmação. A consulta de processos mostra descendentes locais e parentesco registrado quando disponível, com visibilidade incompleta; não representa toda a árvore lógica de subagentes do provedor.
+## O que você pode fazer
 
-A inbox reúne intervenções, sessões interrompidas, entregas disponíveis para revisão e falhas de checks observadas em consultas manuais. A revisão permite comentar linhas de um diff versionado e preparar um lote com prévia e confirmação para uma IA disponível. O vínculo com PR/CI usa o GitHub CLI somente por ação do usuário e distingue o HEAD consultado de alterações locais. Veja o [fluxo e seus limites](docs/DELIVERY_WORKFLOW.md).
+- **Organizar por projeto:** projetos, sessões e agentes na lateral, com abas e rascunhos preservados.
+- **Trabalhar pelo terminal:** iniciar CLIs instalados, enviar instruções, encerrar e recuperar sessões interrompidas.
+- **Acompanhar em conjunto:** quadro, lista e grade com duas ou seis prévias.
+- **Revisar alterações:** worktrees, diffs e comentários com prévia e confirmação de envio.
+- **Retomar o contexto:** histórico, exportação de logs, inbox e consulta manual de PR/CI pelo GitHub CLI.
 
-O [piloto](docs/PILOT.md) mede localmente tempo até a primeira entrega revisada, abertura de intervenções, entrega de entrada ao CLI e frequência de retorno. A coleta começa desativada, exige opt-in e exporta apenas contagens e durações. A instrumentação não representa um estudo com usuários já realizado.
+O modo **Demonstração** mantém dados fictícios identificados separados das sessões reais. [Fluxo da área de trabalho](docs/WORKSPACE_FLOW.md).
 
-A interface usa superfícies pretas, tipografia do sistema, metadados monoespaçados e acentos turquesa. O terminal é renderizado pelo SwiftTerm; o motor reutiliza a biblioteca Rust do Octo fixada em uma revisão. Veja [arquitetura e limites](docs/ENGINE_INTEGRATION.md).
+## Como foi construído
 
-Esta é uma versão de desenvolvimento. O fluxo de terminal foi testado com shell real e Git em diretórios temporários. Execução autenticada de cada provedor, revisão visual e distribuição notarizada ainda precisam de validação. Detectar um CLI não confirma login ou compatibilidade de sua versão.
+| Camada | Implementação |
+| --- | --- |
+| Interface nativa | Swift 6, SwiftUI e AppKit |
+| Terminal | SwiftTerm, com revisão fixada |
+| Estado e persistência | Núcleo Swift independente das views, arquivos locais, locks e gravação atômica |
+| Motor de sessões | Adaptador Rust sobre a biblioteca `orkai` do Octo, com revisão fixada |
+| Comunicação | RPC JSON entre o aplicativo e o processo `trama-engine` |
 
-## Executar
+O Trama desenvolve a interface e a integração nativa, reutilizando o motor do Octo para CLIs, PTY e logs. Não há paridade completa com o Octo. [Arquitetura e contratos](docs/ENGINE_INTEGRATION.md).
 
-Requisitos: macOS 14+, Swift 6 e Rust compatível com o lockfile (validado com Swift 6.1.2 e Rust 1.99.1). O primeiro build baixa dependências.
+No [estudo de memória](docs/MEMORY_VALIDATION.md), duas prévias usaram **16,5% menos memória após carga** que seis, no processo que hospeda a interface de teste. A extração do histórico reduziu o pico do RPC em **8,6%**. Medições controladas em uma máquina, sem incluir a memória dos provedores.
+
+## Executar localmente
+
+Requisitos: **macOS 14+, Swift 6 e Rust**. Validado com Swift 6.1.2 e Rust 1.99.1. O primeiro build baixa dependências.
 
 ```sh
 git clone https://github.com/lzAmaral/Trama-AI.git
@@ -31,47 +45,47 @@ cd Trama-AI
 swift run Trama
 ```
 
-O repositório privado requer acesso. Para gerar um aplicativo local:
+Para gerar e abrir um bundle otimizado:
 
 ```sh
-./scripts/package-app.sh
+./scripts/package-app.sh --release
 open .build/Trama.app
 ```
 
-O bundle tem assinatura ad hoc para desenvolvimento, sem Developer ID ou notarização. Detalhes em [PACKAGING.md](docs/PACKAGING.md). O script também aceita `--release`.
+Bundle com assinatura ad hoc de desenvolvimento, sem notarização. [Empacotamento](docs/PACKAGING.md).
 
-Cadastre uma pasta e selecione o destino no compositor. No compositor do rodapé, escreva a tarefa, escolha um provedor instalado e clique **Iniciar agente** (⌘Return). **Novo agente** (⌘N) volta ao compositor; a criação abre o terminal automaticamente quando o registro aparece. Os CLIs precisam estar no PATH herdado pelo aplicativo; abrir pelo Finder pode resultar em um PATH diferente do terminal. Login permanece no CLI. A execução pode modificar arquivos e, para agentes de IA, enviar dados ao provedor. Fechar a janela ou a aba **não encerra** os agentes; use **Encerrar** no menu do agente.
+1. Cadastre uma pasta e confira o destino no compositor do rodapé.
+2. Escreva a tarefa, escolha um provedor instalado e clique em **Iniciar agente** (⌘Return).
+3. Acompanhe o terminal na aba aberta. **Novo agente** (⌘N) retorna ao compositor.
 
-## Dados e controles
+Os CLIs precisam estar instalados, autenticados e disponíveis no `PATH` do aplicativo, que pode diferir ao abrir pelo Finder. Detectar o executável não comprova login ou compatibilidade.
 
-Projetos ficam em `~/Library/Application Support/Trama/projects.json`; sessões e logs do motor, em `~/Library/Application Support/Trama/Engine`. O cadastro de pastas não altera seu conteúdo. Um arquivo de projetos inválido bloqueia gravações para preservar os dados. O cadastro coordena instâncias desta versão com lock e releitura antes de gravar; contenção pede uma nova tentativa. Outra janela atualiza sua lista no próximo cadastro ou recarregamento. Versões antigas não seguem esse protocolo.
+**Fechar a aba ou a janela não encerra os agentes.** Use **Encerrar** no menu do agente. A execução pode modificar arquivos, enviar dados ao provedor e consumir créditos; as aprovações do CLI permanecem no terminal.
 
-Inbox, notas de revisão, vínculos de PR e medições opt-in ficam em `trama-delivery-workflow.json`, dentro do diretório do motor. Esse arquivo também usa lock, releitura e gravação atômica. Notas podem conter código e informações sensíveis; a exportação de métricas não inclui esse conteúdo. Desativar as métricas limpa sua janela de medição e preserva os dados funcionais.
+## Dados e estado da versão
 
-A ação **Motor** detecta provedores sem acessar credenciais ou rede. A consulta de consumo só ocorre ao escolher um provedor e clicar **Consultar agora**, usando o adaptador upstream. Ela pode ler credenciais locais e consultar o serviço correspondente; não roda em segundo plano. Não foi validada com contas reais nesta entrega.
+Os dados ficam em `~/Library/Application Support/Trama`. Logs e notas podem conter informações sensíveis. As métricas do [piloto](docs/PILOT.md) são locais e começam desativadas.
 
-As aprovações do CLI permanecem no terminal. Merge exige worktree isolada, agente encerrado, revisão das alterações e confirmação. O aplicativo não ativa bypass de permissões, acesso remoto ou atualizações automáticas.
+A consulta de consumo é manual e pode acessar credenciais e a rede do provedor. Sem bypass de permissões, acesso remoto ou atualizações automáticas. [Segurança](docs/SECURITY.md).
 
-## Validar
+Permanecem pendentes a validação autenticada por provedor, a revisão interativa completa, VoiceOver e a distribuição notarizada. Veja a [validação para apresentação](docs/PORTFOLIO_VALIDATION.md), o [roadmap](docs/ROADMAP.md) e os [critérios de entrega](docs/RELEASE_VALIDATION.md).
+
+## Validar e contribuir
 
 ```sh
 ./scripts/build-engine.sh
 ./scripts/cargo-local.sh test --locked --manifest-path Engine/Cargo.toml
-TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test
+TRAMA_TEST_ENGINE_PATH="$PWD/Engine/target/debug/trama-engine" swift test --no-parallel
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
-./scripts/generate-notices.py --check --target aarch64-apple-darwin
-./scripts/generate-notices.py --check --target x86_64-apple-darwin
 git diff --check
 ```
 
-Os testes cobrem persistência, erros e limites do transporte, cancelamento, fila do terminal, lifecycle real de shell, operações Git isoladas, reorganização de sessões, revisão de logs e falhas de empacotamento. Os checks de avisos usam fontes locais; se faltar cache, execute `./scripts/cargo-local.sh fetch --locked --manifest-path Engine/Cargo.toml`. Não executam tarefas de IA pagas ou consultas autenticadas. A compilação e os testes não substituem a revisão visual. Evidências de transporte e ferramentas ficam em [scripts/VALIDATION.md](scripts/VALIDATION.md); critérios externos em [RELEASE_VALIDATION.md](docs/RELEASE_VALIDATION.md).
+Os testes usam shells e Git temporários, sem IA paga ou consultas autenticadas. O CI verifica também empacotamento e avisos de dependências. [Evidências](scripts/VALIDATION.md) · [Engenharia](docs/ENGINEERING.md) · [Colaboração](AGENTS.md).
 
-## Desenvolvimento
+## Créditos
 
-- `Sources/TramaApp`: SwiftUI, estado de apresentação e terminal.
-- `Sources/TramaCore`: persistência, modelos e cliente JSON do motor.
-- `Engine`: adaptador Rust, dependência fixada e testes de lifecycle.
-- `Tests/TramaCoreTests`: contratos Swift e integração com o binário real.
-- `scripts`: build e empacotamento local.
+O motor deriva da biblioteca Rust do [Octo](https://github.com/lucasmarujo/octo), fixada em `f66aa854313026870aaf57f65d26d9cbfbf32269`. A composição visual e os tokens foram adaptados da interface MIT do Octo, de Lucas Marujo. O terminal usa [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm). Revisões, origens e licenças estão em [ThirdPartyNotices](ThirdPartyNotices/README.md).
 
-O integrador define contratos, distribui arquivos entre agentes e controla Git; outro agente revisa o comportamento antes da integração. Consulte [AGENTS.md](AGENTS.md), [engenharia](docs/ENGINEERING.md), [tarefas](docs/TASKS.md), [roadmap](docs/ROADMAP.md) e [segurança](docs/SECURITY.md).
+## Licença
+
+O código próprio do Trama é distribuído sob a [licença MIT](LICENSE). Código e ativos de terceiros mantêm suas respectivas licenças e avisos, incluindo os registrados em [ThirdPartyNotices](ThirdPartyNotices/README.md) e na [landing page](sites/trama/README.md).

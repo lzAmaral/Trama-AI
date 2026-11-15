@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Trama — prévia de portfólio</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#000;color:#ececf2;font-family:-apple-system,BlinkMacSystemFont,sans-serif}#stage{width:1080px;height:1080px;position:relative;overflow:hidden}.scene{position:absolute;inset:0;display:none} .tag{position:absolute;left:90px;top:95px;font-size:28px;letter-spacing:.08em;color:#35fddc;font-family:ui-monospace,monospace}h1{position:absolute;left:90px;top:155px;width:900px;margin:0;font-size:88px;line-height:1.02;letter-spacing:-.045em} .visual{position:absolute;left:90px;top:385px;width:900px;height:562.5px;object-fit:contain;border:1px solid #23282a;border-radius:10px;background:#0a0b0c} .caption{position:absolute;left:90px;top:810px;width:900px;font-size:34px;line-height:1.3;color:#9a9aa8} .footer{position:absolute;left:90px;top:954px;width:900px;font-size:25px;line-height:1.2;color:#9a9aa8}.rule{position:absolute;left:90px;top:925px;width:900px;height:2px;background:#23282a}.number{position:absolute;left:90px;top:440px;font-size:132px;font-weight:700;color:#35fddc;letter-spacing:-.06em}.support{position:absolute;left:90px;top:615px;width:870px;font-size:40px;line-height:1.32}.url{font-family:ui-monospace,monospace;font-size:34px;color:#35fddc}.brand{font-size:130px;line-height:1;color:#35fddc;position:absolute;left:90px;top:400px;letter-spacing:-.06em;font-weight:700}
+</style></head><body><main id="stage"></main>
+<script>
+// Authored for Trama; follows motion-designer's seek/ready contract. No third-party template code bundled.
+window.DUR=38;window.MARK={OPEN:0,PROJECTS:6,STATUS:13,COMPOSER:20,ENGINEERING:27,END:32};window.SAFE_BOX={x:90,y:90,w:900,h:900};
+const specs=[
+ {a:0,b:6,tag:'PROJETO PESSOAL · MACOS',title:'Projetos e agentes.<br>Uma área de trabalho.',body:'<div class="brand" data-block>&gt; Trama</div><div class="support" data-block>Um aplicativo nativo para acompanhar<br>CLIs de agentes nos seus projetos.</div>'},
+ {a:6,b:13,tag:'01 · ORGANIZAÇÃO',title:'Cada projeto<br>tem seu lugar.',image:'../trama-workspace.png'},
+ {a:13,b:20,tag:'02 · ACOMPANHAMENTO',title:'Estados e tarefas<br>em uma visão.',image:'../trama-list.png'},
+ {a:20,b:27,tag:'03 · CONTEXTO',title:'Escolha a pasta.<br>Descreva a tarefa.',image:'../trama-composer.png'},
+ {a:27,b:32,tag:'POR DENTRO',title:'Interface nativa.<br>Motor Rust.',body:'<div class="number" data-block>SwiftUI + Rust</div><div class="support" data-block>Motor baseado no Octo.<br>Terminal integrado com SwiftTerm.</div>'},
+ {a:32,b:38,tag:'PRÉVIA FUNCIONAL · EM DESENVOLVIMENTO',title:'Acompanhe<br>o projeto.',body:'<div class="brand" data-block>&gt; Trama</div><div class="support" data-block>Projetos e agentes em um só lugar.<br><br><span class="url">github.com/lzAmaral/Trama-AI</span></div>'}
+];
+const stage=document.getElementById('stage');
+for(const s of specs){s.node=document.createElement('section');s.node.className='scene';s.node.innerHTML=`<div class="tag" data-block>${s.tag}</div><h1 data-block>${s.title}</h1>${s.image?`<img class="visual" data-role="focal" src="${s.image}" alt="Captura nativa com dados fictícios">`:s.body}<div class="footer" data-block>${s.image?'Captura nativa · dados fictícios · sem execução de IA':'Apresentação com capturas nativas · dados fictícios'}</div>`;stage.append(s.node)}
+window.seek=function(t){for(const s of specs){const visible=t>=s.a&&t<s.b;s.node.style.display=visible?'block':'none';if(!visible)continue;const p=Math.min(1,(t-s.a)/.55);const h=s.node.querySelector('h1');h.style.transform=`translateY(${(1-p)*(1-p)*14}px)`;const img=s.node.querySelector('img');if(img){img.style.top='355px';img.style.height='562.5px';img.style.transform=`scale(${.985+.015*Math.min(1,(t-s.a)/5)})`}}};
+Promise.all([...document.images].map(im=>im.decode())).then(()=>document.fonts.ready).then(()=>{window.seek(+(new URLSearchParams(location.search).get('t')||0));window.ready=true});
+</script></body></html>
